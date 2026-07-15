@@ -1,0 +1,1609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PANDA — PAN Workflow System</title>
+<link rel="stylesheet" href="panda-ui-concept.css">
+</head>
+<body>
+
+<!-- Theme toggle: fixed to the top-right corner, floats above all screens -->
+<button class="iconbtn" id="theme-toggle" title="Toggle light / dark theme"
+  style="position:fixed;top:16px;right:20px;z-index:70;width:36px;height:36px;border-radius:99px;box-shadow:var(--shadow)"></button>
+
+<!-- Notification bell: same floating-circle treatment, panel collapses/expands on click.
+     In the actual project these come from the expiry-notification records (allowances nearing
+     their end date) plus workflow events relevant to the signed-in user. -->
+<button class="iconbtn" id="notif-btn" title="Notifications"
+  style="position:fixed;top:16px;right:64px;z-index:70;width:36px;height:36px;border-radius:99px;box-shadow:var(--shadow)">
+  <svg style="width:15px;height:15px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+  <span class="nbadge" id="notif-count">3</span>
+</button>
+
+<div class="npanel" id="notif-panel">
+  <div class="nhead">
+    <b>Notifications</b>
+    <button class="btn ghost" id="notif-clear" style="padding:2px 8px;font-size:12px">Mark all read</button>
+  </div>
+  <div class="nrow unread"><span class="ndot"></span>
+    <div><p><b>Allowance expiring soon</b> — C. Mercado's Interim Allowance (<span class="ref">PAN-2026-00332</span>) ends Jul 22, 2026.</p><small>2 hours ago · Expiry reminder</small></div></div>
+  <div class="nrow unread"><span class="ndot"></span>
+    <div><p><b>Returned for resolution</b> — <span class="ref">PAN-2026-00338</span> was sent back by the HR Approver: "Wage number mismatch".</p><small>Yesterday · HR Preparation</small></div></div>
+  <div class="nrow unread"><span class="ndot"></span>
+    <div><p><b>Returned to you</b> — <span class="ref">PAN-2026-00351</span> needs its attachment replaced before resubmitting.</p><small>Jul 10 · Requestor</small></div></div>
+  <div class="nrow"><span class="ndot"></span>
+    <div><p><b>Filed</b> — <span class="ref">PAN-2026-00298</span> (L. Bautista, Wage Order) closed out.</p><small>Jun 30 · HR Preparation</small></div></div>
+  <div class="nrow"><span class="ndot"></span>
+    <div><p><b>Bulk approval</b> — 3 Regularization PANs were approved by V. Salazar.</p><small>Jun 28 · Final Approver</small></div></div>
+</div>
+
+<div class="app">
+<aside class="side">
+  <div class="brand">
+    <h1>PANDA<span>&nbsp;v2</span></h1>
+    <p>Personnel Action Notice workflow</p>
+  </div>
+  <nav class="navsec" aria-label="Modules">
+    <h2>Workflow modules</h2>
+    <button class="navbtn active" data-s="req"><span class="dot"></span>Requestor<span class="n">8</span></button>
+    <button class="navbtn" data-s="dh"><span class="dot"></span>Division Head<span class="n">12</span></button>
+    <button class="navbtn" data-s="prep"><span class="dot"></span>HR Preparation<span class="n">9</span></button>
+    <button class="navbtn" data-s="hra"><span class="dot"></span>HR Approver<span class="n">4</span></button>
+    <button class="navbtn" data-s="final"><span class="dot"></span>Final Approver<span class="n">6</span></button>
+  </nav>
+  <nav class="navsec" aria-label="Administration">
+    <h2>Administration</h2>
+    <button class="navbtn" data-s="admin"><span class="dot"></span>User Access</button>
+    <button class="navbtn" data-s="emp"><span class="dot"></span>Employees</button>
+    <button class="navbtn" data-s="logs"><span class="dot"></span>Maintenance</button>
+  </nav>
+  <nav class="navsec" aria-label="Help">
+    <h2>Help</h2>
+    <button class="navbtn" data-s="gloss"><span class="dot"></span>Glossary</button>
+  </nav>
+  <div class="me" style="flex-direction:column;align-items:stretch;gap:12px">
+    <div style="display:flex;gap:10px;align-items:center">
+      <div class="avatar">MD</div>
+      <div style="min-width:0"><b>M. Dela Cruz</b><small>Requestor · Division Head · HR Head</small></div>
+    </div>
+    <a class="btn" href="panda-login-concept.html" style="display:flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;color:var(--ink-2)">
+      <svg style="width:14px;height:14px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+      Log out
+    </a>
+  </div>
+</aside>
+
+<main>
+
+<!-- ================= REQUESTOR ================= -->
+<section class="screen on" id="s-req">
+  <p class="crumb">Requestor · Broiler Operations, Hatchery</p>
+  <!-- NOTE: "View Request" is a tab only in this static mockup. In the actual project it is a
+       separate view/page opened per request (e.g. /pan/{id}), prefilled from the selected row — not a tab. -->
+  <div class="subtabs" role="tablist">
+    <button class="stab on" data-t="req-list">My PAN Requests</button>
+    <button class="stab" data-t="req-form">Request Form</button>
+    <button class="stab" data-t="req-view">View Request</button>
+  </div>
+
+  <div class="sub on" id="t-req-list">
+  <div class="htop">
+    <div>
+      <h2>My PAN Requests</h2>
+      <p>Requests you've raised for your registered departments. Submitted requests are read-only until returned for correction.</p>
+    </div>
+    <div class="spacer"></div>
+    <button class="btn primary" data-goto="req-form">+ New PAN Request</button>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><b>8</b><span>Total requests</span></div>
+    <div class="stat warn"><b>3</b><span>In progress</span></div>
+    <div class="stat bad"><b>1</b><span>Returned to you</span></div>
+    <div class="stat ok"><b>4</b><span>Completed</span></div>
+  </div>
+
+  <div class="bar">
+    <div class="search">⌕<input placeholder="Search by employee, reference no., or action type…"></div>
+    <button class="chip on">All</button><button class="chip">In progress</button><button class="chip">Completed</button>
+  </div>
+
+  <div class="card"><div class="twrap"><table>
+    <thead><tr><th>Reference</th><th>Employee</th><th>Type of Action</th><th>Submitted</th><th>Status</th><th></th></tr></thead>
+    <tbody>
+      <tr><td class="ref">PAN-2026-00358</td>
+        <td><div class="who"><b>R. Villanueva</b><small>EMP-10422 · Broiler Operations</small></div></td>
+        <td>Regularization</td><td>—</td><td><span class="pill p-draft">Draft</span></td>
+        <td class="acts"><button class="btn primary" data-goto="req-form">Edit</button><div class="kebab"><button class="kbtn" title="More actions">⋯</button><div class="kmenu"><button class="kitem kdanger">Delete draft</button></div></div></td></tr>
+      <tr><td class="ref">PAN-2026-00351</td>
+        <td><div class="who"><b>J. Ramos</b><small>EMP-10387 · Hatchery</small></div></td>
+        <td>Promotion</td><td>Jul 10, 2026</td><td><span class="pill p-ret">Returned — replace attachment</span></td>
+        <td class="acts"><button class="btn ghost" data-goto="req-view">View</button><button class="btn primary" data-goto="req-form">Resubmit</button><div class="kebab"><button class="kbtn" title="More actions">⋯</button><div class="kmenu"><button class="kitem kdanger">Withdraw request</button></div></div></td></tr>
+      <tr><td class="ref">PAN-2026-00347</td>
+        <td><div class="who"><b>A. Santos</b><small>EMP-10301 · Broiler Operations</small></div></td>
+        <td>Salary Alignment</td><td>Jul 8, 2026</td><td><span class="pill p-dh">With Division Head</span></td>
+        <td class="acts"><button class="btn ghost" data-goto="req-view">View</button></td></tr>
+      <tr><td class="ref">PAN-2026-00332</td>
+        <td><div class="who"><b>C. Mercado</b><small>EMP-10119 · Hatchery</small></div></td>
+        <td>Interim Allowance</td><td>Jul 2, 2026</td><td><span class="pill p-prep">HR Preparation</span></td>
+        <td class="acts"><button class="btn ghost" data-goto="req-view">View</button></td></tr>
+      <tr><td class="ref">PAN-2026-00298</td>
+        <td><div class="who"><b>L. Bautista</b><small>EMP-10077 · Broiler Operations</small></div></td>
+        <td>Wage Order</td><td>Jun 19, 2026</td><td><span class="pill p-filed">Filed</span></td>
+        <td class="acts"><button class="btn ghost" data-goto="req-view">View</button></td></tr>
+    </tbody>
+  </table></div></div>
+  </div>
+
+  <div class="sub" id="t-req-form">
+  <div class="htop"><div><h2>New PAN Request</h2>
+    <p>Employee list is limited to your registered department(s). A PDF attachment is required to submit; drafts may be saved without one.</p></div></div>
+  <div class="card">
+    <div class="formgrid">
+      <div class="field"><label>Employee <em>*</em></label>
+        <select><option>R. Villanueva — EMP-10422</option><option>A. Santos — EMP-10301</option><option>J. Ramos — EMP-10387</option></select></div>
+      <div class="field"><label>Employee ID</label><input readonly value="EMP-10422"><span class="hint">Auto-filled from employee</span></div>
+      <div class="field"><label>Department</label><input readonly value="Broiler Operations"><span class="hint">Auto-filled from employee</span></div>
+      <div class="field"><label>Type of Action <em>*</em></label>
+        <select><option>Regularization</option><option>Salary Alignment</option><option>Wage Order</option><option>Lateral Transfer</option>
+        <option>Developmental Assignment</option><option>Interim Allowance</option><option>Promotion</option><option>Training Status</option>
+        <option>Confirmation of Appointment</option><option>Change of Position</option><option>Discontinuance of Allowance</option>
+        <option>Confirmation of Development Assignment</option><option>Other Allowances</option></select></div>
+      <div class="field full"><label>Justification</label>
+        <textarea rows="3">Completed 6-month probationary period with a performance rating of 4.2/5. Recommended for regularization by the farm supervisor.</textarea></div>
+      <div class="field full"><label>Supporting Document (PDF) <em>*</em></label>
+        <div class="upload"><b>Choose a PDF</b> or drag it here — performance evaluation, recommendation memo, etc.<br>evaluation_villanueva_jun2026.pdf · 412 KB</div></div>
+    </div>
+    <div class="formfoot">
+      <button class="btn">Save as Draft</button>
+      <div class="spacer"></div>
+      <button class="btn primary">Submit to Division Head</button>
+    </div>
+  </div>
+  </div>
+
+  <!-- In the actual project: separate request-detail view, not a tab -->
+  <div class="sub" id="t-req-view">
+  <div class="htop">
+    <div><h2>View Request — <span class="ref" style="font-size:18px">PAN-2026-00347</span></h2>
+    <p>Your request as submitted. It stays read-only unless the Division Head returns it for correction.</p></div>
+    <div class="spacer"></div>
+    <span class="pill p-dh">With Division Head</span>
+  </div>
+
+  <div class="flow" aria-label="Workflow progress">
+    <span class="step done">Submitted</span><span class="sep">→</span>
+    <span class="step now">Division Head</span><span class="sep">→</span>
+    <span class="step">HR Preparation</span><span class="sep">→</span>
+    <span class="step">HR Approval</span><span class="sep">→</span>
+    <span class="step">Final Approval</span>
+  </div>
+
+  <div class="card">
+    <div class="formgrid">
+      <div class="field"><label>Employee</label><input readonly value="A. Santos"></div>
+      <div class="field"><label>Employee ID</label><input readonly value="EMP-10301"></div>
+      <div class="field"><label>Department</label><input readonly value="Broiler Operations"></div>
+      <div class="field"><label>Type of Action</label><input readonly value="Salary Alignment"></div>
+      <div class="field"><label>Submitted</label><input readonly value="Jul 8, 2026 · 09:41"></div>
+      <div class="field full"><label>Justification</label>
+        <textarea rows="3" readonly>Current pay is below the approved 2026 salary structure for Farm Technician II. Requesting alignment to the job-level minimum.</textarea></div>
+      <div class="field full"><label>Supporting Document</label>
+        <div class="attachrow"><span class="pdf">PDF</span> salary_structure_alignment_santos.pdf <small>· 268 KB</small>
+          <span class="spacer"></span><button class="btn ghost">Open</button></div></div>
+    </div>
+    <div class="formfoot">
+      <button class="btn" data-goto="req-list">← Back to my requests</button>
+      <div class="spacer"></div>
+      <button class="btn" disabled>Read-only while in workflow</button>
+    </div>
+  </div>
+  </div>
+</section>
+
+<!-- ================= DIVISION HEAD ================= -->
+<section class="screen" id="s-dh">
+  <p class="crumb">Division Head · Broiler Operations</p>
+  <!-- NOTE: the two "View Request" tabs exist only in this static mockup. In the actual project this is
+       ONE separate view/page opened per request (e.g. /pan/{id}) — not tabs. The page renders in two states:
+       1) request not yet HR-prepared → show the request details only;
+       2) request already has a prepared PAN → same view, with the PAN details appended below as an extension. -->
+  <div class="subtabs" role="tablist">
+    <button class="stab on" data-t="dh-list">Department Queue</button>
+    <button class="stab" data-t="dh-view">View Request</button>
+    <button class="stab" data-t="dh-view2">View Request + PAN Details</button>
+  </div>
+
+  <div class="sub on" id="t-dh-list">
+  <div class="htop">
+    <div><h2>Department Queue</h2>
+      <p>Every PAN for your department, across all stages. You can only act while a request is awaiting your decision; afterwards it stays visible read-only.</p></div>
+  </div>
+
+  <div class="stats">
+    <div class="stat warn"><b>3</b><span>Awaiting your decision</span></div>
+    <div class="stat acc"><b>7</b><span>In later stages</span></div>
+    <div class="stat ok"><b>2</b><span>Completed this month</span></div>
+  </div>
+
+  <!-- Queue contents depend on the viewer's flag: a regular Division Head sees only their department's
+       non-Manila PANs (shown here). A DH Head sees the inverse — ONLY Manila-tagged PANs, across all
+       departments, and no regular ones. -->
+  <div class="note info"><span class="ic">i</span>Requests tagged confidential ("Manila") never appear in this queue — they are routed to the designated DH Head, even for your own department.</div>
+
+  <div class="bar">
+    <div class="search">⌕<input placeholder="Search this department's requests…"></div>
+    <button class="chip on">Needs my action</button><button class="chip">All stages</button><button class="chip">Completed</button>
+  </div>
+
+  <div class="card"><div class="twrap"><table>
+    <thead><tr><th>Reference</th><th>Employee</th><th>Type of Action</th><th>Requestor</th><th>Status</th><th>Decision</th></tr></thead>
+    <tbody>
+      <tr><td class="ref">PAN-2026-00347</td>
+        <td><div class="who"><b>A. Santos</b><small>EMP-10301</small></div></td>
+        <td>Salary Alignment</td><td>M. Dela Cruz</td><td><span class="pill p-dh">Awaiting your decision</span></td>
+        <td class="acts"><button class="btn ghost" data-goto="dh-view">View</button><button class="btn primary">Approve</button><div class="kebab"><button class="kbtn" title="More actions">⋯</button><div class="kmenu"><button class="kitem kdanger" data-return>Return to Requestor…</button></div></div></td></tr>
+      <tr><td class="ref">PAN-2026-00344</td>
+        <td><div class="who"><b>P. Aquino</b><small>EMP-10255</small></div></td>
+        <td>Lateral Transfer</td><td>K. Reyes</td><td><span class="pill p-dh">Awaiting your decision</span></td>
+        <td class="acts"><button class="btn ghost" data-goto="dh-view">View</button><button class="btn primary">Approve</button><div class="kebab"><button class="kbtn" title="More actions">⋯</button><div class="kmenu"><button class="kitem kdanger" data-return>Return to Requestor…</button></div></div></td></tr>
+      <tr><td class="ref">PAN-2026-00339</td>
+        <td><div class="who"><b>E. Garcia</b><small>EMP-10198</small></div></td>
+        <td>Promotion</td><td>K. Reyes</td><td><span class="pill p-conf">For your confirmation (HR-prepared)</span></td>
+        <td class="acts"><button class="btn ghost" data-goto="dh-view2">View</button><button class="btn primary">Confirm</button><div class="kebab"><button class="kbtn" title="More actions">⋯</button><div class="kmenu"><button class="kitem kdanger" data-return>Dispute…</button></div></div></td></tr>
+      <tr><td class="ref">PAN-2026-00332</td>
+        <td><div class="who"><b>C. Mercado</b><small>EMP-10119</small></div></td>
+        <td>Interim Allowance</td><td>M. Dela Cruz</td><td><span class="pill p-prep">HR Preparation</span></td>
+        <td class="acts"><button class="btn ghost" data-goto="dh-view">View</button></td></tr>
+      <tr><td class="ref">PAN-2026-00311</td>
+        <td><div class="who"><b>D. Torres</b><small>EMP-10064</small></div></td>
+        <td>Regularization</td><td>K. Reyes</td><td><span class="pill p-appr">Approved — for serving</span></td>
+        <td class="acts"><button class="btn ghost" data-goto="dh-view2">View</button></td></tr>
+    </tbody>
+  </table></div></div>
+
+  </div>
+
+  <!-- Variant 1: request only — no prepared PAN yet -->
+  <div class="sub" id="t-dh-view">
+  <div class="htop">
+    <div><h2>View Request — <span class="ref" style="font-size:18px">PAN-2026-00347</span></h2>
+    <p>The request exactly as submitted, read-only. No PAN has been prepared yet, so only the request details are shown.</p></div>
+    <div class="spacer"></div>
+    <span class="pill p-dh">Awaiting your decision</span>
+  </div>
+
+  <div class="flow" aria-label="Workflow progress">
+    <span class="step done">Submitted</span><span class="sep">→</span>
+    <span class="step now">Division Head</span><span class="sep">→</span>
+    <span class="step">HR Preparation</span><span class="sep">→</span>
+    <span class="step">HR Approval</span><span class="sep">→</span>
+    <span class="step">Final Approval</span>
+  </div>
+
+  <div class="card">
+    <div class="formgrid">
+      <div class="field"><label>Employee</label><input readonly value="A. Santos"></div>
+      <div class="field"><label>Employee ID</label><input readonly value="EMP-10301"></div>
+      <div class="field"><label>Department</label><input readonly value="Broiler Operations"></div>
+      <div class="field"><label>Type of Action</label><input readonly value="Salary Alignment"></div>
+      <div class="field"><label>Requested by</label><input readonly value="M. Dela Cruz"></div>
+      <div class="field"><label>Submitted</label><input readonly value="Jul 8, 2026 · 09:41"></div>
+      <div class="field full"><label>Justification</label>
+        <textarea rows="3" readonly>Current pay is below the approved 2026 salary structure for Farm Technician II. Requesting alignment to the job-level minimum.</textarea></div>
+      <div class="field full"><label>Supporting Document</label>
+        <div class="attachrow"><span class="pdf">PDF</span> salary_structure_alignment_santos.pdf <small>· 268 KB</small>
+          <span class="spacer"></span><button class="btn ghost">Open</button></div></div>
+    </div>
+    <div class="formfoot">
+      <button class="btn" data-goto="dh-list">← Back to queue</button>
+      <div class="spacer"></div>
+      <button class="btn danger">Return…</button>
+      <button class="btn primary">Approve</button>
+    </div>
+  </div>
+  </div>
+
+  <!-- Variant 2: request + prepared PAN — the PAN details render below the request as an extension -->
+  <div class="sub" id="t-dh-view2">
+  <div class="htop">
+    <div><h2>View Request — <span class="ref" style="font-size:18px">PAN-2026-00339</span></h2>
+    <p>This request already has a prepared PAN, so its details are shown below the request as an extension.</p></div>
+    <div class="spacer"></div>
+    <span class="pill p-conf">For your confirmation</span>
+  </div>
+
+  <div class="flow" aria-label="Workflow progress">
+    <span class="step done">Submitted</span><span class="sep">→</span>
+    <span class="step done">Division approved</span><span class="sep">→</span>
+    <span class="step done">HR prepared</span><span class="sep">→</span>
+    <span class="step now">DH Confirmation</span><span class="sep">→</span>
+    <span class="step">HR Approval</span><span class="sep">→</span>
+    <span class="step">Final Approval</span>
+  </div>
+
+  <div class="card">
+    <div class="sect">Request details</div>
+    <div class="formgrid" style="padding-top:10px">
+      <div class="field"><label>Employee</label><input readonly value="E. Garcia"></div>
+      <div class="field"><label>Employee ID</label><input readonly value="EMP-10198"></div>
+      <div class="field"><label>Department</label><input readonly value="Broiler Operations"></div>
+      <div class="field"><label>Type of Action</label><input readonly value="Promotion"></div>
+      <div class="field"><label>Requested by</label><input readonly value="K. Reyes"></div>
+      <div class="field"><label>Submitted</label><input readonly value="Jul 3, 2026 · 14:07"></div>
+      <div class="field full"><label>Justification</label>
+        <textarea rows="2" readonly>Consistently exceeded targets for four consecutive quarters; recommended for promotion to Senior Farm Technician.</textarea></div>
+      <div class="field full"><label>Supporting Document</label>
+        <div class="attachrow"><span class="pdf">PDF</span> promotion_recommendation_garcia.pdf <small>· 341 KB</small>
+          <span class="spacer"></span><button class="btn ghost">Open</button></div></div>
+    </div>
+
+    <!-- extension: appears only when a prepared PAN exists -->
+    <div class="sect">PAN Details — prepared by HR</div>
+    <div class="formgrid" style="padding-top:10px">
+      <div class="field"><label>Prepared by</label><input readonly value="T. Navarro · Jul 11, 2026"></div>
+      <div class="field"><label>Date Hired</label><input readonly value="Feb 2, 2023"></div>
+      <div class="field"><label>Employment Status</label><input readonly value="Regular"></div>
+      <div class="field"><label>Effectivity</label><input readonly value="Aug 16, 2026 — open-ended"></div>
+    </div>
+    <div class="twrap"><table class="fromto" style="min-width:620px">
+      <thead><tr><th style="width:200px">Item</th><th>From</th><th class="arrow"></th><th>To</th></tr></thead>
+      <tbody>
+        <tr><td class="lbl">Section</td><td>Broiler Production A</td><td class="arrow">→</td><td>Broiler Production A</td></tr>
+        <tr><td class="lbl">Place of Assignment</td><td>San Rafael Farm</td><td class="arrow">→</td><td>San Rafael Farm</td></tr>
+        <tr><td class="lbl">Immediate Head</td><td>K. Reyes</td><td class="arrow">→</td><td>K. Reyes</td></tr>
+        <tr><td class="lbl">Position</td><td>Farm Technician II</td><td class="arrow">→</td><td><span class="chg">Senior Farm Technician</span></td></tr>
+        <tr><td class="lbl">Job Level</td><td>JL-4</td><td class="arrow">→</td><td><span class="chg">JL-5</span></td></tr>
+        <tr><td class="lbl">Basic Pay</td><td class="num">₱ 28,100.00</td><td class="arrow">→</td><td class="num"><span class="chg">₱ 31,600.00</span></td></tr>
+      </tbody>
+    </table></div>
+    <div class="formgrid" style="padding-top:12px">
+      <div class="field full"><label>Remarks</label>
+        <textarea rows="2" readonly>Per Q2 2026 performance review cycle. Effectivity aligned with payroll cutoff.</textarea></div>
+    </div>
+
+    <div class="formfoot">
+      <button class="btn" data-goto="dh-list">← Back to queue</button>
+      <div class="spacer"></div>
+      <button class="btn danger">Dispute…</button>
+      <button class="btn primary">Confirm</button>
+    </div>
+  </div>
+  </div>
+</section>
+
+<!-- ================= HR PREPARER ================= -->
+<section class="screen" id="s-prep">
+  <p class="crumb">HR Preparation · signed in as HR Head Preparer</p>
+  <!-- NOTE: "View Request" is a tab only in this static mockup. In the actual project it is a
+       separate view/page opened per request (e.g. /pan/{id}), prefilled from the selected row — not a tab. -->
+  <div class="subtabs" role="tablist">
+    <button class="stab on" data-t="prep-list">Preparation Queue</button>
+    <button class="stab" data-t="prep-form">Preparation Form</button>
+    <button class="stab" data-t="prep-view">View Request</button>
+    <button class="stab" data-t="prep-emp">Employees</button>
+  </div>
+
+  <div class="sub on" id="t-prep-list">
+  <div class="htop">
+    <div><h2>Preparation Queue</h2>
+      <p>Division-approved PANs awaiting paperwork. Each must be tagged for confidentiality before preparation can begin.</p></div>
+  </div>
+
+  <div class="stats">
+    <div class="stat warn"><b>5</b><span>Awaiting preparation</span></div>
+    <div class="stat bad"><b>2</b><span>Returned for resolution</span></div>
+    <div class="stat acc"><b>2</b><span>Approved — to serve / file</span></div>
+  </div>
+
+  <div class="bar">
+    <div class="search">⌕<input placeholder="Search PANs awaiting HR paperwork…"></div>
+    <button class="chip on">To prepare</button><button class="chip">In approval</button><button class="chip">To serve / file</button>
+  </div>
+
+  <div class="card"><div class="twrap"><table>
+    <thead><tr><th>Tag</th><th>Reference</th><th>Employee</th><th>Type of Action</th><th>Department</th><th>Status</th><th></th></tr></thead>
+    <tbody>
+      <tr><td><span class="tagdot t-none" title="Untagged"></span></td><td class="ref">PAN-2026-00347</td>
+        <td><div class="who"><b>A. Santos</b><small>EMP-10301</small></div></td>
+        <td>Salary Alignment</td><td>Broiler Operations</td><td><span class="pill p-prep">Tag &amp; prepare</span></td>
+        <!-- No print icon here: nothing to print until a PAN is prepared (no disabled buttons — the pill explains the state). -->
+        <td class="acts"><button class="btn ghost" data-goto="prep-view">View</button><button class="btn primary" data-goto="prep-form">Open</button></td></tr>
+      <tr><td><span class="tagdot t-manila" title="Confidential — Manila"></span></td><td class="ref">PAN-2026-00341</td>
+        <td><div class="who"><b>N. Fernandez</b><small>EMP-10490</small></div></td>
+        <td>Change of Position</td><td>Corporate Office</td><td><span class="pill p-prep">Preparing — confidential</span></td>
+        <td class="acts"><button class="btn ghost" data-goto="prep-view">View</button><button class="btn primary" data-goto="prep-form">Continue</button><button class="iconbtn" title="Print PAN"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V3h12v6"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button></td></tr>
+      <tr><td><span class="tagdot t-routine" title="Tarlac (routine)"></span></td><td class="ref">PAN-2026-00338</td>
+        <td><div class="who"><b>S. Lim</b><small>EMP-10233</small></div></td>
+        <td>Wage Order</td><td>Feedmill</td><td><span class="pill p-ret">Returned by HR Approver</span></td>
+        <td class="acts"><button class="btn ghost" data-goto="prep-view">View</button><button class="btn primary" data-goto="prep-form">Revise</button><button class="iconbtn" title="Print PAN"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V3h12v6"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button><div class="kebab"><button class="kbtn" title="More actions">⋯</button><div class="kmenu"><button class="kitem kdanger">Void / Delete…</button></div></div></td></tr>
+      <tr><td><span class="tagdot t-routine" title="Tarlac (routine)"></span></td><td class="ref">PAN-2026-00311</td>
+        <td><div class="who"><b>D. Torres</b><small>EMP-10064</small></div></td>
+        <td>Regularization</td><td>Broiler Operations</td><td><span class="pill p-appr">Approved</span></td>
+        <td class="acts"><button class="btn ghost" data-goto="prep-view">View</button><button class="btn primary">Mark Served</button><button class="iconbtn" title="Print PAN"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V3h12v6"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button><div class="kebab"><button class="kbtn" title="More actions">⋯</button><div class="kmenu"><button class="kitem">Mark Unserved…<small>AWOL, resigned, terminated, or custom</small></button></div></div></td></tr>
+      <tr><td><span class="tagdot t-routine" title="Tarlac (routine)"></span></td><td class="ref">PAN-2026-00298</td>
+        <td><div class="who"><b>L. Bautista</b><small>EMP-10077</small></div></td>
+        <td>Wage Order</td><td>Broiler Operations</td><td><span class="pill p-filed">Filed</span></td>
+        <td class="acts"><button class="btn ghost" data-goto="prep-view">View</button><button class="iconbtn" title="Print PAN"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V3h12v6"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button><div class="kebab"><button class="kbtn" title="More actions">⋯</button><div class="kmenu"><button class="kitem">Start Follow-up PAN<small>New cycle for this employee</small></button></div></div></td></tr>
+    </tbody>
+  </table></div></div>
+  <p class="locknote" style="margin:8px 2px 0">Tag colors — <span class="tagdot t-manila"></span> Manila (confidential) · <span class="tagdot t-routine"></span> Tarlac (routine) · <span class="tagdot t-none"></span> untagged. Visible to HR Head Preparers only. Once tagged Manila, ordinary preparers can no longer open the record.</p>
+  </div>
+
+  <div class="sub" id="t-prep-form">
+  <div class="htop"><div><h2>Prepare PAN — PAN-2026-00341 · N. Fernandez</h2>
+    <p>Fill in the official paperwork for a division-approved PAN, then submit it for Division Head confirmation.</p></div></div>
+
+  <div class="flow" aria-label="Workflow progress">
+    <span class="step done">Submitted</span><span class="sep">→</span>
+    <span class="step done">Division approved</span><span class="sep">→</span>
+    <span class="step now">HR Preparation</span><span class="sep">→</span>
+    <span class="step">DH Confirmation</span><span class="sep">→</span>
+    <span class="step">HR Approval</span><span class="sep">→</span>
+    <span class="step">Final Approval</span><span class="sep">→</span>
+    <span class="step">Served</span><span class="sep">→</span>
+    <span class="step">Filed</span>
+  </div>
+
+  <!-- SIMULATION ONLY: in the actual project the role comes from the signed-in account, and tagging Manila
+       as a normal preparer redirects them to the list and permanently disables their View button.
+       Here we only simulate the lock/unlock of the form sections. -->
+  <div class="card" style="margin-bottom:14px">
+    <div class="sect">Simulation — try the tagging rules</div>
+    <div class="formgrid" style="padding-top:10px">
+      <div class="field"><label>Signed-in preparer</label>
+        <div style="display:flex;gap:6px">
+          <button class="chip on" id="sim-role-normal">Normal HR Preparer</button>
+          <button class="chip" id="sim-role-head">HR Head Preparer</button>
+        </div></div>
+      <div class="field"><label>Confidentiality Tag</label>
+        <select id="sim-tag">
+          <option value="none">— Untagged —</option>
+          <option value="tarlac">Tarlac (routine)</option>
+          <option value="manila">Manila (confidential)</option>
+        </select>
+        <span class="hint">Any preparer may apply the initial tag; what happens next depends on who tagged what.</span></div>
+    </div>
+  </div>
+
+  <div class="note info" id="prep-note"><span class="ic">i</span>Locked — tag the request (Tarlac or Manila) before preparation can begin.</div>
+
+  <div class="card">
+    <!-- Same "Request details" block the viewer sees on the request view — read-only context for the preparer -->
+    <div class="sect">Request details</div>
+    <div class="formgrid" style="padding-top:10px">
+      <div class="field"><label>Employee</label><input readonly value="N. Fernandez"></div>
+      <div class="field"><label>Employee ID</label><input readonly value="EMP-10490"></div>
+      <div class="field"><label>Department</label><input readonly value="Corporate Office"></div>
+      <div class="field"><label>Type of Action</label><input readonly value="Change of Position"></div>
+      <div class="field"><label>Requested by</label><input readonly value="L. Madrigal"></div>
+      <div class="field"><label>Submitted</label><input readonly value="Jul 6, 2026 · 10:23"></div>
+      <div class="field full"><label>Justification</label>
+        <textarea rows="2" readonly>Role elevated to Senior HR Officer per the approved 2026 organizational structure.</textarea></div>
+      <div class="field full"><label>Supporting Document</label>
+        <div class="attachrow"><span class="pdf">PDF</span> org_structure_memo_fernandez.pdf <small>· 512 KB</small>
+          <span class="spacer"></span><button class="btn ghost">Open</button></div></div>
+    </div>
+
+
+    <div class="prevdetail" id="prev-detail" hidden>
+      <div class="pgrid">
+        <div><small>Type of Action</small><br><b>Salary Alignment</b></div>
+        <div><small>Status</small><br><b>Filed · Mar 28, 2026</b></div>
+        <div><small>Effectivity</small><br><b>Jan 1, 2026</b></div>
+        <div><small>Prepared by</small><br><b>T. Navarro</b></div>
+        <div><small>Basic Pay</small><br><b>₱ 26,000.00 → ₱ 28,500.00</b></div>
+        <div><small>Position</small><br><b>HR Generalist (unchanged)</b></div>
+      </div>
+    </div>
+
+    <!-- Locked until tagged; stays locked for a normal preparer when the tag is Manila -->
+    <div class="lockable locked" id="prep-lockable">
+    <div class="sect">Employment details</div>
+    <div class="formgrid" style="padding-top:10px">
+      <div class="field"><label>Date Hired</label><input value="Mar 16, 2024"></div>
+      <div class="field"><label>Employment Status</label><input readonly value="Regular"></div>
+      <div class="field"><label>Division / Department</label><input readonly value="Corporate Office"></div>
+      <div class="field"><label>Effectivity From</label><input value="Aug 1, 2026"></div>
+      <div class="field"><label>Effectivity To</label><input value="—" placeholder="Open-ended"></div>
+    </div>
+
+    <div class="sect">Action Reference — what is changing</div>
+    <!-- Quick access to the employee's previous PAN (rendered only when one exists).
+      In the actual project the reference id opens that PAN's own view (/pan/{id});
+      "See more" expands the inline summary below. Placed OUTSIDE the lockable region
+      so it stays clickable even while preparation is locked. -->
+    <div class="prevpan">
+      <span>⟲ Pre-generated from:</span>
+      <a class="refid" id="prev-ref" title="Open the previous PAN">PAN-BFC-2026-0813</a>
+      <span>— the employee's last filed PAN; its "To" values seeded this form's "From" values.</span>
+      <a id="prev-more">See more</a>
+    </div>
+    <div class="twrap"><table class="fromto" style="min-width:680px">
+      <thead><tr><th style="width:200px">Item</th><th>From</th><th class="arrow"></th><th>To</th><th style="width:40px"></th></tr></thead>
+      <!-- Fixed rows: Section, Place of Assignment, Immediate Head, Position, Job Level, Basic Pay
+           (+ Leave Credits only when Type of Action is Regularization). Allowance rows are dynamic —
+           added via the selector below. "To" cells are typable; a typed value highlights green. -->
+      <tbody id="prep-ar-body">
+        <tr><td class="lbl">Section</td><td>HR Operations</td><td class="arrow">→</td><td><input class="toin" placeholder="No change"></td><td></td></tr>
+        <tr><td class="lbl">Place of Assignment</td><td>Main Office</td><td class="arrow">→</td><td><input class="toin" placeholder="No change"></td><td></td></tr>
+        <tr><td class="lbl">Immediate Head</td><td>R. Ocampo</td><td class="arrow">→</td><td><input class="toin" placeholder="No change"></td><td></td></tr>
+        <tr><td class="lbl">Position</td><td>HR Generalist</td><td class="arrow">→</td><td><input class="toin" placeholder="No change"></td><td></td></tr>
+        <tr><td class="lbl">Job Level</td><td>JL-6</td><td class="arrow">→</td><td><input class="toin" placeholder="No change"></td><td></td></tr>
+        <tr><td class="lbl">Basic Pay</td><td class="num">₱ 28,500.00</td><td class="arrow">→</td><td class="num"><input class="toin numin" placeholder="₱ 0.00"></td><td></td></tr>
+      </tbody>
+    </table></div>
+    <div class="addrow" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+      <select id="allow-type" style="border:1px solid var(--line);border-radius:7px;background:var(--panel);color:var(--ink);font:inherit;font-size:13px;padding:7px 10px">
+        <option>Communication Allowance</option>
+        <option>Meal Allowance</option>
+        <option>Living Allowance</option>
+        <option>Transportation Allowance</option>
+        <option>Clothing Allowance</option>
+        <option>Fuel Allowance</option>
+        <option>Management Allowance</option>
+        <option>Developmental Assignment Allowance</option>
+        <option>Professional Allowance</option>
+        <option>Interim Allowance</option>
+        <option>Training Allowance</option>
+        <option>Mancom Allowance</option>
+        <option>Allowance (generic)</option>
+      </select>
+      <button class="btn ghost" id="allow-add">+ Add allowance line</button>
+    </div>
+    
+    <div class="sect">Remarks</div>
+    <div class="formgrid" style="padding-top:10px">
+      <div class="field full"><textarea rows="2">Per approved 2026 org structure. Transportation allowance effective same date.</textarea></div>
+    </div>
+    <div class="formfoot">
+      <button class="btn danger">Delete / Void…</button>
+      <div class="spacer"></div>
+      <button class="btn">Save</button>
+      <button class="btn primary">Submit for Division Head Confirmation</button>
+    </div>
+    </div>
+  </div>
+  </div>
+
+  <!-- In the actual project: separate request-detail view, not a tab.
+       For HR Preparer, HR Approver, and Final Approver this view is ALWAYS Request + PAN Details —
+       requests in these queues have already been processed, so there is no request-only variant. -->
+  <div class="sub" id="t-prep-view">
+  <div class="htop">
+    <div><h2>View Request — <span class="ref" style="font-size:18px">PAN-2026-00338</span></h2>
+    <p>The request with its prepared PAN details, currently sent back by the HR Approver for resolution.</p></div>
+    <div class="spacer"></div>
+    <span class="pill p-ret">Returned by HR Approver</span>
+  </div>
+
+  <div class="flow" aria-label="Workflow progress">
+    <span class="step done">Submitted</span><span class="sep">→</span>
+    <span class="step done">Division approved</span><span class="sep">→</span>
+    <span class="step now">HR Preparation — rework</span><span class="sep">→</span>
+    <span class="step">DH Confirmation</span><span class="sep">→</span>
+    <span class="step">HR Approval</span><span class="sep">→</span>
+    <span class="step">Final Approval</span>
+  </div>
+
+  <div class="note warn"><span class="ic">!</span>Returned by R. Ocampo (HR Approver), Jul 13: "Wage number mismatch — verify against Wage Order NCR-26."</div>
+
+  <div class="card">
+    <div class="sect">Request details</div>
+    <div class="formgrid" style="padding-top:10px">
+      <div class="field"><label>Employee</label><input readonly value="S. Lim"></div>
+      <div class="field"><label>Employee ID</label><input readonly value="EMP-10233"></div>
+      <div class="field"><label>Department</label><input readonly value="Feedmill"></div>
+      <div class="field"><label>Type of Action</label><input readonly value="Wage Order"></div>
+      <div class="field"><label>Requested by</label><input readonly value="P. Enriquez"></div>
+      <div class="field"><label>Submitted</label><input readonly value="Jun 30, 2026 · 08:15"></div>
+      <div class="field full"><label>Justification</label>
+        <textarea rows="2" readonly>Application of Wage Order NCR-26 minimum daily rate adjustment, effective July 15, 2026.</textarea></div>
+      <div class="field full"><label>Supporting Document</label>
+        <div class="attachrow"><span class="pdf">PDF</span> wage_order_ncr26_lim.pdf <small>· 187 KB</small>
+          <span class="spacer"></span><button class="btn ghost">Open</button></div></div>
+    </div>
+
+    <div class="sect">PAN Details — prepared by HR</div>
+    <div class="formgrid" style="padding-top:10px">
+      <div class="field"><label>Prepared by</label><input readonly value="T. Navarro · Jul 9, 2026"></div>
+      <div class="field"><label>Date Hired</label><input readonly value="Nov 5, 2021"></div>
+      <div class="field"><label>Employment Status</label><input readonly value="Regular"></div>
+      <div class="field"><label>Effectivity</label><input readonly value="Jul 15, 2026 — open-ended"></div>
+      <div class="field"><label>Wage Order No.</label><input readonly value="NCR-26"><span class="hint">Shown only for Wage Order actions</span></div>
+    </div>
+    <div class="twrap"><table class="fromto" style="min-width:620px">
+      <thead><tr><th style="width:200px">Item</th><th>From</th><th class="arrow"></th><th>To</th></tr></thead>
+      <tbody>
+        <tr><td class="lbl">Section</td><td>Milling Line B</td><td class="arrow">→</td><td>Milling Line B</td></tr>
+        <tr><td class="lbl">Place of Assignment</td><td>Sta. Maria Feedmill</td><td class="arrow">→</td><td>Sta. Maria Feedmill</td></tr>
+        <tr><td class="lbl">Immediate Head</td><td>P. Enriquez</td><td class="arrow">→</td><td>P. Enriquez</td></tr>
+        <tr><td class="lbl">Position</td><td>Mill Operator</td><td class="arrow">→</td><td>Mill Operator</td></tr>
+        <tr><td class="lbl">Job Level</td><td>JL-3</td><td class="arrow">→</td><td>JL-3</td></tr>
+        <tr><td class="lbl">Basic Pay</td><td class="num">₱ 610.00 / day</td><td class="arrow">→</td><td class="num"><span class="chg">₱ 645.00 / day</span></td></tr>
+      </tbody>
+    </table></div>
+    <div class="formfoot">
+      <button class="btn" data-goto="prep-list">← Back to queue</button>
+      <div class="spacer"></div>
+      <button class="btn danger">Void…</button>
+      <button class="btn primary" data-goto="prep-form">Revise in Preparation Form</button>
+    </div>
+  </div>
+  </div>
+
+  <!-- Employees: HR-side, read-only lens over the master roster managed in Administration → Employees
+       (add/edit/remove happens there, not here). From here HR can view an employee's full PAN history and
+       start a new PAN directly ("Update PAN") — this flow begins at HR Preparation, skipping the
+       Requestor and Division Head stages. Typically used for Wage Orders and similar HR-initiated actions. -->
+  <div class="sub" id="t-prep-emp">
+  <div class="htop">
+    <div><h2>Employees</h2>
+    <p>Every employee on the roster, with their PAN history. "Update PAN" starts a new PAN directly from HR — no requestor needed — typically for Wage Orders.</p></div>
+  </div>
+
+  <div class="bar">
+    <div class="search">⌕<input placeholder="Search employees by name, ID, or department…"></div>
+    <button class="chip on">All departments</button><button class="chip">Broiler Operations</button><button class="chip">Feedmill</button><button class="chip">Hatchery</button>
+  </div>
+
+  <div class="card"><div class="twrap"><table>
+    <thead><tr><th>Employee</th><th>Department</th><th>Position</th><th>Farm / Site</th><th>PAN Records</th><th></th></tr></thead>
+    <tbody>
+      <tr><td><div class="who"><b>S. Lim</b><small>EMP-10233</small></div></td>
+        <td>Feedmill</td><td>Mill Operator</td><td>Sta. Maria Feedmill</td><td class="num">4</td>
+        <td class="acts"><button class="btn ghost" data-goto="prep-emp-hist">View PANs</button><button class="btn primary" data-modal="update">Update PAN</button></td></tr>
+      <tr><td><div class="who"><b>N. Fernandez</b><small>EMP-10490</small></div></td>
+        <td>Corporate Office</td><td>HR Generalist</td><td>Main Office</td><td class="num">3</td>
+        <td class="acts"><button class="btn ghost" data-goto="prep-emp-hist">View PANs</button><button class="btn primary" data-modal="update">Update PAN</button></td></tr>
+      <tr><td><div class="who"><b>D. Torres</b><small>EMP-10064</small></div></td>
+        <td>Broiler Operations</td><td>Poultry Caretaker</td><td>San Rafael Farm</td><td class="num">2</td>
+        <td class="acts"><button class="btn ghost" data-goto="prep-emp-hist">View PANs</button><button class="btn primary" data-modal="update">Update PAN</button></td></tr>
+      <tr><td><div class="who"><b>J. Ramos</b><small>EMP-10387</small></div></td>
+        <td>Hatchery</td><td>Hatchery Aide</td><td>San Rafael Farm</td><td class="num">1</td>
+        <td class="acts"><button class="btn ghost" data-goto="prep-emp-hist">View PANs</button><button class="btn primary" data-modal="update">Update PAN</button></td></tr>
+      <tr><td><div class="who"><b>L. Bautista</b><small>EMP-10077</small></div></td>
+        <td>Broiler Operations</td><td>Farm Technician I</td><td>San Rafael Farm</td><td class="num">2</td>
+        <td class="acts"><button class="btn ghost" data-goto="prep-emp-hist">View PANs</button><button class="btn primary" data-modal="update">Update PAN</button></td></tr>
+    </tbody>
+  </table></div></div>
+  </div>
+
+  <!-- In the actual project: per-employee history view (e.g. /employees/{id}/pans), not a tab.
+       Static example shown for S. Lim. -->
+  <div class="sub" id="t-prep-emp-hist" data-stab="prep-emp">
+  <div class="htop">
+    <div><h2>PAN History — S. Lim <span class="ref" style="font-size:14px">EMP-10233</span></h2>
+    <p>Every PAN on record for this employee, newest first. Each PAN's "From" values chain from the previous one's "To" values.</p></div>
+    <div class="spacer"></div>
+    <button class="btn primary" data-modal="update">Update PAN</button>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><b>4</b><span>Total PANs</span></div>
+    <div class="stat ok"><b>3</b><span>Filed</span></div>
+    <div class="stat bad"><b>1</b><span>In rework</span></div>
+    <div class="stat acc"><b>₱ 645/day</b><span>Current basic pay</span></div>
+  </div>
+
+  <div class="card"><div class="twrap"><table>
+    <thead><tr><th>Reference</th><th>Type of Action</th><th>Effectivity</th><th>Key Change</th><th>Status</th><th></th></tr></thead>
+    <tbody>
+      <tr><td class="ref">PAN-2026-00338</td><td>Wage Order</td><td>Jul 15, 2026</td>
+        <td class="num">₱ 610/day → ₱ 645/day</td><td><span class="pill p-ret">Returned — rework</span></td>
+        <td class="acts"><button class="btn ghost" data-goto="prep-view">View</button><button class="iconbtn" title="Print PAN"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V3h12v6"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button></td></tr>
+      <tr><td class="ref">PAN-2025-01102</td><td>Wage Order</td><td>Jul 1, 2025</td>
+        <td class="num">₱ 585/day → ₱ 610/day</td><td><span class="pill p-filed">Filed</span></td>
+        <td class="acts"><button class="btn ghost" data-goto="prep-view">View</button><button class="iconbtn" title="Print PAN"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V3h12v6"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button></td></tr>
+      <tr><td class="ref">PAN-2024-00761</td><td>Promotion</td><td>Mar 16, 2024</td>
+        <td>Mill Helper → Mill Operator</td><td><span class="pill p-filed">Filed</span></td>
+        <td class="acts"><button class="btn ghost" data-goto="prep-view">View</button><button class="iconbtn" title="Print PAN"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V3h12v6"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button></td></tr>
+      <tr><td class="ref">PAN-2023-00287</td><td>Regularization</td><td>Feb 1, 2023</td>
+        <td>Probationary → Regular</td><td><span class="pill p-filed">Filed</span></td>
+        <td class="acts"><button class="btn ghost" data-goto="prep-view">View</button><button class="iconbtn" title="Print PAN"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V3h12v6"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button></td></tr>
+    </tbody>
+  </table></div></div>
+
+  <div style="display:flex;margin-top:14px">
+    <button class="btn" data-goto="prep-emp">← Back to employees</button>
+  </div>
+  </div>
+</section>
+
+<!-- ================= HR APPROVER ================= -->
+<section class="screen" id="s-hra">
+  <p class="crumb">HR Approver</p>
+  <!-- NOTE: "View Request" is a tab only in this static mockup. In the actual project it is a
+       separate view/page opened per request (e.g. /pan/{id}), prefilled from the selected row — not a tab.
+       At this stage the view is ALWAYS Request + PAN Details (no request-only variant): every request
+       in this queue has already been prepared by HR. -->
+  <div class="subtabs" role="tablist">
+    <button class="stab on" data-t="hra-list">Approval Queue</button>
+    <button class="stab" data-t="hra-view">View Request</button>
+  </div>
+
+  <div class="sub on" id="t-hra-list">
+  <div class="htop">
+    <div><h2>HR Approval Queue</h2>
+      <p>PANs confirmed by the Division Head and awaiting HR-level approval. No confidentiality distinction applies at this stage.</p></div>
+  </div>
+
+  <div class="stats">
+    <div class="stat warn"><b>4</b><span>Awaiting HR approval</span></div>
+    <div class="stat acc"><b>6</b><span>With Final Approver</span></div>
+    <div class="stat ok"><b>18</b><span>Approved this month</span></div>
+  </div>
+
+  <div class="bar">
+    <div class="search">⌕<input placeholder="Search PANs awaiting HR approval…"></div>
+    <button class="chip on">Awaiting approval</button><button class="chip">Further along</button>
+  </div>
+
+  <div class="card"><div class="twrap"><table>
+    <thead><tr><th>Reference</th><th>Employee</th><th>Type of Action</th><th>Prepared by</th><th>Basic Pay (From → To)</th><th>Decision</th></tr></thead>
+    <tbody>
+      <tr><td class="ref">PAN-2026-00339</td>
+        <td><div class="who"><b>E. Garcia</b><small>Broiler Operations</small></div></td>
+        <td>Promotion</td><td>T. Navarro</td><td class="num">28,100 → 31,600</td>
+        <td class="acts"><button class="btn ghost" data-goto="hra-view">View</button><button class="btn primary">Approve</button><div class="kebab"><button class="kbtn" title="More actions">⋯</button><div class="kmenu"><button class="kitem kdanger">Return to HR Preparer…</button></div></div></td></tr>
+      <tr><td class="ref">PAN-2026-00341</td>
+        <td><div class="who"><b>N. Fernandez</b><small>Corporate Office</small></div></td>
+        <td>Change of Position</td><td>M. Dela Cruz</td><td class="num">28,500 → 34,200</td>
+        <td class="acts"><button class="btn ghost" data-goto="hra-view">View</button><button class="btn primary">Approve</button><div class="kebab"><button class="kbtn" title="More actions">⋯</button><div class="kmenu"><button class="kitem kdanger">Return to HR Preparer…</button></div></div></td></tr>
+      <tr><td class="ref">PAN-2026-00335</td>
+        <td><div class="who"><b>G. Padilla</b><small>Sales &amp; Distribution</small></div></td>
+        <td>Regularization</td><td>T. Navarro</td><td class="num">19,000 → 21,500</td>
+        <td class="acts"><button class="btn ghost" data-goto="hra-view">View</button><button class="btn primary">Approve</button><div class="kebab"><button class="kbtn" title="More actions">⋯</button><div class="kmenu"><button class="kitem kdanger">Return to HR Preparer…</button></div></div></td></tr>
+      <tr><td class="ref">PAN-2026-00330</td>
+        <td><div class="who"><b>H. Cruz</b><small>Feedmill</small></div></td>
+        <td>Discontinuance of Allowance</td><td>M. Dela Cruz</td><td class="num">— </td>
+        <td class="acts"><button class="btn ghost" data-goto="hra-view">View</button><button class="btn primary">Approve</button><div class="kebab"><button class="kbtn" title="More actions">⋯</button><div class="kmenu"><button class="kitem kdanger">Return to HR Preparer…</button></div></div></td></tr>
+    </tbody>
+  </table></div></div>
+
+  <div class="note info" style="margin-top:14px"><span class="ic">i</span>Returning a PAN here sends it one step back to the HR Preparer with a mandatory reason — not all the way back to the Requestor.</div>
+  </div>
+
+  <!-- In the actual project: separate request-detail view, not a tab -->
+  <div class="sub" id="t-hra-view">
+  <div class="htop">
+    <div><h2>View Request — <span class="ref" style="font-size:18px">PAN-2026-00341</span></h2>
+    <p>The request together with its HR-prepared details, awaiting your approval.</p></div>
+    <div class="spacer"></div>
+    <span class="pill p-hra">Awaiting HR approval</span>
+  </div>
+
+  <div class="flow" aria-label="Workflow progress">
+    <span class="step done">Submitted</span><span class="sep">→</span>
+    <span class="step done">Division approved</span><span class="sep">→</span>
+    <span class="step done">HR prepared</span><span class="sep">→</span>
+    <span class="step done">DH confirmed</span><span class="sep">→</span>
+    <span class="step now">HR Approval</span><span class="sep">→</span>
+    <span class="step">Final Approval</span>
+  </div>
+
+  <div class="card">
+    <!-- Same "Request details" block shown to the HR Preparer — identical contents on both ends -->
+    <div class="sect">Request details</div>
+    <div class="formgrid" style="padding-top:10px">
+      <div class="field"><label>Employee</label><input readonly value="N. Fernandez"></div>
+      <div class="field"><label>Employee ID</label><input readonly value="EMP-10490"></div>
+      <div class="field"><label>Department</label><input readonly value="Corporate Office"></div>
+      <div class="field"><label>Type of Action</label><input readonly value="Change of Position"></div>
+      <div class="field"><label>Requested by</label><input readonly value="L. Madrigal"></div>
+      <div class="field"><label>Submitted</label><input readonly value="Jul 6, 2026 · 10:23"></div>
+      <div class="field full"><label>Justification</label>
+        <textarea rows="2" readonly>Role elevated to Senior HR Officer per the approved 2026 organizational structure.</textarea></div>
+      <div class="field full"><label>Supporting Document</label>
+        <div class="attachrow"><span class="pdf">PDF</span> org_structure_memo_fernandez.pdf <small>· 512 KB</small>
+          <span class="spacer"></span><button class="btn ghost">Open</button></div></div>
+    </div>
+
+    <div class="sect">PAN Details — prepared by HR</div>
+    <div class="formgrid" style="padding-top:10px">
+      <div class="field"><label>Prepared by</label><input readonly value="M. Dela Cruz · Jul 14, 2026"></div>
+      <div class="field"><label>Date Hired</label><input readonly value="Mar 16, 2024"></div>
+      <div class="field"><label>Employment Status</label><input readonly value="Regular"></div>
+      <div class="field"><label>Effectivity</label><input readonly value="Aug 1, 2026 — open-ended"></div>
+    </div>
+    <div class="sect">Action Reference — prepared changes</div>
+    <div class="twrap"><table class="fromto" style="min-width:620px">
+      <thead><tr><th style="width:200px">Item</th><th>From</th><th class="arrow"></th><th>To</th></tr></thead>
+      <tbody>
+        <tr><td class="lbl">Section</td><td>HR Operations</td><td class="arrow">→</td><td>HR Operations</td></tr>
+        <tr><td class="lbl">Place of Assignment</td><td>Main Office</td><td class="arrow">→</td><td>Main Office</td></tr>
+        <tr><td class="lbl">Immediate Head</td><td>R. Ocampo</td><td class="arrow">→</td><td><span class="chg">V. Salazar</span></td></tr>
+        <tr><td class="lbl">Position</td><td>HR Generalist</td><td class="arrow">→</td><td><span class="chg">Senior HR Officer</span></td></tr>
+        <tr><td class="lbl">Job Level</td><td>JL-6</td><td class="arrow">→</td><td><span class="chg">JL-8</span></td></tr>
+        <tr><td class="lbl">Basic Pay</td><td class="num">₱ 28,500.00</td><td class="arrow">→</td><td class="num"><span class="chg">₱ 34,200.00</span></td></tr>
+        <tr><td class="lbl">Transportation Allowance</td><td class="num">—</td><td class="arrow">→</td><td class="num"><span class="chg">₱ 2,000.00</span></td></tr>
+      </tbody>
+    </table></div>
+    <div class="formfoot">
+      <button class="btn" data-goto="hra-list">← Back to queue</button>
+      <div class="spacer"></div>
+      <button class="btn danger">Return to HR Preparer…</button>
+      <button class="btn primary">Approve</button>
+    </div>
+  </div>
+  </div>
+</section>
+
+<!-- ================= FINAL APPROVER ================= -->
+<section class="screen" id="s-final">
+  <p class="crumb">Final Approver</p>
+  <!-- NOTE: "View Request" is a tab only in this static mockup. In the actual project it is a
+       separate view/page opened per request (e.g. /pan/{id}), prefilled from the selected row — not a tab.
+       At this stage the view is ALWAYS Request + PAN Details (no request-only variant): every request
+       in this queue has already been prepared and HR-approved. -->
+  <div class="subtabs" role="tablist">
+    <button class="stab on" data-t="final-list">Sign-off Queue</button>
+    <button class="stab" data-t="final-view">View Request</button>
+  </div>
+
+  <div class="sub on" id="t-final-list">
+  <div class="htop">
+    <div><h2>Final Sign-off</h2>
+      <p>Act on requests individually or in bulk — select rows, or target all requests of one action type at once. Rejection returns a PAN to HR Preparation with a mandatory reason.</p></div>
+  </div>
+
+  <div class="stats">
+    <div class="stat warn"><b>6</b><span>Awaiting final approval</span></div>
+    <div class="stat ok"><b>41</b><span>Approved this quarter</span></div>
+    <div class="stat bad"><b>3</b><span>Rejected this quarter</span></div>
+  </div>
+
+  <div class="bulk">
+    3 selected
+    <div class="spacer"></div>
+    <select style="border:1px solid var(--line);border-radius:7px;padding:6px 10px;font:inherit;background:var(--panel);color:var(--ink)">
+      <option>Select all of type…</option><option>Regularization (3)</option><option>Wage Order (2)</option><option>Promotion (1)</option>
+    </select>
+    <button class="btn primary">Approve selected</button>
+    <button class="btn danger">Reject selected…</button>
+  </div>
+
+  <div class="card"><div class="twrap"><table>
+    <thead><tr><th style="width:36px"><input type="checkbox" checked aria-label="Select all"></th>
+      <th>Reference</th><th>Employee</th><th>Type of Action</th><th>Effectivity</th><th>Basic Pay (From → To)</th><th></th></tr></thead>
+    <tbody>
+      <tr><td><input type="checkbox" checked aria-label="Select"></td><td class="ref">PAN-2026-00335</td>
+        <td><div class="who"><b>G. Padilla</b><small>Sales &amp; Distribution</small></div></td>
+        <td>Regularization</td><td>Aug 1, 2026</td><td class="num">19,000 → 21,500</td>
+        <td class="acts"><button class="btn ghost" data-goto="final-view">View</button><button class="btn primary">Approve</button><div class="kebab"><button class="kbtn" title="More actions">⋯</button><div class="kmenu"><button class="kitem kdanger">Reject — back to HR Prep…</button></div></div></td></tr>
+      <tr><td><input type="checkbox" checked aria-label="Select"></td><td class="ref">PAN-2026-00327</td>
+        <td><div class="who"><b>B. Estrada</b><small>Hatchery</small></div></td>
+        <td>Regularization</td><td>Aug 1, 2026</td><td class="num">18,200 → 20,400</td>
+        <td class="acts"><button class="btn ghost" data-goto="final-view">View</button><button class="btn primary">Approve</button><div class="kebab"><button class="kbtn" title="More actions">⋯</button><div class="kmenu"><button class="kitem kdanger">Reject — back to HR Prep…</button></div></div></td></tr>
+      <tr><td><input type="checkbox" checked aria-label="Select"></td><td class="ref">PAN-2026-00325</td>
+        <td><div class="who"><b>F. Domingo</b><small>Feedmill</small></div></td>
+        <td>Regularization</td><td>Aug 1, 2026</td><td class="num">18,900 → 21,100</td>
+        <td class="acts"><button class="btn ghost" data-goto="final-view">View</button><button class="btn primary">Approve</button><div class="kebab"><button class="kbtn" title="More actions">⋯</button><div class="kmenu"><button class="kitem kdanger">Reject — back to HR Prep…</button></div></div></td></tr>
+      <tr><td><input type="checkbox" aria-label="Select"></td><td class="ref">PAN-2026-00322</td>
+        <td><div class="who"><b>S. Lim</b><small>Feedmill</small></div></td>
+        <td>Wage Order</td><td>Jul 15, 2026</td><td class="num">610/day → 645/day</td>
+        <td class="acts"><button class="btn ghost" data-goto="final-view">View</button><button class="btn primary">Approve</button><div class="kebab"><button class="kbtn" title="More actions">⋯</button><div class="kmenu"><button class="kitem kdanger">Reject — back to HR Prep…</button></div></div></td></tr>
+      <tr><td><input type="checkbox" aria-label="Select"></td><td class="ref">PAN-2026-00318</td>
+        <td><div class="who"><b>E. Garcia</b><small>Broiler Operations</small></div></td>
+        <td>Promotion</td><td>Aug 16, 2026</td><td class="num">28,100 → 31,600</td>
+        <td class="acts"><button class="btn ghost" data-goto="final-view">View</button><button class="btn primary">Approve</button><div class="kebab"><button class="kbtn" title="More actions">⋯</button><div class="kmenu"><button class="kitem kdanger">Reject — back to HR Prep…</button></div></div></td></tr>
+    </tbody>
+  </table></div></div>
+
+  <div class="note info" style="margin-top:14px"><span class="ic">i</span>Approving a <b>&nbsp;Regularization&nbsp;</b> automatically finalizes the employee's status as "Regular", overriding any tentative status set earlier.</div>
+  </div>
+
+  <!-- In the actual project: separate request-detail view, not a tab -->
+  <div class="sub" id="t-final-view">
+  <div class="htop">
+    <div><h2>View Request — <span class="ref" style="font-size:18px">PAN-2026-00335</span></h2>
+    <p>Fully prepared and HR-approved, awaiting your final sign-off.</p></div>
+    <div class="spacer"></div>
+    <span class="pill p-final">Awaiting final approval</span>
+  </div>
+
+  <div class="flow" aria-label="Workflow progress">
+    <span class="step done">Submitted</span><span class="sep">→</span>
+    <span class="step done">Division approved</span><span class="sep">→</span>
+    <span class="step done">HR prepared</span><span class="sep">→</span>
+    <span class="step done">DH confirmed</span><span class="sep">→</span>
+    <span class="step done">HR approved</span><span class="sep">→</span>
+    <span class="step now">Final Approval</span>
+  </div>
+
+  <div class="card">
+    <!-- Same "Request details" block shown to earlier stages — identical contents at every stage -->
+    <div class="sect">Request details</div>
+    <div class="formgrid" style="padding-top:10px">
+      <div class="field"><label>Employee</label><input readonly value="G. Padilla"></div>
+      <div class="field"><label>Employee ID</label><input readonly value="EMP-10512"></div>
+      <div class="field"><label>Department</label><input readonly value="Sales &amp; Distribution"></div>
+      <div class="field"><label>Type of Action</label><input readonly value="Regularization"></div>
+      <div class="field"><label>Requested by</label><input readonly value="J. Villegas"></div>
+      <div class="field"><label>Submitted</label><input readonly value="Jun 26, 2026 · 15:02"></div>
+      <div class="field full"><label>Justification</label>
+        <textarea rows="2" readonly>Completed 6-month probationary period with a satisfactory performance rating; endorsed for regularization by the depot supervisor.</textarea></div>
+      <div class="field full"><label>Supporting Document</label>
+        <div class="attachrow"><span class="pdf">PDF</span> evaluation_padilla_jun2026.pdf <small>· 224 KB</small>
+          <span class="spacer"></span><button class="btn ghost">Open</button></div></div>
+    </div>
+
+    <div class="sect">PAN Details — prepared by HR</div>
+    <div class="formgrid" style="padding-top:10px">
+      <div class="field"><label>Prepared by</label><input readonly value="T. Navarro · Jul 10, 2026"></div>
+      <div class="field"><label>Date Hired</label><input readonly value="Jan 26, 2026"></div>
+      <div class="field"><label>Employment Status</label><input readonly value="Probationary"></div>
+      <div class="field"><label>Effectivity</label><input readonly value="Aug 1, 2026"></div>
+      <div class="field"><label>HR approved by</label><input readonly value="R. Ocampo · Jul 13, 2026"></div>
+    </div>
+    <div class="sect">Action Reference — prepared changes</div>
+    <div class="twrap"><table class="fromto" style="min-width:620px">
+      <thead><tr><th style="width:200px">Item</th><th>From</th><th class="arrow"></th><th>To</th></tr></thead>
+      <tbody>
+        <tr><td class="lbl">Section</td><td>Sales — North Luzon</td><td class="arrow">→</td><td>Sales — North Luzon</td></tr>
+        <tr><td class="lbl">Place of Assignment</td><td>San Fernando Depot</td><td class="arrow">→</td><td>San Fernando Depot</td></tr>
+        <tr><td class="lbl">Immediate Head</td><td>J. Villegas</td><td class="arrow">→</td><td>J. Villegas</td></tr>
+        <tr><td class="lbl">Position</td><td>Sales Clerk</td><td class="arrow">→</td><td>Sales Clerk</td></tr>
+        <tr><td class="lbl">Job Level</td><td>JL-2</td><td class="arrow">→</td><td>JL-2</td></tr>
+        <tr><td class="lbl">Basic Pay</td><td class="num">₱ 19,000.00</td><td class="arrow">→</td><td class="num"><span class="chg">₱ 21,500.00</span></td></tr>
+        <!-- Leave Credits row appears only when Type of Action is Regularization -->
+        <tr><td class="lbl">Leave Credits</td><td class="num">0</td><td class="arrow">→</td><td class="num"><span class="chg">15 / yr</span></td></tr>
+      </tbody>
+    </table></div>
+    <div class="note info" style="margin:14px 18px"><span class="ic">i</span>Approving this Regularization finalizes the employee's status as "Regular" automatically.</div>
+    <div class="formfoot">
+      <button class="btn" data-goto="final-list">← Back to queue</button>
+      <div class="spacer"></div>
+      <button class="btn danger">Reject — back to HR Preparation…</button>
+      <button class="btn primary">Give Final Approval</button>
+    </div>
+  </div>
+  </div>
+</section>
+
+<!-- ================= ADMIN — USER ACCESS ================= -->
+<section class="screen" id="s-admin">
+  <p class="crumb">Administration</p>
+  <!-- NOTE: "User Access" (the detail) is a tab only in this static mockup. In the actual project it is
+       a separate per-user view (e.g. /admin/users/{id}) opened from the list — not a tab. -->
+  <div class="subtabs" role="tablist">
+    <button class="stab on" data-t="admin-list">User Accounts</button>
+    <button class="stab" data-t="admin-view">User Access</button>
+  </div>
+
+  <div class="sub on" id="t-admin-list">
+  <div class="htop">
+    <div><h2>User Accounts</h2>
+      <p>Everyone with access to PANDA. Login identity comes from the external company system; what's managed here is what each person can do. Open a user to edit their stage permissions, departments, flags, and profile.</p></div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><b>36</b><span>User accounts</span></div>
+    <div class="stat acc"><b>11</b><span>Division Heads</span></div>
+    <div class="stat"><b>4</b><span>HR Preparers</span></div>
+    <div class="stat warn"><b>2</b><span>Admins</span></div>
+  </div>
+
+  <div class="bar">
+    <div class="search">⌕<input placeholder="Find a user account…"></div>
+    <button class="chip on">All</button><button class="chip">Division Heads</button><button class="chip">HR</button><button class="chip">Admins</button>
+  </div>
+
+  <div class="card"><div class="twrap"><table>
+    <thead><tr><th>User</th><th>Farm / Site</th><th>Position</th><th>Stage Permissions</th><th>Flags</th><th></th></tr></thead>
+    <tbody>
+      <tr><td><div class="who"><b>K. Reyes</b><small>kreyes</small></div></td>
+        <td>San Rafael Farm</td><td>Farm Supervisor II</td>
+        <td>Requestor · Division Head</td>
+        <td>—</td>
+        <td class="acts"><button class="btn ghost" data-goto="admin-view">View</button></td></tr>
+      <tr><td><div class="who"><b>M. Dela Cruz</b><small>mdelacruz</small></div></td>
+        <td>Main Office</td><td>Sr. HR Officer</td>
+        <td>Requestor · Division Head · HR Preparer</td>
+        <td><span class="pill p-final">HR Head</span></td>
+        <td class="acts"><button class="btn ghost" data-goto="admin-view">View</button></td></tr>
+      <tr><td><div class="who"><b>C. Aguirre</b><small>caguirre</small></div></td>
+        <td>Main Office</td><td>AVP — Corporate Services</td>
+        <td>Division Head</td>
+        <td><span class="pill p-final">DH Head</span></td>
+        <td class="acts"><button class="btn ghost" data-goto="admin-view">View</button></td></tr>
+      <tr><td><div class="who"><b>T. Navarro</b><small>tnavarro</small></div></td>
+        <td>Main Office</td><td>HR Officer</td>
+        <td>HR Preparer</td>
+        <td>—</td>
+        <td class="acts"><button class="btn ghost" data-goto="admin-view">View</button></td></tr>
+      <tr><td><div class="who"><b>R. Ocampo</b><small>rocampo</small></div></td>
+        <td>Main Office</td><td>HR Manager</td>
+        <td>HR Approver</td>
+        <td>—</td>
+        <td class="acts"><button class="btn ghost" data-goto="admin-view">View</button></td></tr>
+      <tr><td><div class="who"><b>V. Salazar</b><small>vsalazar</small></div></td>
+        <td>Main Office</td><td>VP — Operations</td>
+        <td>Final Approver</td>
+        <td>—</td>
+        <td class="acts"><button class="btn ghost" data-goto="admin-view">View</button></td></tr>
+      <tr><td><div class="who"><b>IT Admin</b><small>admin_it</small></div></td>
+        <td>Main Office</td><td>Systems Administrator</td>
+        <td>—</td>
+        <td><span class="pill p-ret">Admin</span></td>
+        <td class="acts"><button class="btn ghost" data-goto="admin-view">View</button></td></tr>
+    </tbody>
+  </table></div></div>
+  </div>
+
+  <!-- In the actual project: separate per-user view, not a tab. Static example: K. Reyes. -->
+  <div class="sub" id="t-admin-view">
+  <div class="htop">
+    <div><h2>User Access — K. Reyes</h2>
+      <p>Stage permissions, department assignments, and flags are all independent — one person can hold any combination.</p></div>
+    <div class="spacer"></div>
+    <button class="btn" data-goto="admin-list">← Back to users</button>
+  </div>
+
+  <div class="twocol">
+    <div class="pane">
+      <h3>Stage permissions &amp; flags</h3>
+      <div class="pad">
+        <div class="permrow"><span>Requestor</span><span class="tog on" role="switch" aria-checked="true" tabindex="0"></span></div>
+        <div class="permrow"><span>Division Head</span><span class="tog on" role="switch" aria-checked="true" tabindex="0"></span></div>
+        <div class="permrow"><span>HR Preparer</span><span class="tog" role="switch" aria-checked="false" tabindex="0"></span></div>
+        <div class="permrow"><span>HR Approver</span><span class="tog" role="switch" aria-checked="false" tabindex="0"></span></div>
+        <div class="permrow"><span>Final Approver</span><span class="tog" role="switch" aria-checked="false" tabindex="0"></span></div>
+        <div class="permrow" style="border-top:2px solid var(--line);margin-top:4px;padding-top:12px">
+          <span>HR Head <small style="color:var(--ink-3)">(Manila PANs at HR Preparation)</small></span><span class="tog" role="switch" aria-checked="false" tabindex="0"></span></div>
+        <!-- Formerly "Confidentiality Approver" — renamed DH Head for consistency with HR Head.
+             Cross-department role: handles Manila-tagged PANs at the division-head stage, for any department.
+             Marking someone as DH Head flips their Division Head queue: it shows ONLY Manila-tagged
+             PANs (from every department) and no regular ones. -->
+        <div class="permrow"><span>DH Head <small style="color:var(--ink-3)">(Manila PANs at division stage, all departments)</small></span><span class="tog" role="switch" aria-checked="false" tabindex="0"></span></div>
+        <div class="permrow"><span>Admin <small style="color:var(--ink-3)">(administration screens)</small></span><span class="tog" role="switch" aria-checked="false" tabindex="0"></span></div>
+      </div>
+    </div>
+    <div class="pane">
+      <h3>Departments &amp; profile</h3>
+      <div class="pad">
+        <p style="margin:10px 0 4px;font-size:11.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-2)">Requests for</p>
+        <span class="deptchip">Broiler Operations <button title="Remove">×</button></span>
+        <span class="deptchip">Hatchery <button title="Remove">×</button></span>
+        <button class="btn ghost" style="padding:4px 8px">+ Add</button>
+        <p style="margin:14px 0 4px;font-size:11.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-2)">Heads department(s)</p>
+        <span class="deptchip">Broiler Operations <button title="Remove">×</button></span>
+        <button class="btn ghost" style="padding:4px 8px">+ Add</button>
+        <p class="locknote" style="margin:6px 0 0">Independent of requestor departments. Co-heads are supported — a department may have several heads.</p>
+        <div class="formgrid" style="padding:14px 0 0;grid-template-columns:1fr 1fr">
+          <div class="field"><label>Farm / Site</label><select><option>San Rafael Farm</option><option>Sta. Maria Feedmill</option><option>Main Office</option></select></div>
+          <div class="field"><label>Job Position</label><input value="Farm Supervisor II"></div>
+          <div class="field full"><label>E-signature (used on printed PANs)</label>
+            <div class="sig">K. Reyes</div>
+            <span class="hint"><b>Replace image…</b> PNG with transparent background recommended</span></div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;padding-top:12px"><button class="btn primary">Save changes</button></div>
+      </div>
+    </div>
+  </div>
+  </div>
+</section>
+
+<!-- ================= ADMIN — EMPLOYEES ================= -->
+<!-- Master employee roster: the single source the HR Preparation "Employees" tab reads from.
+     Admin owns the records (add / edit / remove, bulk import/export); HR Preparation only works
+     with PANs raised against them. Per the system spec, the directory itself is visible to any
+     logged-in user who reaches the admin page — management actions are intended for Admins. -->
+<section class="screen" id="s-emp">
+  <p class="crumb">Administration</p>
+  <div class="htop">
+    <div><h2>Employee Directory</h2>
+      <p>The master roster every PAN is raised against — and the source of the HR Preparation "Employees" tab. Add, edit, or remove records here.</p></div>
+    <div class="spacer"></div>
+    <button class="btn">Import from spreadsheet…</button>
+    <button class="btn">Export</button>
+    <button class="btn primary" data-modal="employee">+ Add Employee</button>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><b>412</b><span>Employees on roster</span></div>
+    <div class="stat acc"><b>9</b><span>Departments</span></div>
+    <div class="stat"><b>3</b><span>Farms / sites</span></div>
+    <div class="stat warn"><b>6</b><span>Added this month</span></div>
+  </div>
+
+  <div class="bar">
+    <div class="search">⌕<input placeholder="Search by name, employee ID, department, or position…"></div>
+    <button class="chip on">All</button><button class="chip">San Rafael Farm</button><button class="chip">Sta. Maria Feedmill</button><button class="chip">Main Office</button>
+  </div>
+
+  <div class="card"><div class="twrap"><table>
+    <!-- "Ongoing PAN" tracks whether the employee has a PAN anywhere in the workflow (not yet filed/closed).
+         Remove is disabled while one is ongoing, so an employee can't be deleted mid-workflow. -->
+    <thead><tr><th>Employee</th><th>Employee ID</th><th>Department</th><th>Position</th><th>Farm / Site</th><th>Ongoing PAN</th><th></th></tr></thead>
+    <tbody>
+      <tr><td><div class="who"><b>S. Lim</b></div></td><td class="ref">EMP-10233</td>
+        <td>Feedmill</td><td>Mill Operator</td><td>Sta. Maria Feedmill</td>
+        <td><span class="pill p-ret">Yes — in rework</span></td>
+        <td class="acts"><button class="btn ghost" data-modal="employee">Edit</button><div class="kebab"><button class="kbtn" title="More actions">⋯</button><div class="kmenu"><button class="kitem" disabled title="Cannot remove — this employee has an ongoing PAN">Remove employee<small>Blocked — ongoing PAN</small></button></div></div></td></tr>
+      <tr><td><div class="who"><b>N. Fernandez</b></div></td><td class="ref">EMP-10490</td>
+        <td>Corporate Office</td><td>HR Generalist</td><td>Main Office</td>
+        <td><span class="pill p-prep">Yes — HR Preparation</span></td>
+        <td class="acts"><button class="btn ghost" data-modal="employee">Edit</button><div class="kebab"><button class="kbtn" title="More actions">⋯</button><div class="kmenu"><button class="kitem" disabled title="Cannot remove — this employee has an ongoing PAN">Remove employee<small>Blocked — ongoing PAN</small></button></div></div></td></tr>
+      <tr><td><div class="who"><b>D. Torres</b></div></td><td class="ref">EMP-10064</td>
+        <td>Broiler Operations</td><td>Poultry Caretaker</td><td>San Rafael Farm</td>
+        <td><span class="pill p-appr">Yes — for serving</span></td>
+        <td class="acts"><button class="btn ghost" data-modal="employee">Edit</button><div class="kebab"><button class="kbtn" title="More actions">⋯</button><div class="kmenu"><button class="kitem" disabled title="Cannot remove — this employee has an ongoing PAN">Remove employee<small>Blocked — ongoing PAN</small></button></div></div></td></tr>
+      <tr><td><div class="who"><b>J. Ramos</b></div></td><td class="ref">EMP-10387</td>
+        <td>Hatchery</td><td>Hatchery Aide</td><td>San Rafael Farm</td>
+        <td><span class="pill p-dh">Yes — with Requestor</span></td>
+        <td class="acts"><button class="btn ghost" data-modal="employee">Edit</button><div class="kebab"><button class="kbtn" title="More actions">⋯</button><div class="kmenu"><button class="kitem" disabled title="Cannot remove — this employee has an ongoing PAN">Remove employee<small>Blocked — ongoing PAN</small></button></div></div></td></tr>
+      <tr><td><div class="who"><b>L. Bautista</b></div></td><td class="ref">EMP-10077</td>
+        <td>Broiler Operations</td><td>Farm Technician I</td><td>San Rafael Farm</td>
+        <td><span class="pill p-draft">None</span></td>
+        <td class="acts"><button class="btn ghost" data-modal="employee">Edit</button><div class="kebab"><button class="kbtn" title="More actions">⋯</button><div class="kmenu"><button class="kitem kdanger">Remove employee</button></div></div></td></tr>
+      <tr><td><div class="who"><b>R. Villanueva</b></div></td><td class="ref">EMP-10422</td>
+        <td>Broiler Operations</td><td>Farm Helper</td><td>San Rafael Farm</td>
+        <td><span class="pill p-draft">None — draft only</span></td>
+        <td class="acts"><button class="btn ghost" data-modal="employee">Edit</button><div class="kebab"><button class="kbtn" title="More actions">⋯</button><div class="kmenu"><button class="kitem kdanger">Remove employee</button></div></div></td></tr>
+    </tbody>
+  </table></div></div>
+
+  <div class="note info" style="margin-top:14px"><span class="ic">i</span><span><b>Remove is disabled while an employee has an ongoing PAN</b>&nbsp;— anything submitted and not yet filed, withdrawn, or voided blocks removal (drafts don't count). Removing an employee never deletes their PAN history; they simply can no longer be selected for new PANs.</span></div>
+</section>
+
+<!-- ================= ADMIN — LOGS ================= -->
+<section class="screen" id="s-logs">
+  <p class="crumb">Administration · Maintenance</p>
+  <div class="subtabs" role="tablist">
+    <button class="stab on" data-t="maint-logs">Logs &amp; Audit</button>
+    <button class="stab" data-t="maint-ref">Reference Values</button>
+    <button class="stab" data-t="maint-backup">Backup &amp; Restore</button>
+    <button class="stab" data-t="maint-danger">Danger Zone</button>
+  </div>
+
+  <div class="sub on" id="t-maint-logs">
+  <div class="htop">
+    <div><h2>Logs &amp; Audit</h2>
+      <p>Read-only records: sign-in attempts, and every significant action taken across the system.</p></div>
+    <div class="spacer"></div>
+    <button class="btn">Export CSV</button>
+  </div>
+
+  <div class="twocol">
+    <div class="pane">
+      <h3>Access Log — sign-in attempts</h3>
+      <div>
+        <div class="logrow"><time>Jul 14 · 08:02</time><span style="flex:1"><b>M. Dela Cruz</b> · 10.20.4.117</span><span class="pill p-appr">Success</span></div>
+        <div class="logrow"><time>Jul 14 · 07:58</time><span style="flex:1"><b>T. Navarro</b> · 10.20.4.201</span><span class="pill p-appr">Success</span></div>
+        <div class="logrow"><time>Jul 14 · 07:51</time><span style="flex:1"><b>j.ramos</b> · 10.20.7.33</span><span class="pill p-ret">Failed — bad password</span></div>
+        <div class="logrow"><time>Jul 13 · 17:22</time><span style="flex:1"><b>K. Reyes</b> · 10.20.5.88</span><span class="pill p-appr">Success</span></div>
+        <div class="logrow"><time>Jul 13 · 17:20</time><span style="flex:1"><b>unknown / admin</b> · 172.16.9.4</span><span class="pill p-ret">Failed — no account</span></div>
+      </div>
+    </div>
+    <div class="pane">
+      <h3>Audit Trail — system actions</h3>
+      <div>
+        <div class="logrow"><time>Jul 14 · 08:15</time><span class="mod">HR Prep</span><span><b>M. Dela Cruz</b> tagged PAN-2026-00341 as Confidential (Manila)</span></div>
+        <div class="logrow"><time>Jul 14 · 08:04</time><span class="mod">Div Head</span><span><b>K. Reyes</b> approved PAN-2026-00344</span></div>
+        <div class="logrow"><time>Jul 13 · 16:40</time><span class="mod">Final</span><span><b>V. Salazar</b> bulk-approved 3 Regularization PANs</span></div>
+        <div class="logrow"><time>Jul 13 · 15:12</time><span class="mod">HR Approve</span><span><b>R. Ocampo</b> returned PAN-2026-00338 — "Wage number mismatch"</span></div>
+        <div class="logrow"><time>Jul 13 · 11:03</time><span class="mod">HR Prep</span><span><b>T. Navarro</b> voided PAN-2026-00316 — "Duplicate of 00311"</span></div>
+        <div class="logrow"><time>Jul 12 · 09:47</time><span class="mod">Admin</span><span><b>IT Admin</b> granted Division Head to K. Reyes (Broiler Operations)</span></div>
+      </div>
+    </div>
+  </div>
+
+  </div>
+
+  <!-- Reference Values: the previously hard-coded Farm/Site and Department lists become editable here.
+       In the actual project a value that is in use (by employees or PANs) cannot be deleted. -->
+  <div class="sub" id="t-maint-ref">
+  <div class="htop">
+    <div><h2>Reference Values</h2>
+      <p>The option lists the rest of the system draws from. Values in use by employees or PANs can't be deleted.</p></div>
+  </div>
+
+  <div class="twocol">
+    <div class="pane">
+      <h3>Farms / Sites</h3>
+      <div class="pad" id="ref-farms">
+        <div class="refrow"><span>San Rafael Farm</span><small>214 employees</small><button class="rowdel" disabled title="In use — cannot delete" style="opacity:.35;cursor:not-allowed">×</button></div>
+        <div class="refrow"><span>Sta. Maria Feedmill</span><small>121 employees</small><button class="rowdel" disabled title="In use — cannot delete" style="opacity:.35;cursor:not-allowed">×</button></div>
+        <div class="refrow"><span>Main Office</span><small>77 employees</small><button class="rowdel" disabled title="In use — cannot delete" style="opacity:.35;cursor:not-allowed">×</button></div>
+        <div class="refrow"><span>Pampanga Grower Site</span><small>0 employees</small><button class="rowdel" title="Delete value">×</button></div>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <input class="refin" placeholder="New farm / site name">
+          <button class="btn" data-addref>Add</button>
+        </div>
+      </div>
+    </div>
+    <div class="pane">
+      <h3>Departments</h3>
+      <div class="pad" id="ref-depts">
+        <div class="refrow"><span>Broiler Operations</span><small>3 heads · 188 employees</small><button class="rowdel" disabled title="In use — cannot delete" style="opacity:.35;cursor:not-allowed">×</button></div>
+        <div class="refrow"><span>Hatchery</span><small>1 head · 64 employees</small><button class="rowdel" disabled title="In use — cannot delete" style="opacity:.35;cursor:not-allowed">×</button></div>
+        <div class="refrow"><span>Feedmill</span><small>2 heads · 96 employees</small><button class="rowdel" disabled title="In use — cannot delete" style="opacity:.35;cursor:not-allowed">×</button></div>
+        <div class="refrow"><span>Sales &amp; Distribution</span><small>1 head · 41 employees</small><button class="rowdel" disabled title="In use — cannot delete" style="opacity:.35;cursor:not-allowed">×</button></div>
+        <div class="refrow"><span>Corporate Office</span><small>2 heads · 23 employees</small><button class="rowdel" disabled title="In use — cannot delete" style="opacity:.35;cursor:not-allowed">×</button></div>
+        <div class="refrow"><span>Aqua Ventures</span><small>0 heads · 0 employees</small><button class="rowdel" title="Delete value">×</button></div>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <input class="refin" placeholder="New department name">
+          <button class="btn" data-addref>Add</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <!-- Backup & Restore: gives the previously unplaced "run a backup now" control a home,
+       alongside the scheduled jobs (nightly backup, old-backup cleanup, health check). -->
+  <div class="sub" id="t-maint-backup">
+  <div class="htop">
+    <div><h2>Backup &amp; Restore</h2>
+      <p>Scheduled backups run automatically every night; from here you can also trigger one manually or restore from an uploaded backup.</p></div>
+  </div>
+
+  <div class="stats">
+    <div class="stat ok"><b>Healthy</b><span>Backup health check</span></div>
+    <div class="stat"><b>01:00</b><span>Nightly schedule</span></div>
+    <div class="stat"><b>14</b><span>Backups retained</span></div>
+    <div class="stat acc"><b>318 MB</b><span>Latest backup size</span></div>
+  </div>
+
+  <div class="twocol">
+    <div class="pane">
+      <h3>Recent backups</h3>
+      <div>
+        <div class="logrow"><time>Jul 15 · 01:00</time><span style="flex:1">pandav2_2026-07-15.sql.gz · 318 MB</span><span class="pill p-appr">OK</span></div>
+        <div class="logrow"><time>Jul 14 · 01:00</time><span style="flex:1">pandav2_2026-07-14.sql.gz · 317 MB</span><span class="pill p-appr">OK</span></div>
+        <div class="logrow"><time>Jul 13 · 01:00</time><span style="flex:1">pandav2_2026-07-13.sql.gz · 317 MB</span><span class="pill p-appr">OK</span></div>
+        <div class="logrow"><time>Jul 12 · 01:00</time><span style="flex:1">pandav2_2026-07-12.sql.gz · 315 MB</span><span class="pill p-appr">OK</span></div>
+      </div>
+      <div style="display:flex;gap:8px;padding:14px 16px;border-top:1px solid var(--line-soft)">
+        <button class="btn primary" id="run-backup">Run Backup Now</button>
+        <button class="btn">Download latest</button>
+      </div>
+    </div>
+    <div class="pane">
+      <h3>Import / Restore</h3>
+      <div class="pad" style="display:flex;flex-direction:column;gap:12px;padding-top:14px">
+        <div class="upload"><b>Choose a backup file</b> or drag it here — .sql.gz produced by this system</div>
+        <div class="note warn" style="margin:0"><span class="ic">!</span>Restoring overwrites current data with the backup's contents. A safety backup is taken automatically first.</div>
+        <div style="display:flex;justify-content:flex-end">
+          <button class="btn danger" data-danger="restore">Restore from Backup…</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <!-- Danger Zone: adapted from data-wipe.html — same functionality (mode selection, preview count,
+       type-to-confirm modal, queued jobs) restyled to this design system. All actions are Admin-only
+       and every run is recorded in the Audit Trail. -->
+  <div class="sub" id="t-maint-danger">
+  <div class="htop">
+    <div><h2>Danger Zone</h2>
+      <p>Destructive housekeeping. Every action here needs a preview, a typed confirmation, and lands in the Audit Trail.</p></div>
+  </div>
+
+  <!-- Same container structure as data-wipe.html: banner → card(head/body) → mode radios →
+       conditional panels → preview row → bordered footer with solid action. Colors/type are ours. -->
+  <div class="dz-banner">
+    <div class="dz-icon"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg></div>
+    <div>
+      <h3>Destructive Actions Ahead</h3>
+      <p>Actions on this page permanently delete data from the system. This cannot be undone. Filed PANs are business records — wipe only what retention policy allows.</p>
+    </div>
+  </div>
+
+  <div class="dz-card">
+    <div class="dz-head">
+      <h3>Wipe PAN Records</h3>
+      <p>Delete PAN requests together with their preparation details and attachments.</p>
+    </div>
+    <div class="dz-body">
+      <div>
+        <span class="dz-label">Select Wipe Mode</span>
+        <div class="rgrid" data-group="wipe">
+          <label class="rcard" data-value="all"><input type="radio" name="wipeMode"><span><b>Wipe All</b><small>Delete every PAN record</small></span></label>
+          <label class="rcard" data-value="range"><input type="radio" name="wipeMode"><span><b>Date Range</b><small>Delete within a date range</small></span></label>
+          <label class="rcard" data-value="year"><input type="radio" name="wipeMode"><span><b>By Year</b><small>Delete all PANs for a year</small></span></label>
+        </div>
+      </div>
+      <div class="formgrid" id="wipe-p-range" hidden style="padding:0;grid-template-columns:1fr 1fr;max-width:440px">
+        <div class="field"><label>From Date</label><input type="date"></div>
+        <div class="field"><label>To Date</label><input type="date"></div>
+      </div>
+      <div class="field" id="wipe-p-year" hidden style="max-width:200px"><label>Select Year</label>
+        <select><option>2022</option><option>2023</option><option>2024</option><option>2025</option><option>2026</option></select></div>
+      <div class="dz-prevrow">
+        <button class="btn" data-preview="wipe"><svg class="dz-btnicon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg> Preview Count</button>
+        <span class="count-badge red" id="wipe-badge" hidden><svg fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg><span></span></span>
+      </div>
+      <div class="dz-foot">
+        <button class="dz-action red" data-danger="wipe"><svg class="dz-btnicon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg> Wipe PAN Records</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="dz-card">
+    <div class="dz-head">
+      <h3>Purge PAN Attachments</h3>
+      <p>Delete supporting documents without removing the PAN records. Affected PANs will be marked as "Attachment Expired".</p>
+    </div>
+    <div class="dz-body">
+      <div>
+        <span class="dz-label">Select Purge Mode</span>
+        <div class="rgrid" data-group="attach" style="max-width:460px">
+          <label class="rcard" data-value="quarter"><input type="radio" name="attachMode"><span><b>By Quarter</b><small>Select a year and quarter (Q1–Q4)</small></span></label>
+          <label class="rcard" data-value="range"><input type="radio" name="attachMode"><span><b>Custom Range</b><small>Specify a custom date range</small></span></label>
+        </div>
+      </div>
+      <div class="formgrid" id="attach-p-quarter" hidden style="padding:0;grid-template-columns:1fr 1fr;max-width:440px">
+        <div class="field"><label>Select Year</label>
+          <select id="attach-year"><option value="">— Select Year —</option><option>2022</option><option>2023</option><option>2024</option><option>2025</option><option>2026</option></select></div>
+        <div class="field"><label>Select Quarter</label>
+          <select id="attach-quarter" disabled><option value="">— Select Quarter —</option><option>Q1 — Jan–Mar</option><option>Q2 — Apr–Jun</option><option>Q3 — Jul–Sep</option><option>Q4 — Oct–Dec</option></select></div>
+      </div>
+      <div class="formgrid" id="attach-p-range" hidden style="padding:0;grid-template-columns:1fr 1fr;max-width:440px">
+        <div class="field"><label>From Date</label><input type="date"></div>
+        <div class="field"><label>To Date</label><input type="date"></div>
+      </div>
+      <div class="dz-prevrow">
+        <button class="btn" data-preview="attach"><svg class="dz-btnicon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg> Preview Count</button>
+        <span class="count-badge amber" id="attach-badge" hidden><svg fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg><span></span></span>
+      </div>
+      <div class="dz-foot">
+        <button class="dz-action amber" data-danger="attach"><svg class="dz-btnicon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg> Purge Attachments</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="dz-card">
+    <div class="dz-head">
+      <h3>Purge Activity Logs</h3>
+      <p>Delete access-log and audit-trail entries from the system.</p>
+    </div>
+    <div class="dz-body">
+      <div>
+        <span class="dz-label">Select Purge Mode</span>
+        <div class="rgrid" data-group="dlog">
+          <label class="rcard" data-value="all"><input type="radio" name="dlogMode"><span><b>Purge All</b><small>Delete all log entries</small></span></label>
+          <label class="rcard" data-value="range"><input type="radio" name="dlogMode"><span><b>Date Range</b><small>Delete within a date range</small></span></label>
+          <label class="rcard" data-value="year"><input type="radio" name="dlogMode"><span><b>By Year</b><small>Delete all logs for a year</small></span></label>
+        </div>
+      </div>
+      <div class="formgrid" id="dlog-p-range" hidden style="padding:0;grid-template-columns:1fr 1fr;max-width:440px">
+        <div class="field"><label>From Date</label><input type="date"></div>
+        <div class="field"><label>To Date</label><input type="date"></div>
+      </div>
+      <div class="field" id="dlog-p-year" hidden style="max-width:200px"><label>Select Year</label>
+        <select><option>2022</option><option>2023</option><option>2024</option><option>2025</option><option>2026</option></select></div>
+      <div class="dz-prevrow">
+        <button class="btn" data-preview="dlog"><svg class="dz-btnicon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg> Preview Count</button>
+        <span class="count-badge red" id="dlog-badge" hidden><svg fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg><span></span></span>
+      </div>
+      <div class="dz-foot">
+        <button class="dz-action red" data-danger="dlog"><svg class="dz-btnicon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg> Purge Activity Logs</button>
+      </div>
+    </div>
+  </div>
+  </div>
+</section>
+
+<!-- ================= HELP — GLOSSARY ================= -->
+<!-- "Definition of terms" reference: every status, tag, and role in one place.
+     Visible to every logged-in user; uses the same pills/dots as the live screens
+     so it doubles as a legend for the rest of the UI. -->
+<section class="screen" id="s-gloss">
+  <p class="crumb">Help</p>
+  <div class="htop">
+    <div><h2>Glossary — Statuses, Tags &amp; Roles</h2>
+      <p>What each status means, who can act on it, and where the PAN goes next. The pills and colors here are the same ones used across the system.</p></div>
+  </div>
+
+  <div class="card" style="margin-bottom:18px">
+    <div class="sect">The full journey of a PAN</div>
+    <div style="padding:14px 18px 16px">
+      <div class="flow" style="margin:0 0 10px">
+        <span class="step done">Draft</span><span class="sep">→</span>
+        <span class="step done">Division Head</span><span class="sep">→</span>
+        <span class="step done">Tag &amp; HR Preparation</span><span class="sep">→</span>
+        <span class="step done">DH Confirmation</span><span class="sep">→</span>
+        <span class="step done">HR Approval</span><span class="sep">→</span>
+        <span class="step done">Final Approval</span><span class="sep">→</span>
+        <span class="step done">Served</span><span class="sep">→</span>
+        <span class="step now">Filed</span>
+      </div>
+      <p class="locknote" style="margin:0">Any stage can also branch backwards: the Division Head returns to the Requestor, the HR Approver returns one step to the Preparer, and the Final Approver rejects all the way back to HR Preparation. Once filed, a follow-up PAN can start a new cycle for the same employee.</p>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:18px">
+    <div class="sect">Statuses</div>
+    <div class="twrap"><table style="min-width:900px">
+      <thead><tr><th style="width:210px">Status</th><th>What it means</th><th style="width:170px">Who can act</th><th>What can happen next</th></tr></thead>
+      <tbody>
+        <tr><td><span class="pill p-draft">Draft</span></td>
+          <td>Saved by the Requestor but not yet submitted. Attachment optional at this point.</td>
+          <td>Requestor</td>
+          <td>Submit to Division Head · edit · delete outright</td></tr>
+        <tr><td><span class="pill p-dh">With Division Head</span></td>
+          <td>Formally submitted (PDF required) and awaiting the department head's decision. Read-only to the Requestor.</td>
+          <td>Division Head <small>(DH Head if Manila)</small></td>
+          <td>Approved → HR Preparation · returned to Requestor with a reason</td></tr>
+        <tr><td><span class="pill p-ret">Returned — for correction</span></td>
+          <td>Sent back to the Requestor with a preset or custom reason (e.g. incomplete document).</td>
+          <td>Requestor</td>
+          <td>Replace attachment &amp; resubmit · withdraw entirely</td></tr>
+        <tr><td><span class="pill p-prep">Awaiting tag &amp; preparation</span></td>
+          <td>Division-approved, but paperwork can't start until a confidentiality tag (Tarlac or Manila) is applied.</td>
+          <td>Any HR Preparer</td>
+          <td>Tagged Tarlac → normal preparer works it · tagged Manila → HR Head only</td></tr>
+        <tr><td><span class="pill p-prep">HR Preparation</span></td>
+          <td>The official paperwork is being filled in: employment details and the Action Reference From/To table.</td>
+          <td>HR Preparer <small>(HR Head if Manila)</small></td>
+          <td>Submitted for DH confirmation · voided with a reason</td></tr>
+        <tr><td><span class="pill p-conf">For DH Confirmation</span></td>
+          <td>HR has prepared the PAN; the Division Head reviews what was actually drafted.</td>
+          <td>Division Head <small>(DH Head if Manila)</small></td>
+          <td>Confirmed → HR Approval · disputed → back to the Preparer</td></tr>
+        <tr><td><span class="pill p-ret">Returned by HR Approver</span></td>
+          <td>Sent one step back to HR Preparation for rework, with a mandatory reason.</td>
+          <td>HR Preparer</td>
+          <td>Revised &amp; resubmitted · voided with a reason</td></tr>
+        <tr><td><span class="pill p-hra">For HR Approval</span></td>
+          <td>Second HR-level check after preparation and confirmation. No confidentiality distinction at this stage.</td>
+          <td>HR Approver</td>
+          <td>Approved → Final Approval · returned one step to the Preparer</td></tr>
+        <tr><td><span class="pill p-final">For Final Approval</span></td>
+          <td>Awaiting the last sign-off — individually or in bulk (by selection or by action type).</td>
+          <td>Final Approver</td>
+          <td>Approved (Regularization auto-sets status to "Regular") · rejected → all the way back to HR Preparation</td></tr>
+        <tr><td><span class="pill p-appr">Approved — for serving</span></td>
+          <td>Fully approved; the action now has to be carried out in the real world.</td>
+          <td>HR Preparer</td>
+          <td>Marked Served · marked Unserved with a reason</td></tr>
+        <tr><td><span class="pill p-appr">Served</span></td>
+          <td>The action has been carried out and acknowledged.</td>
+          <td>HR Preparer</td>
+          <td>Marked Filed to close the record</td></tr>
+        <tr><td><span class="pill p-ret">Unserved</span></td>
+          <td>Approved but couldn't be carried out — AWOL, resigned, terminated, or a custom reason.</td>
+          <td>—</td>
+          <td>Terminal — kept on record</td></tr>
+        <tr><td><span class="pill p-filed">Filed</span></td>
+          <td>Closed out and archived. The PAN's "To" values become the starting "From" values of the employee's next PAN.</td>
+          <td>HR Preparer</td>
+          <td>Start a follow-up PAN for the same employee</td></tr>
+        <tr><td><span class="pill p-draft">Withdrawn</span></td>
+          <td>The Requestor pulled back a request that had been returned to them, instead of resubmitting.</td>
+          <td>—</td>
+          <td>Terminal — kept on record</td></tr>
+        <tr><td><span class="pill p-ret">Voided</span></td>
+          <td>Deleted by HR while awaiting preparation or resolution, with a mandatory reason on record.</td>
+          <td>—</td>
+          <td>Terminal — reason visible in the Audit Trail</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="twocol">
+    <div class="pane">
+      <h3>Confidentiality tags</h3>
+      <div class="pad">
+        <div class="permrow"><span><span class="tagdot t-manila"></span>&nbsp; <b>Manila</b> — highly confidential</span></div>
+        <p class="locknote" style="margin:4px 0 12px">Prepared only by an HR Head Preparer; a normal preparer who opens or tags it is locked out permanently. At the division stages, only the DH Head — not the department's regular Division Head — can see or act on it.</p>
+        <div class="permrow"><span><span class="tagdot t-routine"></span>&nbsp; <b>Tarlac</b> — routine</span></div>
+        <p class="locknote" style="margin:4px 0 12px">The normal path. Worked by ordinary HR Preparers; visible to the department's Division Head as usual.</p>
+        <div class="permrow"><span><span class="tagdot t-none"></span>&nbsp; <b>Untagged</b></span></div>
+        <p class="locknote" style="margin:4px 0 0">Freshly approved by the Division Head. Preparation stays locked until any HR Preparer applies one of the two tags. Tag dots are visible to HR Head Preparers only.</p>
+      </div>
+    </div>
+    <div class="pane">
+      <h3>Roles</h3>
+      <div class="pad">
+        <div class="permrow"><span><b>Requestor</b></span><small style="color:var(--ink-3)">Raises PANs for their department(s)</small></div>
+        <div class="permrow"><span><b>Division Head</b></span><small style="color:var(--ink-3)">Approves/returns, then confirms prepared PANs</small></div>
+        <div class="permrow"><span><b>DH Head</b></span><small style="color:var(--ink-3)">Division-stage decisions on Manila PANs, all departments</small></div>
+        <div class="permrow"><span><b>HR Preparer</b></span><small style="color:var(--ink-3)">Tags and fills in the official paperwork</small></div>
+        <div class="permrow"><span><b>HR Head Preparer</b></span><small style="color:var(--ink-3)">Same, plus exclusive handling of Manila PANs</small></div>
+        <div class="permrow"><span><b>HR Approver</b></span><small style="color:var(--ink-3)">Second check before final sign-off</small></div>
+        <div class="permrow"><span><b>Final Approver</b></span><small style="color:var(--ink-3)">Last approval, single or bulk</small></div>
+        <div class="permrow"><span><b>Admin</b></span><small style="color:var(--ink-3)">Users, access, employees, logs, maintenance</small></div>
+        <p class="locknote" style="margin:10px 0 0">One person can hold any combination of these — e.g. Requestor + Division Head. Department assignments for requesting and heading are independent, and a department can have several co-heads.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>PANDA v2 · static UI concept — no data is live · BFC Group internal</footer>
+</main>
+</div>
+
+<!-- Update PAN modal (HR Preparation → Employees). Starts a new PAN directly at the HR
+     Preparation stage — skips Requestor and Division Head. Requires only Type of Action + attachment. -->
+<div class="overlay" id="update-modal">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="um-title">
+    <h3><span id="um-title">Update PAN — S. Lim (EMP-10233)</span>
+      <button class="x" data-close title="Close">×</button></h3>
+    <div class="formgrid" style="padding:16px;grid-template-columns:1fr">
+      <div class="note info" style="margin:0"><span class="ic">i</span>This starts a new PAN directly at HR Preparation — no requestor or Division Head approval step. Employee details carry over automatically.</div>
+      <div class="field"><label>Type of Action <em>*</em></label>
+        <select><option>Wage Order</option><option>Regularization</option><option>Salary Alignment</option><option>Lateral Transfer</option>
+        <option>Developmental Assignment</option><option>Interim Allowance</option><option>Promotion</option><option>Training Status</option>
+        <option>Confirmation of Appointment</option><option>Change of Position</option><option>Discontinuance of Allowance</option>
+        <option>Confirmation of Development Assignment</option><option>Other Allowances</option></select></div>
+      <div class="field"><label>Supporting Document (PDF) <em>*</em></label>
+        <div class="upload"><b>Choose a PDF</b> or drag it here — wage order issuance, memo, etc.</div></div>
+    </div>
+    <div class="formfoot">
+      <button class="btn" data-close>Cancel</button>
+      <div class="spacer"></div>
+      <button class="btn primary" data-close data-goto="prep-form">Create &amp; Prepare</button>
+    </div>
+  </div>
+</div>
+
+<!-- Danger-zone confirm modal (shared): adapted from data-wipe.html — the exact count
+     (or the word RESTORE) must be typed before the confirm button enables. -->
+<div class="overlay" id="danger-modal">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="dm-title">
+    <div style="padding:24px 24px 8px">
+      <div class="dz-micon"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg></div>
+      <h3 id="dm-title" style="margin:0 0 8px;text-align:center;font-size:16px">Confirm</h3>
+      <p id="dm-msg" style="margin:0 0 18px;text-align:center;font-size:13px;color:var(--ink-2)"></p>
+      <div class="field" style="margin-bottom:16px"><label>Type <b id="dm-req" style="color:var(--red)">—</b> to confirm</label>
+        <input id="dm-input" autocomplete="off" placeholder="Enter it exactly to confirm"></div>
+    </div>
+    <div class="dz-mfoot" style="padding-bottom:20px">
+      <button class="btn" data-close>Cancel</button>
+      <button class="dz-action red" id="dm-confirm" disabled><span id="dm-btn-label">Confirm</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- Success toast -->
+<div class="toast" id="toast"><span class="ok">✓</span><span id="toast-msg"></span></div>
+
+<!-- Add / Edit Employee modal (Administration → Employees) -->
+<div class="overlay" id="emp-modal">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="em-title">
+    <h3><span id="em-title">Add Employee</span>
+      <button class="x" data-close title="Close">×</button></h3>
+    <div class="formgrid" style="padding:16px;grid-template-columns:1fr 1fr">
+      <div class="field full"><label>Full Name <em>*</em></label><input placeholder="Surname, First Name M.I."></div>
+      <div class="field"><label>Employee ID <em>*</em></label><input placeholder="EMP-00000"></div>
+      <div class="field"><label>Department <em>*</em></label>
+        <select><option>Broiler Operations</option><option>Hatchery</option><option>Feedmill</option><option>Sales &amp; Distribution</option><option>Corporate Office</option><option>Accounting</option></select></div>
+      <div class="field"><label>Position <em>*</em></label><input placeholder="e.g. Farm Technician I"></div>
+      <div class="field"><label>Farm / Site <em>*</em></label>
+        <select><option>San Rafael Farm</option><option>Sta. Maria Feedmill</option><option>Main Office</option></select></div>
+    </div>
+    <div class="formfoot">
+      <button class="btn" data-close>Cancel</button>
+      <div class="spacer"></div>
+      <button class="btn primary" data-close>Save Employee</button>
+    </div>
+  </div>
+</div>
+
+<!-- Return / Dispute modal (Division Head) -->
+<div class="overlay" id="return-modal">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="rm-title">
+    <h3><span id="rm-title">Return to Requestor — PAN-2026-00347</span>
+      <button class="x" data-close title="Close">×</button></h3>
+    <div class="formgrid" style="padding:16px;grid-template-columns:1fr">
+      <div class="field"><label>Reason <em>*</em></label>
+        <select><option>Incomplete supporting document</option><option>Wrong employee selected</option><option>Wrong type of action</option><option>Needs stronger justification</option><option>Custom reason…</option></select></div>
+      <div class="field"><label>Details (optional)</label>
+        <textarea rows="3">Attach the signed evaluation form — the uploaded copy is missing page 2.</textarea></div>
+    </div>
+    <div class="formfoot">
+      <button class="btn" data-close>Cancel</button>
+      <div class="spacer"></div>
+      <button class="btn danger" id="rm-send" data-close>Return to Requestor</button>
+    </div>
+  </div>
+</div>
+
+<script src="panda-ui-concept.js"></script>
+</body>
+</html>

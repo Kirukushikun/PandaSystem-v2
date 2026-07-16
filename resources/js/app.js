@@ -61,6 +61,21 @@ document.addEventListener('click', (e) => {
     if (!wasOpen) kebab.classList.add('open');
 });
 
+/* ---------- modals (x-modal): open via [data-modal-open], close via [data-close] / backdrop ---------- */
+document.addEventListener('click', (e) => {
+    const opener = e.target.closest('[data-modal-open]');
+    if (opener) {
+        document.getElementById(opener.dataset.modalOpen)?.classList.add('on');
+        return;
+    }
+    const closer = e.target.closest('[data-close]');
+    if (closer) {
+        closer.closest('.overlay')?.classList.remove('on');
+        return;
+    }
+    if (e.target.classList?.contains('overlay')) e.target.classList.remove('on');
+});
+
 /* ---------- Escape closes any floating surface ---------- */
 document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;

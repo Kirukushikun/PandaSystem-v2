@@ -35,17 +35,19 @@ Routes stubbed in step 0:
 | `/maintenance` | `Maintenance\Index` |
 | `/help/glossary` | static Blade view |
 
-## Step 1 — Shared UI components (`resources/views/components/`)
+## Step 1 — Shared UI components (`resources/views/components/`) ✅
 Pure-presentation pieces as anonymous Blade components (they hold no state yet, so Blade —
 not Livewire — is the right tool; promote to Livewire later only if they need behavior):
-- [ ] `x-status-pill` (all statuses from the Glossary)
-- [ ] `x-tag-dot` (purple=Manila, blue=Tarlac, gray=untagged)
-- [ ] `x-stage-tracker`
-- [ ] `x-stat-card` / stats strip
-- [ ] `x-search-bar` + filter chips
-- [ ] `x-kebab-menu` (slot-based)
-- [ ] `x-modal` shell (+ type-to-confirm variant later, in Maintenance step)
-- [ ] Row-action grammar helper: View (ghost) · one primary verb · kebab
+- [x] `x-status-pill` — `status` key (mirrors planned PanStatus enum) or `tone` + slot label
+- [x] `x-tag-dot` (purple=Manila, blue=Tarlac, gray=untagged)
+- [x] `x-stage-tracker` — `:stages` array + `current` (label, index, or `*` = all done)
+- [x] `x-stat` (wrap a row in plain `<div class="stats">`)
+- [x] `x-search-bar` + `x-chip` (wrap in plain `<div class="bar">`)
+- [x] `x-kebab` + `x-kebab.item` (open/close JS is global in app.js)
+- [x] `x-modal` shell — open via `data-modal-open="{id}"`, close via `data-close`/backdrop/Esc
+      (type-to-confirm variant comes with the Maintenance step)
+- [x] `x-row-actions` td enforcing View (ghost) · one primary verb · kebab
+- [x] Temporary component gallery on `/help/glossary` for visual QA (delete in step 8)
 
 ## Step 2 — Requestor module
 - [ ] `Requestor\Index` — stats, search/chips, table w/ sample rows (`/requests`)

@@ -50,10 +50,10 @@ body{margin:0;background:var(--ground);color:var(--ink);
 .brand h1{margin:0;font-size:20px;letter-spacing:.06em;font-weight:700;color:var(--accent)}
 .brand h1 span{color:var(--ink-3);font-weight:400}
 .brand p{margin:2px 0 0;font-size:11px;color:var(--ink-3);letter-spacing:.02em}
-.navsec{padding:14px 12px 4px}
+.navsec{padding:14px 12px 4px;}
 .navsec h2{margin:0 8px 6px;font-size:10.5px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
 .navbtn{display:flex;align-items:center;gap:10px;width:100%;text-align:left;border:0;background:none;
-  padding:8px 10px;border-radius:7px;color:var(--ink-2);font:inherit;font-size:13.5px;cursor:pointer}
+  padding:8px 10px;border-radius:7px;color:var(--ink-2);font:inherit;font-size:13.5px;cursor:pointer;text-decoration:none;}
 .navbtn:hover{background:var(--panel-2)}
 .navbtn.active{background:var(--accent-soft);color:var(--accent-soft-ink);font-weight:600}
 .navbtn .dot{width:7px;height:7px;border-radius:50%;background:var(--line);flex:none}

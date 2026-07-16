@@ -49,10 +49,13 @@ not Livewire — is the right tool; promote to Livewire later only if they need 
 - [x] `x-row-actions` td enforcing View (ghost) · one primary verb · kebab
 - [x] Temporary component gallery on `/help/glossary` for visual QA (delete in step 8)
 
-## Step 2 — Requestor module
-- [ ] `Requestor\Index` — stats, search/chips, table w/ sample rows (`/requests`)
-- [ ] `Requestor\Form` — new/edit draft form (`/requests/create`)
-- [ ] `Requestor\Show` — read-only view + stage tracker (`/requests/{pan}` — static sample)
+## Step 2 — Requestor module ✅
+- [x] `Requestor\Index` — stats, search/chips, table w/ the mockup's 5 sample rows (`/requests`)
+- [x] `Requestor\Form` — new/edit draft form; Save/Submit show scaffold toasts (`/requests/create`)
+- [x] `Requestor\Show` — read-only view + stage tracker; heading ref comes from the route,
+      body is the static A. Santos sample (`/requests/{pan}`)
+- Note: mockup subtabs deliberately dropped — the three screens are separate routes per CLAUDE.md.
+  Edit/Resubmit row buttons point at `/requests/create` until per-PAN edit exists.
 
 ## Step 3 — Division Head module
 - [ ] `DivisionHead\Queue` — department-scoped table (`/division`)

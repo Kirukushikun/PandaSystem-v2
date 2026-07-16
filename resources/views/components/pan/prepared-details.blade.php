@@ -5,6 +5,8 @@
 @props([
     'preparedBy', 'dateHired', 'employmentStatus', 'effectivity',
     'wageNo' => null,
+    'hrApprovedBy' => null,
+    'refHeading' => null,
     'rows' => [],
     'remarks' => null,
 ])
@@ -17,7 +19,11 @@
   @if ($wageNo !== null)
   <div class="field"><label>Wage Order No.</label><input readonly value="{{ $wageNo }}"><span class="hint">Shown only for Wage Order actions</span></div>
   @endif
+  @if ($hrApprovedBy !== null)
+  <div class="field"><label>HR approved by</label><input readonly value="{{ $hrApprovedBy }}"></div>
+  @endif
 </div>
+@if ($refHeading !== null)<div class="sect">{{ $refHeading }}</div>@endif
 <div class="twrap"><table class="fromto" style="min-width:620px">
   <thead><tr><th style="width:200px">Item</th><th>From</th><th class="arrow"></th><th>To</th></tr></thead>
   <tbody>

@@ -81,10 +81,15 @@ not Livewire — is the right tool; promote to Livewire later only if they need 
 - [x] `HrPreparation\EmployeeHistory` — S. Lim sample, chain of 4 PANs (`/employees/{employee}/pans`)
 - [x] *(added)* `x-print-btn` shared component; print buttons toast until step 9's print route
 
-## Step 5 — Approver modules
-- [ ] `HrApprover\Queue` + `Show` (`/hr-approval`, `/hr-approval/{pan}`)
-- [ ] `FinalApprover\Queue` — incl. bulk-selection UI (`/final-approval`)
-- [ ] `FinalApprover\Show` (`/final-approval/{pan}`)
+## Step 5 — Approver modules ✅
+- [x] `HrApprover\Queue` — 4 rows, "one step back" note, Return-to-HR-Preparer modal (`/hr-approval`)
+- [x] `HrApprover\Show` — composes x-pan.* (new `ref-heading` prop for the "Action Reference —
+      prepared changes" header) (`/hr-approval/{pan}`)
+- [x] `FinalApprover\Queue` — LIVE bulk selection: checkbox state, select-all toggle,
+      "Select all of type…" dropdown, Approve selected (toast + clear), Reject modal;
+      auto-Regular note (`/final-approval`)
+- [x] `FinalApprover\Show` — Leave Credits row (Regularization-only), `hr-approved-by` prop,
+      inline auto-Regular note, Reject/Give Final Approval footer (`/final-approval/{pan}`)
 
 ## Step 6 — Admin module
 - [ ] `Admin\Users` (`/admin/users`)

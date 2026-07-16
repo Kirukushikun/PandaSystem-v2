@@ -18,7 +18,9 @@ Route::get('/preparation/{pan}', App\Livewire\HrPreparation\Show::class)->name('
 Route::get('/employees', App\Livewire\HrPreparation\Employees::class)->name('employees.index');
 Route::get('/employees/{employee}/pans', App\Livewire\HrPreparation\EmployeeHistory::class)->name('employees.history');
 Route::get('/hr-approval', App\Livewire\HrApprover\Queue::class)->name('hr-approval.queue');
+Route::get('/hr-approval/{pan}', App\Livewire\HrApprover\Show::class)->name('hr-approval.show');
 Route::get('/final-approval', App\Livewire\FinalApprover\Queue::class)->name('final-approval.queue');
+Route::get('/final-approval/{pan}', App\Livewire\FinalApprover\Show::class)->name('final-approval.show');
 
 Route::get('/admin/users', App\Livewire\Admin\Users::class)->name('admin.users');
 Route::get('/admin/employees', App\Livewire\Admin\Employees::class)->name('admin.employees');

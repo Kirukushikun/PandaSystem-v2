@@ -68,13 +68,18 @@ not Livewire — is the right tool; promote to Livewire later only if they need 
 - [x] Return + Dispute modals (x-modal) reachable from BOTH the queue kebabs and the Show
       footers — every transition has a visible control (v1 lesson)
 
-## Step 4 — HR Preparation module (the deep one — may need two sessions)
-- [ ] `HrPreparation\Queue` — tagging UI, lock states (`/preparation`)
-- [ ] `HrPreparation\PrepareForm` — employment details + Action Reference editor
-      (fixed rows, dynamic allowance rows, previous-PAN "See more") (`/preparation/{pan}/edit`)
-- [ ] `HrPreparation\Show` (`/preparation/{pan}`)
-- [ ] `HrPreparation\Employees` (`/employees`) + Update PAN modal
-- [ ] `HrPreparation\EmployeeHistory` (`/employees/{employee}/pans`)
+## Step 4 — HR Preparation module ✅
+- [x] `HrPreparation\Queue` — tag-dot column, print icons (visible per convention), row verbs
+      Open/Continue/Revise/Mark Served, tag-legend locknote, link to Employees lens (`/preparation`)
+- [x] `HrPreparation\PrepareForm` — first REAL Livewire interactivity: tag/role simulation drives
+      the lockable regions + note (4 outcomes), previous-PAN "See more" toggle, dynamic allowance
+      rows (add/remove, 13 types). `.toin` green highlight is global JS. (`/preparation/{pan}/edit`)
+- [x] `HrPreparation\Show` — always Request + PAN Details (no request-only variant for HR roles);
+      warn note, Wage Order No. via new `wage-no` prop on x-pan.prepared-details (`/preparation/{pan}`)
+- [x] `HrPreparation\Employees` + Update PAN modal (origin='hr' flow; Create & Prepare navigates
+      to the prep form) (`/employees` — sidebar keeps HR Preparation active here)
+- [x] `HrPreparation\EmployeeHistory` — S. Lim sample, chain of 4 PANs (`/employees/{employee}/pans`)
+- [x] *(added)* `x-print-btn` shared component; print buttons toast until step 9's print route
 
 ## Step 5 — Approver modules
 - [ ] `HrApprover\Queue` + `Show` (`/hr-approval`, `/hr-approval/{pan}`)

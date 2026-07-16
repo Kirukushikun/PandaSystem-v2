@@ -84,6 +84,12 @@ document.addEventListener('keydown', (e) => {
     document.querySelectorAll('.overlay.on').forEach((m) => m.classList.remove('on'));
 });
 
+/* ---------- Action Reference "To" inputs: typed values highlight green ---------- */
+document.addEventListener('input', (e) => {
+    if (e.target.classList?.contains('toin'))
+        e.target.classList.toggle('filled', e.target.value.trim() !== '');
+});
+
 /* ---------- toast ---------- */
 let toastTimer;
 window.showToast = function (msg) {

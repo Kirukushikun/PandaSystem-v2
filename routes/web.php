@@ -13,6 +13,10 @@ Route::get('/requests/{pan}', App\Livewire\Requestor\Show::class)->name('request
 Route::get('/division', App\Livewire\DivisionHead\Queue::class)->name('division.queue');
 Route::get('/division/{pan}', App\Livewire\DivisionHead\Show::class)->name('division.show');
 Route::get('/preparation', App\Livewire\HrPreparation\Queue::class)->name('preparation.queue');
+Route::get('/preparation/{pan}/edit', App\Livewire\HrPreparation\PrepareForm::class)->name('preparation.edit');
+Route::get('/preparation/{pan}', App\Livewire\HrPreparation\Show::class)->name('preparation.show');
+Route::get('/employees', App\Livewire\HrPreparation\Employees::class)->name('employees.index');
+Route::get('/employees/{employee}/pans', App\Livewire\HrPreparation\EmployeeHistory::class)->name('employees.history');
 Route::get('/hr-approval', App\Livewire\HrApprover\Queue::class)->name('hr-approval.queue');
 Route::get('/final-approval', App\Livewire\FinalApprover\Queue::class)->name('final-approval.queue');
 

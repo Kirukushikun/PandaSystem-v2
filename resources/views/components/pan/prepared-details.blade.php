@@ -4,6 +4,7 @@
      chg highlights the To value green, num right-aligns money. --}}
 @props([
     'preparedBy', 'dateHired', 'employmentStatus', 'effectivity',
+    'wageNo' => null,
     'rows' => [],
     'remarks' => null,
 ])
@@ -13,6 +14,9 @@
   <div class="field"><label>Date Hired</label><input readonly value="{{ $dateHired }}"></div>
   <div class="field"><label>Employment Status</label><input readonly value="{{ $employmentStatus }}"></div>
   <div class="field"><label>Effectivity</label><input readonly value="{{ $effectivity }}"></div>
+  @if ($wageNo !== null)
+  <div class="field"><label>Wage Order No.</label><input readonly value="{{ $wageNo }}"><span class="hint">Shown only for Wage Order actions</span></div>
+  @endif
 </div>
 <div class="twrap"><table class="fromto" style="min-width:620px">
   <thead><tr><th style="width:200px">Item</th><th>From</th><th class="arrow"></th><th>To</th></tr></thead>

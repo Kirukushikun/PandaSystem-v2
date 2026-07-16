@@ -50,7 +50,8 @@
     <h2>Workflow modules</h2>
     <a class="navbtn @if(request()->routeIs('requests.*')) active @endif" href="{{ route('requests.index') }}" wire:navigate><span class="dot"></span>Requestor<span class="n">8</span></a>
     <a class="navbtn @if(request()->routeIs('division.*')) active @endif" href="{{ route('division.queue') }}" wire:navigate><span class="dot"></span>Division Head<span class="n">12</span></a>
-    <a class="navbtn @if(request()->routeIs('preparation.*')) active @endif" href="{{ route('preparation.queue') }}" wire:navigate><span class="dot"></span>HR Preparation<span class="n">9</span></a>
+    {{-- employees.* is the HR-Prep roster lens (/employees), part of this module per the mockup --}}
+    <a class="navbtn @if(request()->routeIs('preparation.*') || request()->routeIs('employees.*')) active @endif" href="{{ route('preparation.queue') }}" wire:navigate><span class="dot"></span>HR Preparation<span class="n">9</span></a>
     <a class="navbtn @if(request()->routeIs('hr-approval.*')) active @endif" href="{{ route('hr-approval.queue') }}" wire:navigate><span class="dot"></span>HR Approver<span class="n">4</span></a>
     <a class="navbtn @if(request()->routeIs('final-approval.*')) active @endif" href="{{ route('final-approval.queue') }}" wire:navigate><span class="dot"></span>Final Approver<span class="n">6</span></a>
   </nav>

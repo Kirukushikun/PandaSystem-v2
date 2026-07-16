@@ -1,0 +1,99 @@
+# UI Scaffold Checklist — mockup → Livewire (no database)
+
+Goal: port `project-overview/panda-ui-concept.html` into organized Livewire components with
+real routes and shared Blade components. **Pure UI — hardcoded sample data, no models, no
+migrations.** Folder structure follows `DEVELOPMENT_PLAN.md` §2; routes follow §4.
+
+Rule of the road: one step per session-ish, each step ends navigable in the browser.
+Sample data stays identical to the mockup (K. Reyes, M. Dela Cruz, S. Lim…) so screens can
+be compared 1:1.
+
+---
+
+## Step 0 — Shell (layout, theme, navigation) ✅
+- [x] Install `livewire/livewire`
+- [x] Port design tokens + full mockup CSS → `resources/css/app.css`
+      (mockup CSS is authoritative; Tailwind import removed so preflight doesn't fight it)
+- [x] Port shell JS → `resources/js/app.js` (theme toggle w/ `localStorage['panda-theme']`,
+      notification panel open/close, kebab menus, toast helper — all via document-level
+      delegation so it survives `wire:navigate`)
+- [x] `resources/views/layouts/app.blade.php` — sidebar (route links + active state),
+      floating theme toggle + notification bell/panel, toast container, FOUC guard script
+- [x] Placeholder full-page components for every sidebar item (see routes below)
+- [x] `routes/web.php` — all module routes → Livewire components, `/` redirects to `/requests`
+
+Routes stubbed in step 0:
+| Route | Component |
+|---|---|
+| `/requests` | `Requestor\Index` |
+| `/division` | `DivisionHead\Queue` |
+| `/preparation` | `HrPreparation\Queue` |
+| `/hr-approval` | `HrApprover\Queue` |
+| `/final-approval` | `FinalApprover\Queue` |
+| `/admin/users` | `Admin\Users` |
+| `/admin/employees` | `Admin\Employees` |
+| `/maintenance` | `Maintenance\Index` |
+| `/help/glossary` | static Blade view |
+
+## Step 1 — Shared UI components (`resources/views/components/`)
+Pure-presentation pieces as anonymous Blade components (they hold no state yet, so Blade —
+not Livewire — is the right tool; promote to Livewire later only if they need behavior):
+- [ ] `x-status-pill` (all statuses from the Glossary)
+- [ ] `x-tag-dot` (purple=Manila, blue=Tarlac, gray=untagged)
+- [ ] `x-stage-tracker`
+- [ ] `x-stat-card` / stats strip
+- [ ] `x-search-bar` + filter chips
+- [ ] `x-kebab-menu` (slot-based)
+- [ ] `x-modal` shell (+ type-to-confirm variant later, in Maintenance step)
+- [ ] Row-action grammar helper: View (ghost) · one primary verb · kebab
+
+## Step 2 — Requestor module
+- [ ] `Requestor\Index` — stats, search/chips, table w/ sample rows (`/requests`)
+- [ ] `Requestor\Form` — new/edit draft form (`/requests/create`)
+- [ ] `Requestor\Show` — read-only view + stage tracker (`/requests/{pan}` — static sample)
+
+## Step 3 — Division Head module
+- [ ] `DivisionHead\Queue` — department-scoped table (`/division`)
+- [ ] `DivisionHead\Show` — both render states: request-only AND request+PAN (`/division/{pan}`)
+- [ ] Return / Dispute modal (nested component or Alpine)
+
+## Step 4 — HR Preparation module (the deep one — may need two sessions)
+- [ ] `HrPreparation\Queue` — tagging UI, lock states (`/preparation`)
+- [ ] `HrPreparation\PrepareForm` — employment details + Action Reference editor
+      (fixed rows, dynamic allowance rows, previous-PAN "See more") (`/preparation/{pan}/edit`)
+- [ ] `HrPreparation\Show` (`/preparation/{pan}`)
+- [ ] `HrPreparation\Employees` (`/employees`) + Update PAN modal
+- [ ] `HrPreparation\EmployeeHistory` (`/employees/{employee}/pans`)
+
+## Step 5 — Approver modules
+- [ ] `HrApprover\Queue` + `Show` (`/hr-approval`, `/hr-approval/{pan}`)
+- [ ] `FinalApprover\Queue` — incl. bulk-selection UI (`/final-approval`)
+- [ ] `FinalApprover\Show` (`/final-approval/{pan}`)
+
+## Step 6 — Admin module
+- [ ] `Admin\Users` (`/admin/users`)
+- [ ] `Admin\UserAccess` (`/admin/users/{user}`)
+- [ ] `Admin\Employees` + Add/Edit Employee modal (`/admin/employees`)
+
+## Step 7 — Maintenance module
+- [ ] Route split: `/maintenance/{logs,reference,backups,danger}`
+- [ ] `Maintenance\AccessLogs` + `AuditTrail` tables
+- [ ] `Maintenance\ReferenceValues`
+- [ ] `Maintenance\Backups`
+- [ ] `Maintenance\DangerZone` — mode radio-cards → preview count → type-the-exact-count modal
+
+## Step 8 — Help & auth shell
+- [ ] Glossary page content (status legend reusing shared components) (`/help/glossary`)
+- [ ] Login page from `panda-login-concept.html` (static, no real auth)
+- [ ] Notification bell panel as its own `Shared\NotificationBell` Livewire component
+
+## Step 9 — Polish pass
+- [ ] `wire:navigate` on all sidebar/table links; verify theme + kebab JS survives navigation
+- [ ] Empty states for every table
+- [ ] Print view placeholder route (`/pan/{pan}/print`)
+- [ ] Cross-check every screen against the mockup side-by-side
+
+---
+
+*Deliberately deferred to the real build (not UI scaffold work): policies/gates, enums,
+state machine, migrations, seeders, file uploads, notifications backend.*

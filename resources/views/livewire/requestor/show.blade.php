@@ -12,18 +12,11 @@
   <x-stage-tracker :stages="['Submitted','Division Head','HR Preparation','HR Approval','Final Approval']" current="Division Head" />
 
   <div class="card">
-    <div class="formgrid">
-      <div class="field"><label>Employee</label><input readonly value="A. Santos"></div>
-      <div class="field"><label>Employee ID</label><input readonly value="EMP-10301"></div>
-      <div class="field"><label>Department</label><input readonly value="Broiler Operations"></div>
-      <div class="field"><label>Type of Action</label><input readonly value="Salary Alignment"></div>
-      <div class="field"><label>Submitted</label><input readonly value="Jul 8, 2026 · 09:41"></div>
-      <div class="field full"><label>Justification</label>
-        <textarea rows="3" readonly>Current pay is below the approved 2026 salary structure for Farm Technician II. Requesting alignment to the job-level minimum.</textarea></div>
-      <div class="field full"><label>Supporting Document</label>
-        <div class="attachrow"><span class="pdf">PDF</span> salary_structure_alignment_santos.pdf <small>· 268 KB</small>
-          <span class="spacer"></span><button class="btn ghost" type="button">Open</button></div></div>
-    </div>
+    <x-pan.request-details
+      employee="A. Santos" employee-id="EMP-10301" department="Broiler Operations"
+      action="Salary Alignment" submitted="Jul 8, 2026 · 09:41"
+      justification="Current pay is below the approved 2026 salary structure for Farm Technician II. Requesting alignment to the job-level minimum."
+      document="salary_structure_alignment_santos.pdf" document-size="268 KB" />
     <div class="formfoot">
       <a class="btn" href="{{ route('requests.index') }}" wire:navigate style="text-decoration:none">← Back to my requests</a>
       <div class="spacer"></div>

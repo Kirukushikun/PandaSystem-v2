@@ -48,6 +48,10 @@ not Livewire — is the right tool; promote to Livewire later only if they need 
       (type-to-confirm variant comes with the Maintenance step)
 - [x] `x-row-actions` td enforcing View (ghost) · one primary verb · kebab
 - [x] Temporary component gallery on `/help/glossary` for visual QA (delete in step 8)
+- [x] *(added during step 3)* `x-pan.request-details` + `x-pan.prepared-details` — the two
+      Show-view body blocks shared by every role (`sect` prop adds the section header;
+      `:rows` mirrors the planned action_reference JSON shape). Role Show pages only own
+      their wrapper: crumb, intro copy, pill, tracker, footer verbs, modals.
 
 ## Step 2 — Requestor module ✅
 - [x] `Requestor\Index` — stats, search/chips, table w/ the mockup's 5 sample rows (`/requests`)
@@ -57,10 +61,12 @@ not Livewire — is the right tool; promote to Livewire later only if they need 
 - Note: mockup subtabs deliberately dropped — the three screens are separate routes per CLAUDE.md.
   Edit/Resubmit row buttons point at `/requests/create` until per-PAN edit exists.
 
-## Step 3 — Division Head module
-- [ ] `DivisionHead\Queue` — department-scoped table (`/division`)
-- [ ] `DivisionHead\Show` — both render states: request-only AND request+PAN (`/division/{pan}`)
-- [ ] Return / Dispute modal (nested component or Alpine)
+## Step 3 — Division Head module ✅
+- [x] `DivisionHead\Queue` — stats, Manila info note, 5 sample rows w/ Approve/Confirm verbs (`/division`)
+- [x] `DivisionHead\Show` — ONE view, both render states via `$hasPreparedPan`
+      (scaffold: hardcoded true for PAN-2026-00339/00311; real build: `pan_forms` exists) (`/division/{pan}`)
+- [x] Return + Dispute modals (x-modal) reachable from BOTH the queue kebabs and the Show
+      footers — every transition has a visible control (v1 lesson)
 
 ## Step 4 — HR Preparation module (the deep one — may need two sessions)
 - [ ] `HrPreparation\Queue` — tagging UI, lock states (`/preparation`)

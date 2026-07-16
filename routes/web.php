@@ -11,6 +11,7 @@ Route::get('/requests', App\Livewire\Requestor\Index::class)->name('requests.ind
 Route::get('/requests/create', App\Livewire\Requestor\Form::class)->name('requests.create');
 Route::get('/requests/{pan}', App\Livewire\Requestor\Show::class)->name('requests.show');
 Route::get('/division', App\Livewire\DivisionHead\Queue::class)->name('division.queue');
+Route::get('/division/{pan}', App\Livewire\DivisionHead\Show::class)->name('division.show');
 Route::get('/preparation', App\Livewire\HrPreparation\Queue::class)->name('preparation.queue');
 Route::get('/hr-approval', App\Livewire\HrApprover\Queue::class)->name('hr-approval.queue');
 Route::get('/final-approval', App\Livewire\FinalApprover\Queue::class)->name('final-approval.queue');

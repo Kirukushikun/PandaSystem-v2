@@ -16,29 +16,8 @@
 <button class="iconbtn" id="theme-toggle" title="Toggle light / dark theme"
   style="position:fixed;top:16px;right:20px;z-index:70;width:36px;height:36px;border-radius:99px;box-shadow:var(--shadow)"></button>
 
-{{-- Notification bell — static sample content for now; becomes Shared\NotificationBell in scaffold step 8 --}}
-<button class="iconbtn" id="notif-btn" title="Notifications"
-  style="position:fixed;top:16px;right:64px;z-index:70;width:36px;height:36px;border-radius:99px;box-shadow:var(--shadow)">
-  <svg style="width:15px;height:15px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-  <span class="nbadge" id="notif-count">3</span>
-</button>
-
-<div class="npanel" id="notif-panel">
-  <div class="nhead">
-    <b>Notifications</b>
-    <button class="btn ghost" id="notif-clear" style="padding:2px 8px;font-size:12px">Mark all read</button>
-  </div>
-  <div class="nrow unread"><span class="ndot"></span>
-    <div><p><b>Allowance expiring soon</b> — C. Mercado's Interim Allowance (<span class="ref">PAN-2026-00332</span>) ends Jul 22, 2026.</p><small>2 hours ago · Expiry reminder</small></div></div>
-  <div class="nrow unread"><span class="ndot"></span>
-    <div><p><b>Returned for resolution</b> — <span class="ref">PAN-2026-00338</span> was sent back by the HR Approver: "Wage number mismatch".</p><small>Yesterday · HR Preparation</small></div></div>
-  <div class="nrow unread"><span class="ndot"></span>
-    <div><p><b>Returned to you</b> — <span class="ref">PAN-2026-00351</span> needs its attachment replaced before resubmitting.</p><small>Jul 10 · Requestor</small></div></div>
-  <div class="nrow"><span class="ndot"></span>
-    <div><p><b>Filed</b> — <span class="ref">PAN-2026-00298</span> (L. Bautista, Wage Order) closed out.</p><small>Jun 30 · HR Preparation</small></div></div>
-  <div class="nrow"><span class="ndot"></span>
-    <div><p><b>Bulk approval</b> — 3 Regularization PANs were approved by V. Salazar.</p><small>Jun 28 · Final Approver</small></div></div>
-</div>
+{{-- Notification bell — Livewire owns the unread state; open/close stays in app.js --}}
+<livewire:shared.notification-bell />
 
 <div class="app">
 <aside class="side">
@@ -70,7 +49,8 @@
       <div class="avatar">MD</div>
       <div style="min-width:0"><b>M. Dela Cruz</b><small>Requestor · Division Head · HR Head</small></div>
     </div>
-    <a class="btn" href="#" style="display:flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;color:var(--ink-2)">
+    {{-- Plain link (no wire:navigate) — the login page is a standalone document with its own styles --}}
+    <a class="btn" href="{{ route('login') }}" style="display:flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;color:var(--ink-2)">
       <svg style="width:14px;height:14px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
       Log out
     </a>

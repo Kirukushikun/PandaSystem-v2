@@ -33,18 +33,12 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', pai
 paintThemeButton();
 document.addEventListener('livewire:navigated', paintThemeButton);
 
-/* ---------- notification bell ---------- */
+/* ---------- notification bell (unread state is Livewire's; only open/close lives here) ---------- */
 document.addEventListener('click', (e) => {
     const panel = document.getElementById('notif-panel');
     if (!panel) return;
     if (e.target.closest('#notif-btn')) {
         panel.classList.toggle('open');
-        return;
-    }
-    if (e.target.closest('#notif-clear')) {
-        panel.querySelectorAll('.nrow.unread').forEach((r) => r.classList.remove('unread'));
-        const count = document.getElementById('notif-count');
-        if (count) count.style.display = 'none';
         return;
     }
     if (!e.target.closest('#notif-panel')) panel.classList.remove('open');

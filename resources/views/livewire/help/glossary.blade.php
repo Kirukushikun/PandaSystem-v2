@@ -1,123 +1,80 @@
+{{-- Definition of terms: every status, tag, and role. Uses the same shared pills/dots
+     as the live screens, so this page doubles as a legend for the rest of the UI. --}}
 <div>
   <p class="crumb">Help</p>
   <div class="htop">
-    <div>
-      <h2>Glossary</h2>
-      <p>Placeholder — real Glossary content lands in scaffold step 8. Below is a temporary
-        preview of the shared components built in step 1, so they can be checked against the mockup.</p>
-    </div>
+    <div><h2>Glossary — Statuses, Tags &amp; Roles</h2>
+      <p>What each status means, who can act on it, and where the PAN goes next. The pills and colors here are the same ones used across the system.</p></div>
   </div>
 
-  {{-- ============ TEMPORARY component preview (delete in step 8) ============ --}}
-
-  <div class="card" style="padding:18px;margin-bottom:18px">
-    <p class="crumb">x-status-pill — all statuses</p>
-    <div style="display:flex;flex-wrap:wrap;gap:8px">
-      <x-status-pill status="draft" />
-      <x-status-pill status="with-division-head" />
-      <x-status-pill status="returned-to-requestor" />
-      <x-status-pill status="awaiting-tag" />
-      <x-status-pill status="in-preparation" />
-      <x-status-pill status="for-confirmation" />
-      <x-status-pill status="returned-to-preparer" />
-      <x-status-pill status="for-hr-approval" />
-      <x-status-pill status="for-final-approval" />
-      <x-status-pill status="approved" />
-      <x-status-pill status="served" />
-      <x-status-pill status="unserved" />
-      <x-status-pill status="filed" />
-      <x-status-pill status="withdrawn" />
-      <x-status-pill status="voided" />
-      <x-status-pill status="with-division-head">Awaiting your decision (label override)</x-status-pill>
-      <x-status-pill tone="ret">Failed — bad password (freeform)</x-status-pill>
-    </div>
-  </div>
-
-  <div class="card" style="padding:18px;margin-bottom:18px">
-    <p class="crumb">x-tag-dot</p>
-    <p style="margin:0;font-size:13px">
-      <x-tag-dot tag="manila" /> Manila (confidential) &nbsp;·&nbsp;
-      <x-tag-dot tag="tarlac" /> Tarlac (routine) &nbsp;·&nbsp;
-      <x-tag-dot /> Untagged
-    </p>
-  </div>
-
-  <div class="card" style="padding:18px;margin-bottom:18px">
-    <p class="crumb">x-stage-tracker</p>
-    <x-stage-tracker :stages="['Submitted','Division Head','HR Preparation','HR Approval','Final Approval']" current="Division Head" />
-    <x-stage-tracker :stages="['Submitted','Division approved','HR prepared','DH Confirmation','HR Approval','Final Approval']" current="DH Confirmation" />
-    <x-stage-tracker :stages="['Submitted','Division Head','HR Preparation','HR Approval','Final Approval']" current="*" style="margin-bottom:0" />
-  </div>
-
-  <div class="card" style="padding:18px;margin-bottom:18px">
-    <p class="crumb">x-stat (in a .stats strip)</p>
-    <div class="stats" style="margin-bottom:0">
-      <x-stat value="8" label="Total requests" />
-      <x-stat value="3" label="In progress" tone="warn" />
-      <x-stat value="1" label="Returned to you" tone="bad" />
-      <x-stat value="4" label="Completed" tone="ok" />
-      <x-stat value="₱ 645/day" label="Current basic pay" tone="acc" />
-    </div>
-  </div>
-
-  <div class="card" style="padding:18px;margin-bottom:18px">
-    <p class="crumb">x-search-bar + x-chip (in a .bar)</p>
-    <div class="bar" style="margin-bottom:0">
-      <x-search-bar placeholder="Search by employee, reference no., or action type…" />
-      <x-chip on>All</x-chip><x-chip>In progress</x-chip><x-chip>Completed</x-chip>
+  <div class="card" style="margin-bottom:18px">
+    <div class="sect">The full journey of a PAN</div>
+    <div style="padding:14px 18px 16px">
+      <x-stage-tracker style="margin:0 0 10px"
+        :stages="['Draft','Division Head','Tag & HR Preparation','DH Confirmation','HR Approval','Final Approval','Served','Filed']"
+        current="Filed" />
+      <p class="locknote" style="margin:0">Any stage can also branch backwards: the Division Head returns to the Requestor, the HR Approver returns one step to the Preparer, and the Final Approver rejects all the way back to HR Preparation. Once filed, a follow-up PAN can start a new cycle for the same employee.</p>
     </div>
   </div>
 
   <div class="card" style="margin-bottom:18px">
-    <div class="twrap"><table>
-      <thead><tr><th>Reference</th><th>Employee</th><th>Status</th><th></th></tr></thead>
+    <div class="sect">Statuses</div>
+    <div class="twrap"><table style="min-width:900px">
+      <thead><tr><th style="width:210px">Status</th><th>What it means</th><th style="width:170px">Who can act</th><th>What can happen next</th></tr></thead>
       <tbody>
+        @foreach ([
+          ['draft', 'Draft', 'Saved by the Requestor but not yet submitted. Attachment optional at this point.', 'Requestor', 'Submit to Division Head · edit · delete outright'],
+          ['with-division-head', 'With Division Head', 'Formally submitted (PDF required) and awaiting the department head\'s decision. Read-only to the Requestor.', 'Division Head <small>(DH Head if Manila)</small>', 'Approved → HR Preparation · returned to Requestor with a reason'],
+          ['returned-to-requestor', 'Returned — for correction', 'Sent back to the Requestor with a preset or custom reason (e.g. incomplete document).', 'Requestor', 'Replace attachment & resubmit · withdraw entirely'],
+          ['awaiting-tag', 'Awaiting tag & preparation', 'Division-approved, but paperwork can\'t start until a confidentiality tag (Tarlac or Manila) is applied.', 'Any HR Preparer', 'Tagged Tarlac → normal preparer works it · tagged Manila → HR Head only'],
+          ['in-preparation', 'HR Preparation', 'The official paperwork is being filled in: employment details and the Action Reference From/To table.', 'HR Preparer <small>(HR Head if Manila)</small>', 'Submitted for DH confirmation · voided with a reason'],
+          ['for-confirmation', 'For DH Confirmation', 'HR has prepared the PAN; the Division Head reviews what was actually drafted.', 'Division Head <small>(DH Head if Manila)</small>', 'Confirmed → HR Approval · disputed → back to the Preparer'],
+          ['returned-to-preparer', 'Returned by HR Approver', 'Sent one step back to HR Preparation for rework, with a mandatory reason.', 'HR Preparer', 'Revised & resubmitted · voided with a reason'],
+          ['for-hr-approval', 'For HR Approval', 'Second HR-level check after preparation and confirmation. No confidentiality distinction at this stage.', 'HR Approver', 'Approved → Final Approval · returned one step to the Preparer'],
+          ['for-final-approval', 'For Final Approval', 'Awaiting the last sign-off — individually or in bulk (by selection or by action type).', 'Final Approver', 'Approved (Regularization auto-sets status to "Regular") · rejected → all the way back to HR Preparation'],
+          ['approved', 'Approved — for serving', 'Fully approved; the action now has to be carried out in the real world.', 'HR Preparer', 'Marked Served · marked Unserved with a reason'],
+          ['served', 'Served', 'The action has been carried out and acknowledged.', 'HR Preparer', 'Marked Filed to close the record'],
+          ['unserved', 'Unserved', 'Approved but couldn\'t be carried out — AWOL, resigned, terminated, or a custom reason.', '—', 'Terminal — kept on record'],
+          ['filed', 'Filed', 'Closed out and archived. The PAN\'s "To" values become the starting "From" values of the employee\'s next PAN.', 'HR Preparer', 'Start a follow-up PAN for the same employee'],
+          ['withdrawn', 'Withdrawn', 'The Requestor pulled back a request that had been returned to them, instead of resubmitting.', '—', 'Terminal — kept on record'],
+          ['voided', 'Voided', 'Deleted by HR while awaiting preparation or resolution, with a mandatory reason on record.', '—', 'Terminal — reason visible in the Audit Trail'],
+        ] as [$status, $label, $means, $who, $next])
         <tr>
-          <td class="ref">PAN-2026-00358</td>
-          <td><div class="who"><b>R. Villanueva</b><small>EMP-10422 · Broiler Operations</small></div></td>
-          <td><x-status-pill status="draft" /></td>
-          <x-row-actions>
-            <a class="btn ghost" href="#">View</a>
-            <button class="btn primary" type="button">Edit</button>
-            <x-kebab>
-              <x-kebab.item danger>Delete draft</x-kebab.item>
-            </x-kebab>
-          </x-row-actions>
+          <td><x-status-pill :status="$status">{{ $label }}</x-status-pill></td>
+          <td>{{ $means }}</td>
+          <td>{!! $who !!}</td>
+          <td>{{ $next }}</td>
         </tr>
-        <tr>
-          <td class="ref">PAN-2026-00347</td>
-          <td><div class="who"><b>K. Reyes</b><small>EMP-10310 · Hatchery</small></div></td>
-          <td><x-status-pill status="with-division-head">Awaiting your decision</x-status-pill></td>
-          <x-row-actions>
-            <a class="btn ghost" href="#">View</a>
-            <button class="btn primary" type="button">Approve</button>
-            <x-kebab>
-              <x-kebab.item danger data-modal-open="demo-modal">Return to Requestor…</x-kebab.item>
-            </x-kebab>
-          </x-row-actions>
-        </tr>
+        @endforeach
       </tbody>
     </table></div>
   </div>
 
-  <div class="card" style="padding:18px">
-    <p class="crumb">x-modal</p>
-    <button class="btn" type="button" data-modal-open="demo-modal">Open demo modal</button>
-  </div>
-
-  <x-modal id="demo-modal" title="Return to Requestor — PAN-2026-00347">
-    <div class="formgrid" style="padding:16px;grid-template-columns:1fr">
-      <div class="field"><label>Reason <em>*</em></label>
-        <select><option>Incomplete supporting document</option><option>Wrong employee selected</option><option>Wrong type of action</option><option>Needs stronger justification</option><option>Custom reason…</option></select></div>
-      <div class="field"><label>Details (optional)</label>
-        <textarea rows="3"></textarea></div>
+  <div class="twocol">
+    <div class="pane">
+      <h3>Confidentiality tags</h3>
+      <div class="pad">
+        <div class="permrow"><span><x-tag-dot tag="manila" />&nbsp; <b>Manila</b> — highly confidential</span></div>
+        <p class="locknote" style="margin:4px 0 12px">Prepared only by an HR Head Preparer; a normal preparer who opens or tags it is locked out permanently. At the division stages, only the DH Head — not the department's regular Division Head — can see or act on it.</p>
+        <div class="permrow"><span><x-tag-dot tag="tarlac" />&nbsp; <b>Tarlac</b> — routine</span></div>
+        <p class="locknote" style="margin:4px 0 12px">The normal path. Worked by ordinary HR Preparers; visible to the department's Division Head as usual.</p>
+        <div class="permrow"><span><x-tag-dot />&nbsp; <b>Untagged</b></span></div>
+        <p class="locknote" style="margin:4px 0 0">Freshly approved by the Division Head. Preparation stays locked until any HR Preparer applies one of the two tags. Tag dots are visible to HR Head Preparers only.</p>
+      </div>
     </div>
-    <x-slot:footer>
-      <button class="btn" type="button" data-close>Cancel</button>
-      <div class="spacer"></div>
-      <button class="btn danger" type="button" data-close>Return to Requestor</button>
-    </x-slot:footer>
-  </x-modal>
-
-  {{-- ============ end temporary preview ============ --}}
+    <div class="pane">
+      <h3>Roles</h3>
+      <div class="pad">
+        <div class="permrow"><span><b>Requestor</b></span><small style="color:var(--ink-3)">Raises PANs for their department(s)</small></div>
+        <div class="permrow"><span><b>Division Head</b></span><small style="color:var(--ink-3)">Approves/returns, then confirms prepared PANs</small></div>
+        <div class="permrow"><span><b>DH Head</b></span><small style="color:var(--ink-3)">Division-stage decisions on Manila PANs, all departments</small></div>
+        <div class="permrow"><span><b>HR Preparer</b></span><small style="color:var(--ink-3)">Tags and fills in the official paperwork</small></div>
+        <div class="permrow"><span><b>HR Head Preparer</b></span><small style="color:var(--ink-3)">Same, plus exclusive handling of Manila PANs</small></div>
+        <div class="permrow"><span><b>HR Approver</b></span><small style="color:var(--ink-3)">Second check before final sign-off</small></div>
+        <div class="permrow"><span><b>Final Approver</b></span><small style="color:var(--ink-3)">Last approval, single or bulk</small></div>
+        <div class="permrow"><span><b>Admin</b></span><small style="color:var(--ink-3)">Users, access, employees, logs, maintenance</small></div>
+        <p class="locknote" style="margin:10px 0 0">One person can hold any combination of these — e.g. Requestor + Division Head. Department assignments for requesting and heading are independent, and a department can have several co-heads.</p>
+      </div>
+    </div>
+  </div>
 </div>

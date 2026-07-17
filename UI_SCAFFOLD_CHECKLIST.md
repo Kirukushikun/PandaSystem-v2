@@ -111,10 +111,14 @@ not Livewire — is the right tool; promote to Livewire later only if they need 
       (random, like the mockup) → type-the-exact-count modal (fully Livewire: the required text and
       button label follow the previewed count) → queued-job toast, badges reset
 
-## Step 8 — Help & auth shell
-- [ ] Glossary page content (status legend reusing shared components) (`/help/glossary`)
-- [ ] Login page from `panda-login-concept.html` (static, no real auth)
-- [ ] Notification bell panel as its own `Shared\NotificationBell` Livewire component
+## Step 8 — Help & auth shell ✅
+- [x] Glossary page content (`/help/glossary`) — temp component gallery replaced with the real
+      thing: journey strip via x-stage-tracker (current="Filed"), 15-row status table looping
+      x-status-pill with mockup labels, tags pane via x-tag-dot, roles pane
+- [x] Login page from `panda-login-concept.html` (`/login`, standalone Blade view, inline styles
+      + data-theme override added; Sign in navigates to /requests; sidebar Log out links here)
+- [x] `Shared\NotificationBell` Livewire component — unread state + Mark all read live in the
+      component (badge hides at 0); open/close stays in app.js (#notif-clear JS removed)
 
 ## Step 9 — Polish pass
 - [ ] `wire:navigate` on all sidebar/table links; verify theme + kebab JS survives navigation

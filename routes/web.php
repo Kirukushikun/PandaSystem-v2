@@ -7,6 +7,9 @@ use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/requests');
 
+// Static login scaffold — real auth (ExternalAuthService + middleware) arrives with the real build
+Route::view('/login', 'login')->name('login');
+
 Route::get('/requests', App\Livewire\Requestor\Index::class)->name('requests.index');
 Route::get('/requests/create', App\Livewire\Requestor\Form::class)->name('requests.create');
 Route::get('/requests/{pan}', App\Livewire\Requestor\Show::class)->name('requests.show');

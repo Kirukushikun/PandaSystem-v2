@@ -35,7 +35,7 @@
         <x-row-actions>
           <a class="btn ghost" href="{{ route('preparation.show', 'PAN-2026-00341') }}" wire:navigate style="text-decoration:none">View</a>
           <a class="btn primary" href="{{ route('preparation.edit', 'PAN-2026-00341') }}" wire:navigate style="text-decoration:none">Continue</a>
-          <x-print-btn onclick="showToast('Print view arrives in scaffold step 9.')" />
+          <x-print-btn href="{{ route('pan.print', 'PAN-2026-00341') }}" />
         </x-row-actions></tr>
       <tr><td><x-tag-dot tag="tarlac" /></td><td class="ref">PAN-2026-00338</td>
         <td><div class="who"><b>S. Lim</b><small>EMP-10233</small></div></td>
@@ -43,7 +43,7 @@
         <x-row-actions>
           <a class="btn ghost" href="{{ route('preparation.show', 'PAN-2026-00338') }}" wire:navigate style="text-decoration:none">View</a>
           <a class="btn primary" href="{{ route('preparation.edit', 'PAN-2026-00338') }}" wire:navigate style="text-decoration:none">Revise</a>
-          <x-print-btn onclick="showToast('Print view arrives in scaffold step 9.')" />
+          <x-print-btn href="{{ route('pan.print', 'PAN-2026-00338') }}" />
           <x-kebab><x-kebab.item danger>Void / Delete…</x-kebab.item></x-kebab>
         </x-row-actions></tr>
       <tr><td><x-tag-dot tag="tarlac" /></td><td class="ref">PAN-2026-00311</td>
@@ -52,7 +52,7 @@
         <x-row-actions>
           <a class="btn ghost" href="{{ route('preparation.show', 'PAN-2026-00311') }}" wire:navigate style="text-decoration:none">View</a>
           <button class="btn primary" type="button" onclick="showToast('Marked as Served (UI scaffold — nothing is persisted yet).')">Mark Served</button>
-          <x-print-btn onclick="showToast('Print view arrives in scaffold step 9.')" />
+          <x-print-btn href="{{ route('pan.print', 'PAN-2026-00311') }}" />
           <x-kebab><x-kebab.item>Mark Unserved…<small>AWOL, resigned, terminated, or custom</small></x-kebab.item></x-kebab>
         </x-row-actions></tr>
       <tr><td><x-tag-dot tag="tarlac" /></td><td class="ref">PAN-2026-00298</td>
@@ -60,7 +60,7 @@
         <td>Wage Order</td><td>Broiler Operations</td><td><x-status-pill status="filed" /></td>
         <x-row-actions>
           <a class="btn ghost" href="{{ route('preparation.show', 'PAN-2026-00298') }}" wire:navigate style="text-decoration:none">View</a>
-          <x-print-btn onclick="showToast('Print view arrives in scaffold step 9.')" />
+          <x-print-btn href="{{ route('pan.print', 'PAN-2026-00298') }}" />
           <x-kebab><x-kebab.item>Start Follow-up PAN<small>New cycle for this employee</small></x-kebab.item></x-kebab>
         </x-row-actions></tr>
     </tbody>

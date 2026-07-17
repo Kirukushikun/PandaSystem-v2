@@ -10,8 +10,11 @@ use Livewire\Component;
 #[Title('Final Sign-off — PANDA')]
 class Queue extends Component
 {
-    /** Mockup sample rows; bulk selection works against these. Real build: the queue query. */
-    public const ROWS = [
+    /**
+     * Mockup sample rows — live state, so approving actually removes them from the
+     * queue and the empty state becomes reachable. Real build: the queue query.
+     */
+    public array $rows = [
         ['ref' => 'PAN-2026-00335', 'name' => 'G. Padilla', 'dept' => 'Sales & Distribution', 'type' => 'Regularization', 'eff' => 'Aug 1, 2026',  'pay' => '19,000 → 21,500'],
         ['ref' => 'PAN-2026-00327', 'name' => 'B. Estrada', 'dept' => 'Hatchery',             'type' => 'Regularization', 'eff' => 'Aug 1, 2026',  'pay' => '18,200 → 20,400'],
         ['ref' => 'PAN-2026-00325', 'name' => 'F. Domingo', 'dept' => 'Feedmill',             'type' => 'Regularization', 'eff' => 'Aug 1, 2026',  'pay' => '18,900 → 21,100'],
@@ -24,7 +27,7 @@ class Queue extends Component
 
     public function toggleAll()
     {
-        $all = array_column(self::ROWS, 'ref');
+        $all = array_column($this->rows, 'ref');
         $this->selected = count($this->selected) === count($all) ? [] : $all;
     }
 
@@ -35,7 +38,7 @@ class Queue extends Component
             return;
         }
         $this->selected = array_column(
-            array_filter(self::ROWS, fn ($row) => $row['type'] === $type),
+            array_filter($this->rows, fn ($row) => $row['type'] === $type),
             'ref'
         );
     }
@@ -48,12 +51,21 @@ class Queue extends Component
 
             return;
         }
+        $this->rows = array_values(array_filter($this->rows, fn ($row) => ! in_array($row['ref'], $this->selected)));
         $this->selected = [];
-        $this->js("showToast('{$count} PAN(s) approved (UI scaffold — nothing is persisted yet). Regularizations auto-finalize status to Regular.')");
+        $this->js("showToast('{$count} PAN(s) approved and cleared from the queue (UI scaffold — nothing is persisted yet). Regularizations auto-finalize status to Regular.')");
+    }
+
+    /** Approving one row directly (the row's filled verb) also clears it. */
+    public function approveOne(string $ref)
+    {
+        $this->rows = array_values(array_filter($this->rows, fn ($row) => $row['ref'] !== $ref));
+        $this->selected = array_values(array_diff($this->selected, [$ref]));
+        $this->js("showToast('Final approval given — {$ref} cleared from the queue (UI scaffold — nothing is persisted yet).')");
     }
 
     public function render()
     {
-        return view('livewire.final-approver.queue', ['rows' => self::ROWS]);
+        return view('livewire.final-approver.queue');
     }
 }

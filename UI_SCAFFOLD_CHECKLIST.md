@@ -120,11 +120,18 @@ not Livewire — is the right tool; promote to Livewire later only if they need 
 - [x] `Shared\NotificationBell` Livewire component — unread state + Mark all read live in the
       component (badge hides at 0); open/close stays in app.js (#notif-clear JS removed)
 
-## Step 9 — Polish pass
-- [ ] `wire:navigate` on all sidebar/table links; verify theme + kebab JS survives navigation
-- [ ] Empty states for every table
-- [ ] Print view placeholder route (`/pan/{pan}/print`)
-- [ ] Cross-check every screen against the mockup side-by-side
+## Step 9 — Polish pass ✅
+- [x] `wire:navigate` sweep — every internal route link has it; deliberate exceptions are the
+      standalone pages (Log out → /login, print links → new tab). Shell JS already survives
+      navigation by design (document-level delegation). Unused Laravel welcome.blade.php deleted.
+- [x] Empty states — new `x-empty-state` shared component; live on the Final Approver queue:
+      rows are now component state, so Approve / Approve selected actually clear rows and
+      "All caught up" is reachable. (Static tables get theirs when real queries arrive.)
+- [x] Print view placeholder route (`/pan/{pan}/print`, standalone page, 3 labeled copies +
+      window.print; real layout ports from print-view.blade.php). `x-print-btn` now takes
+      `href` and all 8 HR-Prep print icons link to it (new tab) instead of toasting.
+- [x] Cross-check — all 24 routes verified 200 with mockup content (content-level checks each
+      step; final visual side-by-side is the user's browser pass)
 
 ---
 

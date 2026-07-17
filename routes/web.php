@@ -35,4 +35,7 @@ Route::get('/maintenance/reference', App\Livewire\Maintenance\ReferenceValues::c
 Route::get('/maintenance/backups', App\Livewire\Maintenance\Backups::class)->name('maintenance.backups');
 Route::get('/maintenance/danger', App\Livewire\Maintenance\DangerZone::class)->name('maintenance.danger');
 
+// Print placeholder — the real 3-copy layout ports from print-view.blade.php in the real build
+Route::get('/pan/{pan}/print', fn (string $pan) => view('pan-print', ['pan' => $pan]))->name('pan.print');
+
 Route::get('/help/glossary', App\Livewire\Help\Glossary::class)->name('help.glossary');

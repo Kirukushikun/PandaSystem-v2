@@ -11,6 +11,9 @@
     <x-stat value="3" label="Rejected this quarter" tone="bad" />
   </div>
 
+  @if (count($rows) === 0)
+  <x-empty-state title="All caught up" message="Nothing is waiting for your final sign-off. Approved PANs move on to HR Preparation for serving." />
+  @else
   <div class="bulk">
     {{ count($selected) }} selected
     <div class="spacer"></div>
@@ -36,13 +39,14 @@
         <td>{{ $row['type'] }}</td><td>{{ $row['eff'] }}</td><td class="num">{{ $row['pay'] }}</td>
         <x-row-actions>
           <a class="btn ghost" href="{{ route('final-approval.show', $row['ref']) }}" wire:navigate style="text-decoration:none">View</a>
-          <button class="btn primary" type="button" onclick="showToast('Final approval given (UI scaffold — nothing is persisted yet).')">Approve</button>
+          <button class="btn primary" type="button" wire:click="approveOne('{{ $row['ref'] }}')">Approve</button>
           <x-kebab><x-kebab.item danger data-modal-open="reject-modal">Reject — back to HR Prep…</x-kebab.item></x-kebab>
         </x-row-actions>
       </tr>
       @endforeach
     </tbody>
   </table></div></div>
+  @endif
 
   <div class="note info" style="margin-top:14px"><span class="ic">i</span>Approving a <b>&nbsp;Regularization&nbsp;</b> automatically finalizes the employee's status as "Regular", overriding any tentative status set earlier.</div>
 

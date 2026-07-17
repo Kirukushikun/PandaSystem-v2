@@ -22,25 +22,25 @@
         <td class="num">₱ 610/day → ₱ 645/day</td><td><x-status-pill status="returned-to-preparer">Returned — rework</x-status-pill></td>
         <x-row-actions>
           <a class="btn ghost" href="{{ route('preparation.show', 'PAN-2026-00338') }}" wire:navigate style="text-decoration:none">View</a>
-          <x-print-btn onclick="showToast('Print view arrives in scaffold step 9.')" />
+          <x-print-btn href="{{ route('pan.print', 'PAN-2026-00338') }}" />
         </x-row-actions></tr>
       <tr><td class="ref">PAN-2025-01102</td><td>Wage Order</td><td>Jul 1, 2025</td>
         <td class="num">₱ 585/day → ₱ 610/day</td><td><x-status-pill status="filed" /></td>
         <x-row-actions>
           <a class="btn ghost" href="{{ route('preparation.show', 'PAN-2025-01102') }}" wire:navigate style="text-decoration:none">View</a>
-          <x-print-btn onclick="showToast('Print view arrives in scaffold step 9.')" />
+          <x-print-btn href="{{ route('pan.print', 'PAN-2025-01102') }}" />
         </x-row-actions></tr>
       <tr><td class="ref">PAN-2024-00761</td><td>Promotion</td><td>Mar 16, 2024</td>
         <td>Mill Helper → Mill Operator</td><td><x-status-pill status="filed" /></td>
         <x-row-actions>
           <a class="btn ghost" href="{{ route('preparation.show', 'PAN-2024-00761') }}" wire:navigate style="text-decoration:none">View</a>
-          <x-print-btn onclick="showToast('Print view arrives in scaffold step 9.')" />
+          <x-print-btn href="{{ route('pan.print', 'PAN-2024-00761') }}" />
         </x-row-actions></tr>
       <tr><td class="ref">PAN-2023-00287</td><td>Regularization</td><td>Feb 1, 2023</td>
         <td>Probationary → Regular</td><td><x-status-pill status="filed" /></td>
         <x-row-actions>
           <a class="btn ghost" href="{{ route('preparation.show', 'PAN-2023-00287') }}" wire:navigate style="text-decoration:none">View</a>
-          <x-print-btn onclick="showToast('Print view arrives in scaffold step 9.')" />
+          <x-print-btn href="{{ route('pan.print', 'PAN-2023-00287') }}" />
         </x-row-actions></tr>
     </tbody>
   </table></div></div>

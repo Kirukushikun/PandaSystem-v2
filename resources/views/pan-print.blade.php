@@ -9,7 +9,9 @@
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400;1,700&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900&display=swap');
 *{ font-family: 'Courier'; font-weight: 700; }
-body{ height: auto; padding: 20px; }
+body{ height: auto;  padding: 40px 15%;   display: flex; background-color: #F1F2F6;
+    flex-direction: column;
+    gap: 20px; }
 .outer-border{ margin: 20px; background-color: white; outline: 35px solid white; border: 3px solid #385623; }
 .inner-border{ gap:20px; border: 4px solid #385623; }
 .inner-border h3{ text-align: center; font-size: 28px; margin-bottom: 10px; }
@@ -33,7 +35,7 @@ img{ width: 280px; margin: 40px 0 20px; }
 
 @media print {
   .print-action{ display: none !important; }
-  body{ padding: 0 !important; margin-top: -20px !important; background-color: white !important; }
+  body{ padding: 0 !important; background-color: white !important; }
   .outer-border{ border: 1px solid #385623 !important; }
   .inner-border{ border: 2px solid #385623 !important; gap: 10px; }
   img{ width: 180px; margin: 10px 0 20px; }
@@ -120,7 +122,7 @@ img{ width: 280px; margin: 40px 0 20px; }
     </div>
 
     <div class="print-header">
-      <img src="images/BGC.png" alt="">
+      <img src="{{asset('images/BGC.png')}}" alt="">
       <h3 class="font-courier">
         BROOKSIDE FARMS CORPORATION <br>
         Anupul, Bamban, Tarlac
@@ -247,7 +249,7 @@ img{ width: 280px; margin: 40px 0 20px; }
     </div>
 
     <div class="print-header">
-      <img src="images/BGC.png" alt="">
+      <img src="{{asset('images/BGC.png')}}" alt="">
       <h3 class="font-courier">
         BROOKSIDE FARMS CORPORATION <br>
         Anupul, Bamban, Tarlac
@@ -374,7 +376,7 @@ img{ width: 280px; margin: 40px 0 20px; }
     </div>
 
     <div class="print-header">
-      <img src="images/BGC.png" alt="">
+      <img src="{{asset('images/BGC.png')}}" alt="">
       <h3 class="font-courier">
         BROOKSIDE FARMS CORPORATION <br>
         Anupul, Bamban, Tarlac

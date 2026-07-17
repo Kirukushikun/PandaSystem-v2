@@ -9,10 +9,6 @@ Route::get('/login', [LoginController::class, 'showLogin'])->name('login');
 Route::post('/login', [LoginController::class, 'postLogin'])->name('login.post');
 Route::get('/app-login/{id}', [AuthenticationController::class, 'app_login'])->name('app.login');
 
-// Break-glass admin login — disabled while BYPASS_SECRET is empty (bypass-feature-guide.md)
-Route::get('/bypass', [App\Http\Controllers\BypassController::class, 'show']);
-Route::post('/bypass', [App\Http\Controllers\BypassController::class, 'authenticate'])->middleware('throttle:5,1');
-
 // Everything else requires a signed-in user. Per-module/per-record authorization
 // comes from Gates + policies on every route/action — never sidebar visibility.
 Route::middleware('auth')->group(function () {

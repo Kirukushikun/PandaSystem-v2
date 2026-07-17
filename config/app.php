@@ -107,22 +107,6 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Bypass (break-glass) login
-    |--------------------------------------------------------------------------
-    |
-    | Emergency admin access for when the external Auth API is unavailable
-    | (e.g. the provider goes dark after office hours). Disabled entirely
-    | while bypass_secret is empty. Read via config() — not env() — so it
-    | keeps working under `php artisan config:cache`.
-    |
-    */
-
-    'bypass_secret' => env('BYPASS_SECRET'),
-
-    'bypass_user_id' => env('BYPASS_USER_ID'),
-
-    /*
-    |--------------------------------------------------------------------------
     | Maintenance Mode Driver
     |--------------------------------------------------------------------------
     |

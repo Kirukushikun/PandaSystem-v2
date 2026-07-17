@@ -2,44 +2,70 @@
 
 namespace Database\Factories;
 
-use App\Models\User;
+use App\Models\Farm;
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 
 /**
- * @extends Factory<User>
+ * @extends Factory<\App\Models\User>
  */
 class UserFactory extends Factory
 {
-    /**
-     * The current password being used by the factory.
-     */
-    protected static ?string $password;
-
-    /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
-     */
     public function definition(): array
     {
         return [
-            'name' => fake()->name(),
-            'email' => fake()->unique()->safeEmail(),
-            'email_verified_at' => now(),
-            'password' => static::$password ??= Hash::make('password'),
-            'remember_token' => Str::random(10),
+            'external_id' => $this->faker->unique()->numerify('EXT-####'),
+            'username' => $this->faker->unique()->userName(),
+            'name' => $this->faker->name(),
+            'position' => $this->faker->jobTitle(),
+            'farm_id' => Farm::factory(),
+            'is_requestor' => false,
+            'is_division_head' => false,
+            'is_hr_preparer' => false,
+            'is_hr_approver' => false,
+            'is_final_approver' => false,
+            'is_hr_head' => false,
+            'is_dh_head' => false,
+            'is_admin' => false,
         ];
     }
 
-    /**
-     * Indicate that the model's email address should be unverified.
-     */
-    public function unverified(): static
+    public function requestor(): static
     {
-        return $this->state(fn (array $attributes) => [
-            'email_verified_at' => null,
-        ]);
+        return $this->state(['is_requestor' => true]);
+    }
+
+    public function divisionHead(): static
+    {
+        return $this->state(['is_division_head' => true]);
+    }
+
+    public function hrPreparer(): static
+    {
+        return $this->state(['is_hr_preparer' => true]);
+    }
+
+    public function hrApprover(): static
+    {
+        return $this->state(['is_hr_approver' => true]);
+    }
+
+    public function finalApprover(): static
+    {
+        return $this->state(['is_final_approver' => true]);
+    }
+
+    public function hrHead(): static
+    {
+        return $this->state(['is_hr_preparer' => true, 'is_hr_head' => true]);
+    }
+
+    public function dhHead(): static
+    {
+        return $this->state(['is_division_head' => true, 'is_dh_head' => true]);
+    }
+
+    public function admin(): static
+    {
+        return $this->state(['is_admin' => true]);
     }
 }

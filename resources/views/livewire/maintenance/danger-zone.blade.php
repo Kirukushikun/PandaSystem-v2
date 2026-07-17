@@ -26,7 +26,7 @@
     <div class="dz-body">
       <div>
         <span class="dz-label">{{ $cfg['label'] }}</span>
-        <div class="rgrid" @if ($g === 'attach') style="max-width:460px" @endif>
+        <div class="rgrid" data-group="{{ $g }}" @if (count($cfg['modes']) === 2) style="grid-template-columns:1fr 1fr" @endif>
           @foreach ($cfg['modes'] as $mode => [$mTitle, $mSmall])
           <label class="rcard @if ($modes[$g] === $mode) sel @endif" wire:key="dz-{{ $g }}-{{ $mode }}" wire:click="selectMode('{{ $g }}', '{{ $mode }}')">
             <input type="radio" name="{{ $g }}Mode" @checked($modes[$g] === $mode)><span><b>{{ $mTitle }}</b><small>{{ $mSmall }}</small></span></label>

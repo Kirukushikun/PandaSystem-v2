@@ -10,6 +10,7 @@ uses(RefreshDatabase::class);
 
 beforeEach(function () {
     config([
+        'services.auth_api.fake' => false, // these tests exercise the real external flow
         'services.auth_api.base_uri' => 'https://auth.test',
         'services.auth_api.api_key' => 'test-key',
         'services.auth_api.auth_user_api_key' => 'test-user-key',

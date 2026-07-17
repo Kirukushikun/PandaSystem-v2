@@ -40,6 +40,9 @@ return [
         'base_uri' => env('AUTH_API_BASE_URI', ''),
         'api_key' => env('AUTH_API_KEY', ''),
         'auth_user_api_key' => env('AUTH_USER_API_KEY', ''),
+        // Dev-only: skip the external API entirely and accept any password for a
+        // local users.email. Ignored in production no matter what .env says.
+        'fake' => env('AUTH_FAKE', false),
     ],
 
     'user_api' => [

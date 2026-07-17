@@ -51,6 +51,12 @@ class LoginController extends Controller
             ])->withInput();
         }
 
+        // Dev fake-auth: the provider's Auth API is unreachable outside office hours,
+        // so local development signs in seeded users directly. Never active in production.
+        if (config('services.auth_api.fake') && ! app()->isProduction()) {
+            return $this->fakeLogin($email, $request);
+        }
+
         try {
             $base_uri = config('services.auth_api.base_uri');
             $api_key = config('services.auth_api.api_key');
@@ -130,6 +136,28 @@ class LoginController extends Controller
                 'email' => 'Authentication service error. Please try again.',
             ])->withInput();
         }
+    }
+
+    /** Same outcome as the real flow — local row = access, everything logged. */
+    private function fakeLogin(string $email, Request $request): RedirectResponse
+    {
+        $user = User::where('email', $email)->first();
+
+        if (! $user) {
+            $this->incrementAttempts($email);
+            $this->logAccess($email, false, $request);
+
+            return back()->withErrors([
+                'email' => 'You are not authorized to access this system.',
+            ])->withInput();
+        }
+
+        $this->clearAttempts($email);
+        $this->logAccess($email, true, $request);
+        Auth::loginUsingId($user->id);
+        $request->session()->regenerate();
+
+        return redirect()->intended(route('requests.index'));
     }
 
     public function logout(Request $request): RedirectResponse

@@ -99,12 +99,17 @@ not Livewire — is the right tool; promote to Livewire later only if they need 
 - [x] `Admin\Employees` + shared Add/Edit Employee modal — 6 roster rows, Remove blocked w/ reason
       while a PAN is ongoing (drafts don't block), ongoing-PAN pills (`/admin/employees`)
 
-## Step 7 — Maintenance module
-- [ ] Route split: `/maintenance/{logs,reference,backups,danger}`
-- [ ] `Maintenance\AccessLogs` + `AuditTrail` tables
-- [ ] `Maintenance\ReferenceValues`
-- [ ] `Maintenance\Backups`
-- [ ] `Maintenance\DangerZone` — mode radio-cards → preview count → type-the-exact-count modal
+## Step 7 — Maintenance module ✅
+- [x] Route split: `/maintenance/{logs,reference,backups,danger}` (+ `/maintenance` → logs redirect);
+      `x-maintenance-tabs` renders the mockup subtabs as real route links
+- [x] `Maintenance\Logs` — Access Log + Audit Trail panes on one screen, as in the mockup
+- [x] `Maintenance\ReferenceValues` — LIVE lists: add appends a deletable 0-use value, × deletes,
+      in-use values stay blocked with the reason
+- [x] `Maintenance\Backups` — stats, recent backups, Run Backup Now; Restore opens a
+      Livewire type-RESTORE confirm modal
+- [x] `Maintenance\DangerZone` — 3 cards from one GROUPS config: mode radio-cards → Preview Count
+      (random, like the mockup) → type-the-exact-count modal (fully Livewire: the required text and
+      button label follow the previewed count) → queued-job toast, badges reset
 
 ## Step 8 — Help & auth shell
 - [ ] Glossary page content (status legend reusing shared components) (`/help/glossary`)

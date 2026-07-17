@@ -25,6 +25,11 @@ Route::get('/final-approval/{pan}', App\Livewire\FinalApprover\Show::class)->nam
 Route::get('/admin/users', App\Livewire\Admin\Users::class)->name('admin.users');
 Route::get('/admin/users/{user}', App\Livewire\Admin\UserAccess::class)->name('admin.users.access');
 Route::get('/admin/employees', App\Livewire\Admin\Employees::class)->name('admin.employees');
-Route::get('/maintenance', App\Livewire\Maintenance\Index::class)->name('maintenance.index');
+// Mockup's Maintenance subtabs are separate routes (per CLAUDE.md UI contract)
+Route::redirect('/maintenance', '/maintenance/logs');
+Route::get('/maintenance/logs', App\Livewire\Maintenance\Logs::class)->name('maintenance.logs');
+Route::get('/maintenance/reference', App\Livewire\Maintenance\ReferenceValues::class)->name('maintenance.reference');
+Route::get('/maintenance/backups', App\Livewire\Maintenance\Backups::class)->name('maintenance.backups');
+Route::get('/maintenance/danger', App\Livewire\Maintenance\DangerZone::class)->name('maintenance.danger');
 
 Route::get('/help/glossary', App\Livewire\Help\Glossary::class)->name('help.glossary');

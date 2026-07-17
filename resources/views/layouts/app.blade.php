@@ -59,7 +59,7 @@
     <h2>Administration</h2>
     <a class="navbtn @if(request()->routeIs('admin.users*')) active @endif" href="{{ route('admin.users') }}" wire:navigate><span class="dot"></span>User Access</a>
     <a class="navbtn @if(request()->routeIs('admin.employees*')) active @endif" href="{{ route('admin.employees') }}" wire:navigate><span class="dot"></span>Employees</a>
-    <a class="navbtn @if(request()->routeIs('maintenance.*')) active @endif" href="{{ route('maintenance.index') }}" wire:navigate><span class="dot"></span>Maintenance</a>
+    <a class="navbtn @if(request()->routeIs('maintenance.*')) active @endif" href="{{ route('maintenance.logs') }}" wire:navigate><span class="dot"></span>Maintenance</a>
   </nav>
   <nav class="navsec" aria-label="Help">
     <h2>Help</h2>

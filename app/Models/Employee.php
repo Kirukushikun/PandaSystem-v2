@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
@@ -26,5 +27,19 @@ class Employee extends Model
     public function department(): BelongsTo
     {
         return $this->belongsTo(Department::class);
+    }
+
+    public function panRequests(): HasMany
+    {
+        return $this->hasMany(PanRequest::class);
+    }
+
+    /**
+     * The deletion guard (v1 lesson — policy + query, never just the UI):
+     * an employee with a PAN anywhere in the workflow can't be removed.
+     */
+    public function hasOngoingPan(): bool
+    {
+        return $this->panRequests()->ongoing()->exists();
     }
 }

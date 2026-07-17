@@ -25,21 +25,34 @@
     <h1>PANDA<span>&nbsp;v2</span></h1>
     <p>Personnel Action Notice workflow</p>
   </div>
+  {{-- Links hidden per gate are UX only — every route enforces the same gate + policies --}}
   <nav class="navsec" aria-label="Modules">
     <h2>Workflow modules</h2>
-    <a class="navbtn @if(request()->routeIs('requests.*')) active @endif" href="{{ route('requests.index') }}" wire:navigate><span class="dot"></span>Requestor<span class="n">8</span></a>
-    <a class="navbtn @if(request()->routeIs('division.*')) active @endif" href="{{ route('division.queue') }}" wire:navigate><span class="dot"></span>Division Head<span class="n">12</span></a>
+    @can('requestor')
+    <a class="navbtn @if(request()->routeIs('requests.*')) active @endif" href="{{ route('requests.index') }}" wire:navigate><span class="dot"></span>Requestor</a>
+    @endcan
+    @can('division_head')
+    <a class="navbtn @if(request()->routeIs('division.*')) active @endif" href="{{ route('division.queue') }}" wire:navigate><span class="dot"></span>Division Head</a>
+    @endcan
     {{-- employees.* is the HR-Prep roster lens (/employees), part of this module per the mockup --}}
-    <a class="navbtn @if(request()->routeIs('preparation.*') || request()->routeIs('employees.*')) active @endif" href="{{ route('preparation.queue') }}" wire:navigate><span class="dot"></span>HR Preparation<span class="n">9</span></a>
-    <a class="navbtn @if(request()->routeIs('hr-approval.*')) active @endif" href="{{ route('hr-approval.queue') }}" wire:navigate><span class="dot"></span>HR Approver<span class="n">4</span></a>
-    <a class="navbtn @if(request()->routeIs('final-approval.*')) active @endif" href="{{ route('final-approval.queue') }}" wire:navigate><span class="dot"></span>Final Approver<span class="n">6</span></a>
+    @can('hr_preparer')
+    <a class="navbtn @if(request()->routeIs('preparation.*') || request()->routeIs('employees.*')) active @endif" href="{{ route('preparation.queue') }}" wire:navigate><span class="dot"></span>HR Preparation</a>
+    @endcan
+    @can('hr_approver')
+    <a class="navbtn @if(request()->routeIs('hr-approval.*')) active @endif" href="{{ route('hr-approval.queue') }}" wire:navigate><span class="dot"></span>HR Approver</a>
+    @endcan
+    @can('final_approver')
+    <a class="navbtn @if(request()->routeIs('final-approval.*')) active @endif" href="{{ route('final-approval.queue') }}" wire:navigate><span class="dot"></span>Final Approver</a>
+    @endcan
   </nav>
+  @can('admin')
   <nav class="navsec" aria-label="Administration">
     <h2>Administration</h2>
     <a class="navbtn @if(request()->routeIs('admin.users*')) active @endif" href="{{ route('admin.users') }}" wire:navigate><span class="dot"></span>User Access</a>
     <a class="navbtn @if(request()->routeIs('admin.employees*')) active @endif" href="{{ route('admin.employees') }}" wire:navigate><span class="dot"></span>Employees</a>
     <a class="navbtn @if(request()->routeIs('maintenance.*')) active @endif" href="{{ route('maintenance.logs') }}" wire:navigate><span class="dot"></span>Maintenance</a>
   </nav>
+  @endcan
   <nav class="navsec" aria-label="Help">
     <h2>Help</h2>
     <a class="navbtn @if(request()->routeIs('help.glossary')) active @endif" href="{{ route('help.glossary') }}" wire:navigate><span class="dot"></span>Glossary</a>

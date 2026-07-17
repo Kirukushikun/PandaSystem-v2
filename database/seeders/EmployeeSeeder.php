@@ -24,6 +24,9 @@ class EmployeeSeeder extends Seeder
             ['employee_no' => 'EMP-10387', 'name' => 'J. Ramos',      'department' => 'Hatchery',           'position' => 'Hatchery Aide',     'farm' => 'San Rafael Farm'],
             ['employee_no' => 'EMP-10077', 'name' => 'L. Bautista',   'department' => 'Broiler Operations', 'position' => 'Farm Technician I', 'farm' => 'San Rafael Farm'],
             ['employee_no' => 'EMP-10422', 'name' => 'R. Villanueva', 'department' => 'Broiler Operations', 'position' => 'Farm Helper',       'farm' => 'San Rafael Farm'],
+            // These two appear in the mockup's Requestor list (not the Directory screen)
+            ['employee_no' => 'EMP-10301', 'name' => 'A. Santos',     'department' => 'Broiler Operations', 'position' => 'Poultry Caretaker', 'farm' => 'San Rafael Farm'],
+            ['employee_no' => 'EMP-10119', 'name' => 'C. Mercado',    'department' => 'Hatchery',           'position' => 'Hatchery Aide',     'farm' => 'San Rafael Farm'],
         ];
 
         foreach ($employees as $data) {

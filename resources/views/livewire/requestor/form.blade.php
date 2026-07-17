@@ -1,28 +1,58 @@
 <div>
-  <p class="crumb">Requestor · Broiler Operations, Hatchery</p>
-  <div class="htop"><div><h2>New PAN Request</h2>
+  <p class="crumb">Requestor · {{ $departments ?: 'no departments assigned' }}</p>
+  <div class="htop"><div>
+    <h2>{{ $panRequest ? ($panRequest->status === App\Enums\PanStatus::ReturnedToRequestor ? 'Resolve Return — ' : 'Edit Draft — ').$panRequest->reference : 'New PAN Request' }}</h2>
     <p>Employee list is limited to your registered department(s). A PDF attachment is required to submit; drafts may be saved without one.</p></div></div>
+
+  @if ($panRequest?->status === App\Enums\PanStatus::ReturnedToRequestor && ($return = $panRequest->returns->last()))
+  <div class="note warn"><span class="ic">!</span><span><b>Returned:</b>&nbsp;{{ $return->reason }}@if ($return->details) — {{ $return->details }}@endif</span></div>
+  @endif
 
   <div class="card">
     <div class="formgrid">
       <div class="field"><label>Employee <em>*</em></label>
-        <select><option>R. Villanueva — EMP-10422</option><option>A. Santos — EMP-10301</option><option>J. Ramos — EMP-10387</option></select></div>
-      <div class="field"><label>Employee ID</label><input readonly value="EMP-10422"><span class="hint">Auto-filled from employee</span></div>
-      <div class="field"><label>Department</label><input readonly value="Broiler Operations"><span class="hint">Auto-filled from employee</span></div>
+        <select wire:model.live="employee_id">
+          <option value="">— Select employee —</option>
+          @foreach ($this->employees as $employee)
+          <option value="{{ $employee->id }}">{{ $employee->name }} — {{ $employee->employee_no }}</option>
+          @endforeach
+        </select>
+        @error('employee_id')<span class="hint" style="color:var(--red)">{{ $message }}</span>@enderror</div>
+      <div class="field"><label>Employee ID</label><input readonly value="{{ $selectedEmployee?->employee_no }}"><span class="hint">Auto-filled from employee</span></div>
+      <div class="field"><label>Department</label><input readonly value="{{ $selectedEmployee?->department->name }}"><span class="hint">Auto-filled from employee</span></div>
       <div class="field"><label>Type of Action <em>*</em></label>
-        <select><option>Regularization</option><option>Salary Alignment</option><option>Wage Order</option><option>Lateral Transfer</option>
-        <option>Developmental Assignment</option><option>Interim Allowance</option><option>Promotion</option><option>Training Status</option>
-        <option>Confirmation of Appointment</option><option>Change of Position</option><option>Discontinuance of Allowance</option>
-        <option>Confirmation of Development Assignment</option><option>Other Allowances</option></select></div>
+        <select wire:model="action_type">
+          <option value="">— Select type —</option>
+          @foreach ($actionTypes as $type)
+          <option value="{{ $type->value }}">{{ $type->label() }}</option>
+          @endforeach
+        </select>
+        @error('action_type')<span class="hint" style="color:var(--red)">{{ $message }}</span>@enderror</div>
       <div class="field full"><label>Justification</label>
-        <textarea rows="3">Completed 6-month probationary period with a performance rating of 4.2/5. Recommended for regularization by the farm supervisor.</textarea></div>
+        <textarea rows="3" wire:model="justification" placeholder="Why this action is being requested…"></textarea>
+        @error('justification')<span class="hint" style="color:var(--red)">{{ $message }}</span>@enderror</div>
       <div class="field full"><label>Supporting Document (PDF) <em>*</em></label>
-        <div class="upload"><b>Choose a PDF</b> or drag it here — performance evaluation, recommendation memo, etc.<br>evaluation_villanueva_jun2026.pdf · 412 KB</div></div>
+        <label class="upload" style="cursor:pointer;display:block">
+          <input type="file" accept="application/pdf" wire:model="attachment" hidden>
+          <b>Choose a PDF</b> or drag it here — performance evaluation, recommendation memo, etc.
+          @if ($attachment)
+            <br>{{ $attachment->getClientOriginalName() }} · {{ number_format($attachment->getSize() / 1024) }} KB
+          @elseif ($panRequest?->attachment_path)
+            <br>{{ basename($panRequest->attachment_path) }} (already uploaded — choose a file to replace it)
+          @endif
+          <span wire:loading wire:target="attachment"><br>Uploading…</span>
+        </label>
+        @error('attachment')<span class="hint" style="color:var(--red)">{{ $message }}</span>@enderror</div>
     </div>
     <div class="formfoot">
-      <button class="btn" type="button" onclick="showToast('Draft saved (UI scaffold — nothing is persisted yet).')">Save as Draft</button>
+      @if ($panRequest?->status !== App\Enums\PanStatus::ReturnedToRequestor)
+      <button class="btn" type="button" wire:click="saveDraft" wire:loading.attr="disabled">Save as Draft</button>
+      @endif
       <div class="spacer"></div>
-      <button class="btn primary" type="button" onclick="showToast('Submitted to Division Head (UI scaffold — nothing is persisted yet).')">Submit to Division Head</button>
+      <a class="btn" href="{{ route('requests.index') }}" wire:navigate style="text-decoration:none">Cancel</a>
+      <button class="btn primary" type="button" wire:click="submit" wire:loading.attr="disabled">
+        {{ $panRequest?->status === App\Enums\PanStatus::ReturnedToRequestor ? 'Resubmit to Division Head' : 'Submit to Division Head' }}
+      </button>
     </div>
   </div>
 </div>

@@ -2,6 +2,7 @@
 
 namespace App\Livewire\DivisionHead;
 
+use App\Models\PanRequest;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -19,6 +20,11 @@ class Show extends Component
 
     public function mount(string $pan)
     {
+        // Per-record authorization already live (v1 direct-link lesson) even though
+        // the body below still renders scaffold sample data until this module is wired.
+        $panRequest = PanRequest::where('reference', $pan)->firstOrFail();
+        $this->authorize('view', $panRequest);
+
         $this->pan = $pan;
         $this->hasPreparedPan = in_array($pan, ['PAN-2026-00339', 'PAN-2026-00311']);
     }

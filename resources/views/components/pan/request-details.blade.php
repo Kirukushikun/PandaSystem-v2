@@ -7,7 +7,8 @@
     'requestedBy' => null,
     'justification' => '',
     'justificationRows' => 3,
-    'document', 'documentSize',
+    'document' => null, 'documentSize' => null,
+    'documentUrl' => null, // real download link (policy-gated route); button stays inert without it
     'sect' => false,
 ])
 @if ($sect)<div class="sect">Request details</div>@endif
@@ -23,6 +24,16 @@
   <div class="field full"><label>Justification</label>
     <textarea rows="{{ $justificationRows }}" readonly>{{ $justification }}</textarea></div>
   <div class="field full"><label>Supporting Document</label>
-    <div class="attachrow"><span class="pdf">PDF</span> {{ $document }} <small>· {{ $documentSize }}</small>
-      <span class="spacer"></span><button class="btn ghost" type="button">Open</button></div></div>
+    @if ($document)
+    <div class="attachrow"><span class="pdf">PDF</span> {{ $document }} @if ($documentSize)<small>· {{ $documentSize }}</small>@endif
+      <span class="spacer"></span>
+      @if ($documentUrl)
+      <a class="btn ghost" href="{{ $documentUrl }}" style="text-decoration:none">Open</a>
+      @else
+      <button class="btn ghost" type="button">Open</button>
+      @endif
+    </div>
+    @else
+    <div class="attachrow"><small style="color:var(--ink-3)">No document attached yet — required before submitting.</small></div>
+    @endif</div>
 </div>

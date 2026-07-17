@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
             ReferenceDataSeeder::class,
             UserSeeder::class,
             EmployeeSeeder::class,
+            PanSeeder::class,
         ]);
     }
 }

@@ -16,7 +16,8 @@ return new class extends Migration
         Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->string('external_id')->nullable()->unique(); // id in the company system
-            $table->string('username')->unique();                // login handle, e.g. kreyes
+            $table->string('username')->unique();                // display handle, e.g. kreyes
+            $table->string('email')->unique();                   // org-standard login identity
             $table->string('name');
             $table->string('position')->nullable();
             $table->foreignId('farm_id')->nullable()->constrained()->nullOnDelete();

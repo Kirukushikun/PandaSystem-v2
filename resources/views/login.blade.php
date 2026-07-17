@@ -62,30 +62,48 @@ footer{margin-top:22px;text-align:center;font-size:11px;color:var(--ink-3)}
 </head>
 <body>
 <div>
-  {{-- Static login scaffold. Real build: credentials checked against the external company
-       system (ExternalAuthService — PANDA never stores passwords); failed attempts land in
-       the Access Log. Submitting just navigates into the app. --}}
-  <form class="card" action="{{ route('requests.index') }}" method="get">
+  {{-- Org-standard external authentication: credentials go to the company Auth API
+       (never validated or stored locally); a valid company login still needs a local
+       users row to get in. Every attempt lands in access_logs. --}}
+  <form class="card" action="{{ route('login.post') }}" method="POST">
+    @csrf
     <div class="brand">
       <h1>PANDA<span>&nbsp;v2</span></h1>
       <p>Personnel Action Notice workflow · BFC Group</p>
     </div>
+    @if ($errors->has('email'))
+      <p style="margin:0 0 14px;font-size:12.5px;color:var(--red)">{{ $errors->first('email') }}</p>
+    @endif
     <div class="field">
-      <label for="u">Username</label>
-      <input id="u" autocomplete="username" placeholder="e.g. mdelacruz">
+      <label for="email">Email</label>
+      <input id="email" name="email" type="email" value="{{ old('email') }}" required autocomplete="username" placeholder="e.g. mdelacruz@bfcgroup.org">
     </div>
     <div class="field">
       <label for="p">Password</label>
-      <input id="p" type="password" autocomplete="current-password" placeholder="••••••••">
+      <input id="p" name="password" type="password" required autocomplete="current-password" placeholder="••••••••">
     </div>
-    <div class="row">
-      <label><input type="checkbox"> Remember me</label>
-      <a href="#">Forgot password?</a>
-    </div>
+    @if ($turnstileSiteKey)
+      <div id="turnstile-box" style="margin:2px 0 14px"></div>
+      @if ($errors->has('turnstile_token'))
+        <p style="margin:0 0 14px;font-size:12.5px;color:var(--red)">{{ $errors->first('turnstile_token') }}</p>
+      @endif
+      <input type="hidden" name="turnstile_token" id="turnstile-token">
+    @endif
     <button type="submit">Sign in</button>
     <p class="hint">Company account required — access is managed by IT Administration.</p>
   </form>
-  <footer>PANDA v2 · static UI concept — no data is live</footer>
+  <footer>PANDA v2 · BFC Group internal</footer>
 </div>
+@if ($turnstileSiteKey)
+<script>
+  window.onTurnstileReady = function () {
+    window.turnstile?.render('#turnstile-box', {
+      sitekey: @json($turnstileSiteKey),
+      callback: function (token) { document.getElementById('turnstile-token').value = token; },
+    });
+  };
+</script>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onTurnstileReady&render=explicit" async></script>
+@endif
 </body>
 </html>

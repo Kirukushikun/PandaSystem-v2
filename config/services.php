@@ -35,4 +35,22 @@ return [
         ],
     ],
 
+    // Org-standard external authentication (see authentication-implementation-guide.md)
+    'auth_api' => [
+        'base_uri' => env('AUTH_API_BASE_URI', ''),
+        'api_key' => env('AUTH_API_KEY', ''),
+        'auth_user_api_key' => env('AUTH_USER_API_KEY', ''),
+    ],
+
+    'user_api' => [
+        'endpoint' => env('USER_API_ENDPOINT', ''),
+        'key' => env('USER_API_KEY', ''),
+    ],
+
+    'turnstile' => [
+        'site_key' => env('TURNSTILE_SITE_KEY', ''),
+        'secret' => env('TURNSTILE_SECRET_KEY', ''),
+        'verify' => env('TURNSTILE_VERIFY', false),
+    ],
+
 ];

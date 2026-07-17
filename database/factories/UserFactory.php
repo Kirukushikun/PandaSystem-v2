@@ -15,6 +15,7 @@ class UserFactory extends Factory
         return [
             'external_id' => $this->faker->unique()->numerify('EXT-####'),
             'username' => $this->faker->unique()->userName(),
+            'email' => $this->faker->unique()->safeEmail(),
             'name' => $this->faker->name(),
             'position' => $this->faker->jobTitle(),
             'farm_id' => Farm::factory(),

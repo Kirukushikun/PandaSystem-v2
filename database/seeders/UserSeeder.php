@@ -32,6 +32,7 @@ class UserSeeder extends Seeder
                 ['username' => $data['username']],
                 [
                     'name' => $data['name'],
+                    'email' => $data['username'].'@bfcgroup.org', // org-standard login identity
                     'position' => $data['position'],
                     'farm_id' => $farms[$data['farm']],
                     ...array_fill_keys($data['perms'], true),

@@ -3,27 +3,16 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * One sign-in attempt (successful or failed). Append-only: no updated_at.
+ * One sign-in attempt (successful or failed) — org-standard shape.
  */
 class AccessLog extends Model
 {
-    public const UPDATED_AT = null;
-
-    protected $fillable = ['username', 'user_id', 'ip', 'user_agent', 'successful'];
+    protected $fillable = ['email', 'success', 'ip_address', 'user_agent'];
 
     protected function casts(): array
     {
-        return [
-            'successful' => 'boolean',
-            'created_at' => 'datetime',
-        ];
-    }
-
-    public function user(): BelongsTo
-    {
-        return $this->belongsTo(User::class);
+        return ['success' => 'boolean'];
     }
 }

@@ -21,7 +21,7 @@ class User extends Authenticatable
     use HasFactory, Notifiable, SoftDeletes;
 
     protected $fillable = [
-        'external_id', 'username', 'name', 'position', 'farm_id',
+        'external_id', 'username', 'email', 'name', 'position', 'farm_id',
         'is_requestor', 'is_division_head', 'is_hr_preparer',
         'is_hr_approver', 'is_final_approver',
         'is_hr_head', 'is_dh_head', 'is_admin',

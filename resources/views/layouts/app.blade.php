@@ -45,15 +45,27 @@
     <a class="navbtn @if(request()->routeIs('help.glossary')) active @endif" href="{{ route('help.glossary') }}" wire:navigate><span class="dot"></span>Glossary</a>
   </nav>
   <div class="me" style="flex-direction:column;align-items:stretch;gap:12px">
+    @php
+      $me = auth()->user();
+      $meRoles = collect([
+          'Requestor' => $me?->is_requestor, 'Division Head' => $me?->is_division_head,
+          'HR Preparer' => $me?->is_hr_preparer, 'HR Approver' => $me?->is_hr_approver,
+          'Final Approver' => $me?->is_final_approver, 'HR Head' => $me?->is_hr_head,
+          'DH Head' => $me?->is_dh_head, 'Admin' => $me?->is_admin,
+      ])->filter()->keys()->implode(' · ');
+      $meInitials = collect(explode(' ', $me?->name ?? ''))->map(fn ($w) => mb_substr(trim($w, '.'), 0, 1))->take(2)->implode('');
+    @endphp
     <div style="display:flex;gap:10px;align-items:center">
-      <div class="avatar">MD</div>
-      <div style="min-width:0"><b>M. Dela Cruz</b><small>Requestor · Division Head · HR Head</small></div>
+      <div class="avatar">{{ strtoupper($meInitials) ?: '?' }}</div>
+      <div style="min-width:0"><b>{{ $me?->name }}</b><small>{{ $meRoles ?: $me?->position }}</small></div>
     </div>
-    {{-- Plain link (no wire:navigate) — the login page is a standalone document with its own styles --}}
-    <a class="btn" href="{{ route('login') }}" style="display:flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;color:var(--ink-2)">
-      <svg style="width:14px;height:14px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
-      Log out
-    </a>
+    <form method="POST" action="{{ route('logout') }}" style="display:contents">
+      @csrf
+      <button class="btn" type="submit" style="display:flex;align-items:center;justify-content:center;gap:8px;color:var(--ink-2);width:100%">
+        <svg style="width:14px;height:14px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+        Log out
+      </button>
+    </form>
   </div>
 </aside>
 

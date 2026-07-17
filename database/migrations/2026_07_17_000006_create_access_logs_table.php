@@ -7,19 +7,19 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /**
-     * Sign-in attempts, successful and failed (the Maintenance → Logs & Audit pane).
-     * username is recorded as typed — failed attempts may name no real account.
+     * Sign-in attempts, successful and failed — org-standard shape
+     * (authentication-implementation-guide.md). email is recorded as typed,
+     * so failed attempts may name no real account.
      */
     public function up(): void
     {
         Schema::create('access_logs', function (Blueprint $table) {
             $table->id();
-            $table->string('username');
-            $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
-            $table->string('ip', 45)->nullable();
-            $table->text('user_agent')->nullable();
-            $table->boolean('successful');
-            $table->timestamp('created_at')->useCurrent();
+            $table->string('email');
+            $table->boolean('success');
+            $table->string('ip_address');
+            $table->string('user_agent')->nullable();
+            $table->timestamps();
         });
     }
 

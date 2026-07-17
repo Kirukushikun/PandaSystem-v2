@@ -23,6 +23,7 @@ Route::get('/final-approval', App\Livewire\FinalApprover\Queue::class)->name('fi
 Route::get('/final-approval/{pan}', App\Livewire\FinalApprover\Show::class)->name('final-approval.show');
 
 Route::get('/admin/users', App\Livewire\Admin\Users::class)->name('admin.users');
+Route::get('/admin/users/{user}', App\Livewire\Admin\UserAccess::class)->name('admin.users.access');
 Route::get('/admin/employees', App\Livewire\Admin\Employees::class)->name('admin.employees');
 Route::get('/maintenance', App\Livewire\Maintenance\Index::class)->name('maintenance.index');
 

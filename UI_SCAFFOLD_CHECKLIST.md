@@ -91,10 +91,13 @@ not Livewire — is the right tool; promote to Livewire later only if they need 
 - [x] `FinalApprover\Show` — Leave Credits row (Regularization-only), `hr-approved-by` prop,
       inline auto-Regular note, Reject/Give Final Approval footer (`/final-approval/{pan}`)
 
-## Step 6 — Admin module
-- [ ] `Admin\Users` (`/admin/users`)
-- [ ] `Admin\UserAccess` (`/admin/users/{user}`)
-- [ ] `Admin\Employees` + Add/Edit Employee modal (`/admin/employees`)
+## Step 6 — Admin module ✅
+- [x] `Admin\Users` — stats, chips, 7 sample accounts w/ flag pills (HR Head / DH Head / Admin);
+      View → per-user route (mockup subtab dropped per CLAUDE.md) (`/admin/users`)
+- [x] `Admin\UserAccess` — LIVE permission switches (`$perms` array mirrors the 8 planned boolean
+      columns, wire:click toggles), dept chips + profile pane, K. Reyes sample (`/admin/users/{user}`)
+- [x] `Admin\Employees` + shared Add/Edit Employee modal — 6 roster rows, Remove blocked w/ reason
+      while a PAN is ongoing (drafts don't block), ongoing-PAN pills (`/admin/employees`)
 
 ## Step 7 — Maintenance module
 - [ ] Route split: `/maintenance/{logs,reference,backups,danger}`

@@ -6,22 +6,32 @@ Final Approver → Served → Filed. Full behavior spec in `System_overview.md`;
 `DEVELOPMENT_PLAN.md`.
 
 ## Tech stack
-- **Target:** Laravel 12 + Livewire 3, MySQL (Laragon on Windows), Vite, Pest, `database` queue.
+- **Actual:** Laravel 13 + Livewire 4.3 (plan said 12/3 — composer won; classic class-based
+  components in `app/Livewire` work fine), MySQL (Laragon on Windows), Vite, Pest, `database` queue.
 - **Packages planned:** `spatie/laravel-backup`, `maatwebsite/excel`. Deliberately NOT using
   spatie/laravel-permission (roles are 8 fixed booleans on `users` + Gates/Policies).
 - Auth comes from the **external company system** (via `ExternalAuthService`); PANDA never stores
   passwords, only the local profile + permissions.
 
 ## Current state
-- **Built:** static UI mockup only — `panda-ui-concept.html` + `panda-ui-concept.css/.js`
-  (split out by hand from the original single file), `panda-login-concept.html`,
-  `DEVELOPMENT_PLAN.md`. No Laravel app exists yet.
-- The mockup is the **UI contract**: its "tabs" marked with `<!-- mockup only -->` comments are
-  separate routes in the real app (e.g. View Request = `/pan/{id}`). Sample data in it is the
-  intended seeder data.
-- An older PAN print replica (`#pan-print`) was removed from the HTML by an editor undo; the
-  real print layout source of truth is the user's Blade file (`print-view.blade.php`, shared in
-  conversation) — 3 copies (Employee / 201 Filing / Payroll), Courier, green borders, 4 signatories.
+- **UI scaffold COMPLETE** (branch `ui-scaffolds`, committed per-step as "feat: Phase N - …"):
+  the whole mockup ported to Livewire components with real routes — **hardcoded sample data,
+  no database/models/policies yet**. Plan + what each step delivered: `UI_SCAFFOLD_CHECKLIST.md`
+  (repo root). Mockups/planning docs live in `project-overview/`.
+- Shared UI = anonymous Blade components in `resources/views/components/` (x-status-pill,
+  x-tag-dot, x-stage-tracker, x-modal, x-pan.request-details, x-pan.prepared-details, …);
+  only NotificationBell is a Livewire component. Livewire interactivity exists where state
+  matters: prep-form tag/role sim, final-approver bulk selection, danger-zone type-to-confirm,
+  user-access toggles, reference-values lists.
+- The mockup remains the **UI contract**: its "tabs" marked with `<!-- mockup only -->` comments
+  are separate routes (e.g. View Request = `/pan/{id}`). Its sample data is the intended seeder
+  data — scaffold screens match it 1:1 for comparison.
+- The real print layout now lives in the repo at `resources/views/pan-print.blade.php`
+  (user-ported; 3 copies Employee / 201 Filing / Payroll, Courier, green borders, signatories,
+  compact print modes). Served by `/pan/{pan}/print`. Still static sample data + CDN assets
+  (Tailwind CDN, Font Awesome, Google Fonts) — wire real data and localize assets in the real build.
+- **Next:** the real build per `DEVELOPMENT_PLAN.md` — start with the `PanStatus` enum +
+  `PanWorkflow` state machine (tested), then migrations/seeders, then wire modules to data.
 
 ## Key architecture decisions
 - **One `PanStatus` enum + `PanWorkflow` state-machine service** owns every transition; build and
@@ -63,5 +73,12 @@ Final Approver → Served → Filed. Full behavior spec in `System_overview.md`;
 - Employee deletion must be blocked while an ongoing PAN exists (submitted, not yet
   filed/withdrawn/voided — drafts don't block); enforce in policy + query, not just UI.
 - Regularization final-approval **auto-finalizes status to "Regular"**, overriding earlier values.
-- The user edits mockup files by hand between sessions (CSS/JS were externalized, print view
-  vanished) — **check current file state before editing; don't assume prior structure.**
+- The user edits files by hand between sessions (CSS/JS were externalized, print view moved
+  around) — **check current file state before editing; don't assume prior structure.**
+
+## Dev-environment gotchas (Windows/Laragon)
+- Stray `php artisan serve` processes cause compiled-view rename "Access is denied" 500s —
+  kill strays, then `php artisan view:clear`.
+- Always `php artisan route:clear` after adding routes — the cache goes stale silently.
+- Don't batch-edit Blade files with PowerShell 5.1 `Get-Content`/`Set-Content` — BOM-less UTF-8
+  gets read as ANSI and em dashes/₱/· turn to mojibake. Use proper editor tooling.

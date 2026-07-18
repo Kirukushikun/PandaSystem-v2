@@ -81,30 +81,6 @@ class Show extends Component
         $this->redirectRoute('division.queue', navigate: true);
     }
 
-    /**
-     * action_reference JSON → x-pan.prepared-details rows. Fixed fields get their
-     * display labels; unknown fields (dynamic allowances) render their own name.
-     */
-    public function referenceRows(): array
-    {
-        return array_map(fn (array $row) => [
-            'label' => match ($row['field']) {
-                'section' => 'Section',
-                'place' => 'Place of Assignment',
-                'head' => 'Immediate Head',
-                'position' => 'Position',
-                'joblevel' => 'Job Level',
-                'basic' => 'Basic Pay',
-                'leavecredits' => 'Leave Credits',
-                default => $row['field'],
-            },
-            'from' => $row['field'] === 'basic' ? '₱ '.$row['from'] : $row['from'],
-            'to' => $row['field'] === 'basic' ? '₱ '.$row['to'] : $row['to'],
-            'chg' => $row['from'] !== $row['to'],
-            'num' => $row['field'] === 'basic',
-        ], $this->panRequest->form->action_reference ?? []);
-    }
-
     /** Same journey strip as the Requestor's Show — one truth for stage progress. */
     public function tracker(): array
     {
@@ -132,7 +108,7 @@ class Show extends Component
         return view('livewire.division-head.show', [
             'pan' => $this->panRequest,
             'form' => $this->panRequest->form,
-            'rows' => $this->referenceRows(),
+            'rows' => $this->panRequest->form?->displayRows() ?? [],
             'stages' => $stages,
             'current' => $current,
             'departments' => auth()->user()->is_dh_head

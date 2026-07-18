@@ -1,5 +1,5 @@
 <div>
-  <p class="crumb">HR Preparation · signed in as HR Head Preparer</p>
+  <p class="crumb">HR Preparation · signed in as {{ $isHrHead ? 'HR Head Preparer' : 'HR Preparer' }}</p>
   <div class="htop">
     <div><h2>Preparation Queue</h2>
       <p>Division-approved PANs awaiting paperwork. Each must be tagged for confidentiality before preparation can begin.</p></div>
@@ -8,62 +8,108 @@
   </div>
 
   <div class="stats">
-    <x-stat value="5" label="Awaiting preparation" tone="warn" />
-    <x-stat value="2" label="Returned for resolution" tone="bad" />
-    <x-stat value="2" label="Approved — to serve / file" tone="acc" />
+    <x-stat :value="$stats['prepare']" label="Awaiting preparation" tone="warn" />
+    <x-stat :value="$stats['returned']" label="Returned for resolution" tone="bad" />
+    <x-stat :value="$stats['serve']" label="Approved — to serve / file" tone="acc" />
   </div>
 
   <div class="bar">
-    <x-search-bar placeholder="Search PANs awaiting HR paperwork…" />
-    <x-chip on>To prepare</x-chip><x-chip>In approval</x-chip><x-chip>To serve / file</x-chip>
+    <div class="search">⌕<input placeholder="Search PANs awaiting HR paperwork…" wire:model.live.debounce.300ms="search"></div>
+    <button class="chip @if ($filter === 'all') on @endif" type="button" wire:click="$set('filter', 'all')">All</button>
+    <button class="chip @if ($filter === 'prepare') on @endif" type="button" wire:click="$set('filter', 'prepare')">To prepare</button>
+    <button class="chip @if ($filter === 'approval') on @endif" type="button" wire:click="$set('filter', 'approval')">In approval</button>
+    <button class="chip @if ($filter === 'serve') on @endif" type="button" wire:click="$set('filter', 'serve')">To serve / file</button>
   </div>
 
+  @if ($pans->isEmpty())
+  <x-empty-state title="Nothing to prepare" message="No PANs match — clear the search and filters, or wait for the next division approval." />
+  @else
   <div class="card"><div class="twrap"><table>
     <thead><tr><th>Tag</th><th>Reference</th><th>Employee</th><th>Type of Action</th><th>Department</th><th>Status</th><th></th></tr></thead>
     <tbody>
-      <tr><td><x-tag-dot /></td><td class="ref">PAN-2026-00347</td>
-        <td><div class="who"><b>A. Santos</b><small>EMP-10301</small></div></td>
-        <td>Salary Alignment</td><td>Broiler Operations</td><td><x-status-pill status="in-preparation">Tag &amp; prepare</x-status-pill></td>
-        {{-- No print icon: nothing to print until a PAN is prepared (no disabled buttons — the pill explains the state). --}}
+      @foreach ($pans as $pan)
+      <tr wire:key="pan-{{ $pan->id }}">
+        <td><x-tag-dot :tag="$pan->confidentiality_tag->value" /></td> {{-- 'untagged' falls to the gray default --}}
+        <td class="ref">{{ $pan->reference }}</td>
+        <td><div class="who"><b>{{ $pan->employee->name }}</b><small>{{ $pan->employee->employee_no }}</small></div></td>
+        <td>{{ $pan->action_type->label() }}</td>
+        <td>{{ $pan->employee->department->name }}</td>
+        <td>
+          @if ($pan->status === App\Enums\PanStatus::AwaitingTag)
+            <x-status-pill status="in-preparation">Tag &amp; prepare</x-status-pill>
+          @elseif ($pan->status === App\Enums\PanStatus::InPreparation && $pan->confidentiality_tag === App\Enums\ConfidentialityTag::Manila)
+            <x-status-pill status="in-preparation">Preparing — confidential</x-status-pill>
+          @else
+            <x-status-pill :status="$pan->status->value" />
+          @endif
+        </td>
+        {{-- No print icon until a PAN is prepared (no disabled buttons — the pill explains the state). --}}
         <x-row-actions>
-          <a class="btn ghost" href="{{ route('preparation.show', 'PAN-2026-00347') }}" wire:navigate style="text-decoration:none">View</a>
-          <a class="btn primary" href="{{ route('preparation.edit', 'PAN-2026-00347') }}" wire:navigate style="text-decoration:none">Open</a>
-        </x-row-actions></tr>
-      <tr><td><x-tag-dot tag="manila" /></td><td class="ref">PAN-2026-00341</td>
-        <td><div class="who"><b>N. Fernandez</b><small>EMP-10490</small></div></td>
-        <td>Change of Position</td><td>Corporate Office</td><td><x-status-pill status="in-preparation">Preparing — confidential</x-status-pill></td>
-        <x-row-actions>
-          <a class="btn ghost" href="{{ route('preparation.show', 'PAN-2026-00341') }}" wire:navigate style="text-decoration:none">View</a>
-          <a class="btn primary" href="{{ route('preparation.edit', 'PAN-2026-00341') }}" wire:navigate style="text-decoration:none">Continue</a>
-          <x-print-btn href="{{ route('pan.print', 'PAN-2026-00341') }}" />
-        </x-row-actions></tr>
-      <tr><td><x-tag-dot tag="tarlac" /></td><td class="ref">PAN-2026-00338</td>
-        <td><div class="who"><b>S. Lim</b><small>EMP-10233</small></div></td>
-        <td>Wage Order</td><td>Feedmill</td><td><x-status-pill status="returned-to-preparer" /></td>
-        <x-row-actions>
-          <a class="btn ghost" href="{{ route('preparation.show', 'PAN-2026-00338') }}" wire:navigate style="text-decoration:none">View</a>
-          <a class="btn primary" href="{{ route('preparation.edit', 'PAN-2026-00338') }}" wire:navigate style="text-decoration:none">Revise</a>
-          <x-print-btn href="{{ route('pan.print', 'PAN-2026-00338') }}" />
-          <x-kebab><x-kebab.item danger>Void / Delete…</x-kebab.item></x-kebab>
-        </x-row-actions></tr>
-      <tr><td><x-tag-dot tag="tarlac" /></td><td class="ref">PAN-2026-00311</td>
-        <td><div class="who"><b>D. Torres</b><small>EMP-10064</small></div></td>
-        <td>Regularization</td><td>Broiler Operations</td><td><x-status-pill status="approved">Approved</x-status-pill></td>
-        <x-row-actions>
-          <a class="btn ghost" href="{{ route('preparation.show', 'PAN-2026-00311') }}" wire:navigate style="text-decoration:none">View</a>
-          <button class="btn primary" type="button" onclick="showToast('Marked as Served (UI scaffold — nothing is persisted yet).')">Mark Served</button>
-          <x-print-btn href="{{ route('pan.print', 'PAN-2026-00311') }}" />
-          <x-kebab><x-kebab.item>Mark Unserved…<small>AWOL, resigned, terminated, or custom</small></x-kebab.item></x-kebab>
-        </x-row-actions></tr>
-      <tr><td><x-tag-dot tag="tarlac" /></td><td class="ref">PAN-2026-00298</td>
-        <td><div class="who"><b>L. Bautista</b><small>EMP-10077</small></div></td>
-        <td>Wage Order</td><td>Broiler Operations</td><td><x-status-pill status="filed" /></td>
-        <x-row-actions>
-          <a class="btn ghost" href="{{ route('preparation.show', 'PAN-2026-00298') }}" wire:navigate style="text-decoration:none">View</a>
-          <x-print-btn href="{{ route('pan.print', 'PAN-2026-00298') }}" />
-          <x-kebab><x-kebab.item>Start Follow-up PAN<small>New cycle for this employee</small></x-kebab.item></x-kebab>
-        </x-row-actions></tr>
+          <a class="btn ghost" href="{{ route('preparation.show', $pan->reference) }}" wire:navigate style="text-decoration:none">View</a>
+          @if ($pan->status === App\Enums\PanStatus::AwaitingTag)
+            <a class="btn primary" href="{{ route('preparation.edit', $pan->reference) }}" wire:navigate style="text-decoration:none">Open</a>
+          @elseif ($pan->status === App\Enums\PanStatus::InPreparation)
+            <a class="btn primary" href="{{ route('preparation.edit', $pan->reference) }}" wire:navigate style="text-decoration:none">Continue</a>
+          @elseif ($pan->status === App\Enums\PanStatus::ReturnedToPreparer)
+            <a class="btn primary" href="{{ route('preparation.edit', $pan->reference) }}" wire:navigate style="text-decoration:none">Revise</a>
+          @elseif ($pan->status === App\Enums\PanStatus::Approved)
+            @can('markServed', $pan)
+            <button class="btn primary" type="button" wire:click="markServed({{ $pan->id }})" wire:confirm="Mark {{ $pan->reference }} as Served?">Mark Served</button>
+            @endcan
+          @elseif ($pan->status === App\Enums\PanStatus::Served)
+            @can('filePan', $pan)
+            <button class="btn primary" type="button" wire:click="filePan({{ $pan->id }})" wire:confirm="File {{ $pan->reference }}? This closes the cycle.">File</button>
+            @endcan
+          @endif
+          @if ($pan->form)
+            <x-print-btn href="{{ route('pan.print', $pan->reference) }}" />
+          @endif
+          @can('void', $pan)
+            <x-kebab><x-kebab.item danger wire:click="startReason({{ $pan->id }}, 'void')" data-modal-open="reason-modal">Void / Delete…</x-kebab.item></x-kebab>
+          @endcan
+          @can('markUnserved', $pan)
+            <x-kebab><x-kebab.item wire:click="startReason({{ $pan->id }}, 'mark_unserved')" data-modal-open="reason-modal">Mark Unserved…<small>AWOL, resigned, terminated, or custom</small></x-kebab.item></x-kebab>
+          @endcan
+          @if ($pan->status === App\Enums\PanStatus::Filed)
+            <x-kebab><x-kebab.item wire:navigate href="{{ route('employees.history', $pan->employee->employee_no) }}">Start Follow-up PAN<small>New cycle for this employee</small></x-kebab.item></x-kebab>
+          @endif
+        </x-row-actions>
+      </tr>
+      @endforeach
     </tbody>
   </table></div></div>
+  @endif
+  @if ($isHrHead)
   <p class="locknote" style="margin:8px 2px 0">Tag colors — <x-tag-dot tag="manila" /> Manila (confidential) · <x-tag-dot tag="tarlac" /> Tarlac (routine) · <x-tag-dot /> untagged. Visible to HR Head Preparers only. Once tagged Manila, ordinary preparers can no longer open the record.</p>
+  @endif
+
+  <x-modal id="reason-modal" title="{{ $modalAction === 'void' ? 'Void / Delete' : 'Mark Unserved' }}{{ $modalPan ? ' — '.$modalPan->reference : '' }}">
+    <div class="formgrid" style="padding:16px;grid-template-columns:1fr">
+      <div class="field"><label>Reason <em>*</em></label>
+        <select wire:model="reason">
+          <option value="">Select a reason…</option>
+          @if ($modalAction === 'void')
+          <option>Duplicate request</option>
+          <option>Raised in error</option>
+          <option>Overtaken by events</option>
+          @else
+          <option>AWOL</option>
+          <option>Resigned before serving</option>
+          <option>Terminated</option>
+          @endif
+          <option>Custom reason…</option>
+        </select>
+        @error('reason')<span class="hint" style="color:var(--bad)">{{ $message }}</span>@enderror</div>
+      <div class="field"><label>Details @if ($reason === 'Custom reason…')<em>*</em>@else (optional)@endif</label>
+        <textarea rows="3" wire:model="details"></textarea>
+        @error('details')<span class="hint" style="color:var(--bad)">{{ $message }}</span>@enderror</div>
+    </div>
+    <x-slot:footer>
+      <button class="btn" type="button" data-close>Cancel</button>
+      <div class="spacer"></div>
+      <button class="btn danger" type="button" wire:click="submitReason">
+        {{ $modalAction === 'void' ? 'Void this PAN' : 'Mark Unserved' }}
+      </button>
+    </x-slot:footer>
+  </x-modal>
 </div>

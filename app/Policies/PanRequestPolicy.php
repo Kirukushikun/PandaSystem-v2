@@ -104,6 +104,57 @@ class PanRequestPolicy
         return $pan->status === PanStatus::ForConfirmation && $this->headsStageFor($user, $pan);
     }
 
+    // HR Preparation stages — Manila PANs may only be worked by HR Head preparers;
+    // routine ones by any preparer. Tagging happens BEFORE confidentiality exists,
+    // so any preparer may apply the initial tag (what happens next depends on it).
+
+    public function tag(User $user, PanRequest $pan): bool
+    {
+        return $pan->status === PanStatus::AwaitingTag && $user->is_hr_preparer;
+    }
+
+    public function prepare(User $user, PanRequest $pan): bool
+    {
+        return in_array($pan->status, [PanStatus::InPreparation, PanStatus::ReturnedToPreparer], true)
+            && $this->preparesFor($user, $pan);
+    }
+
+    public function void(User $user, PanRequest $pan): bool
+    {
+        return in_array($pan->status, [PanStatus::AwaitingTag, PanStatus::InPreparation, PanStatus::ReturnedToPreparer], true)
+            && $this->preparesFor($user, $pan);
+    }
+
+    public function markServed(User $user, PanRequest $pan): bool
+    {
+        return $pan->status === PanStatus::Approved && $this->preparesFor($user, $pan);
+    }
+
+    public function markUnserved(User $user, PanRequest $pan): bool
+    {
+        return $pan->status === PanStatus::Approved && $this->preparesFor($user, $pan);
+    }
+
+    public function filePan(User $user, PanRequest $pan): bool
+    {
+        return $pan->status === PanStatus::Served && $this->preparesFor($user, $pan);
+    }
+
+    /** Starting a PAN directly at HR ("Update PAN", origin='hr'). */
+    public function createHr(User $user): bool
+    {
+        return $user->is_hr_preparer;
+    }
+
+    private function preparesFor(User $user, PanRequest $pan): bool
+    {
+        if ($pan->confidentiality_tag === ConfidentialityTag::Manila) {
+            return $user->is_hr_head;
+        }
+
+        return $user->is_hr_preparer;
+    }
+
     private function headsStageFor(User $user, PanRequest $pan): bool
     {
         if ($pan->confidentiality_tag === ConfidentialityTag::Manila) {

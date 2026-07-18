@@ -40,4 +40,28 @@ class PanForm extends Model
     {
         return $this->belongsTo(User::class, 'prepared_by');
     }
+
+    /**
+     * action_reference JSON → x-pan.prepared-details rows. Fixed fields get their
+     * display labels; unknown fields (dynamic allowances) render their own name.
+     */
+    public function displayRows(): array
+    {
+        return array_map(fn (array $row) => [
+            'label' => match ($row['field']) {
+                'section' => 'Section',
+                'place' => 'Place of Assignment',
+                'head' => 'Immediate Head',
+                'position' => 'Position',
+                'joblevel' => 'Job Level',
+                'basic' => 'Basic Pay',
+                'leavecredits' => 'Leave Credits',
+                default => $row['field'],
+            },
+            'from' => $row['field'] === 'basic' ? '₱ '.$row['from'] : $row['from'],
+            'to' => $row['field'] === 'basic' ? '₱ '.$row['to'] : $row['to'],
+            'chg' => $row['from'] !== $row['to'],
+            'num' => $row['field'] === 'basic',
+        ], $this->action_reference ?? []);
+    }
 }

@@ -1,0 +1,148 @@
+<?php
+
+namespace App\Livewire\DivisionHead;
+
+use App\Enums\ConfidentialityTag;
+use App\Enums\PanStatus;
+use App\Models\PanRequest;
+use App\Services\PanWorkflow;
+use Illuminate\Database\Eloquent\Builder;
+use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
+use Livewire\Component;
+
+#[Layout('layouts.app')]
+#[Title('Department Queue — PANDA')]
+class Queue extends Component
+{
+    public string $search = '';
+
+    public string $filter = 'action'; // action | all | completed
+
+    // Shared reason modal (Return to Requestor / Dispute — both demand a reason)
+    public bool $showModal = false;
+
+    public ?int $target = null;
+
+    public string $modalAction = '';
+
+    public string $reason = '';
+
+    public string $details = '';
+
+    public function approve(int $id): void
+    {
+        $pan = PanRequest::findOrFail($id);
+        $this->authorize('approveDivision', $pan);
+
+        $pan->update([
+            'status' => app(PanWorkflow::class)->apply($pan->status, 'approve_division'),
+            'division_head_id' => auth()->id(),
+        ]);
+        $this->js("showToast('{$pan->reference} approved — forwarded to HR Preparation.')");
+    }
+
+    public function confirmPrepared(int $id): void
+    {
+        $pan = PanRequest::findOrFail($id);
+        $this->authorize('confirm', $pan);
+
+        $pan->update(['status' => app(PanWorkflow::class)->apply($pan->status, 'confirm')]);
+        $this->js("showToast('{$pan->reference} confirmed — forwarded to HR Approver.')");
+    }
+
+    /** Arms and opens the reason modal — server state, so re-renders can't shut it. */
+    public function startReason(int $id, string $action): void
+    {
+        $this->target = $id;
+        $this->modalAction = $action; // return_to_requestor | dispute
+        $this->reason = '';
+        $this->details = '';
+        $this->resetErrorBag();
+        $this->showModal = true;
+    }
+
+    public function submitReason(): void
+    {
+        $pan = PanRequest::findOrFail($this->target);
+        $this->authorize($this->modalAction === 'dispute' ? 'dispute' : 'returnToRequestor', $pan);
+
+        $this->validate([
+            'reason' => 'required|string|max:255',
+            'details' => 'required_if:reason,Custom reason…|nullable|string|max:1000',
+        ], ['details.required_if' => 'Describe the custom reason in the details field.']);
+
+        $from = $pan->status;
+        $to = app(PanWorkflow::class)->apply($from, $this->modalAction);
+
+        $pan->update(['status' => $to]);
+        $pan->returns()->create([
+            'action' => $this->modalAction,
+            'from_status' => $from,
+            'to_status' => $to,
+            'reason' => $this->reason,
+            'details' => $this->details ?: null,
+            'returned_by' => auth()->id(),
+        ]);
+
+        $this->js($this->modalAction === 'dispute'
+            ? "showToast('{$pan->reference} disputed — sent back to HR Preparer.')"
+            : "showToast('{$pan->reference} returned to the Requestor with your reason.')");
+        $this->reset('showModal', 'target', 'modalAction', 'reason', 'details');
+    }
+
+    /**
+     * The two lenses, combined for users holding both flags: a department head sees
+     * their own departments' non-Manila PANs; a DH Head sees ONLY Manila-tagged
+     * PANs across all departments. Drafts are in nobody's queue.
+     */
+    protected function scope(): Builder
+    {
+        $user = auth()->user();
+
+        return PanRequest::query()
+            ->where('status', '!=', PanStatus::Draft->value)
+            ->where(function (Builder $q) use ($user) {
+                if ($user->is_division_head) {
+                    $q->orWhere(fn (Builder $q) => $q
+                        ->whereIn('department_id', $user->headedDepartments()->pluck('departments.id'))
+                        ->where('confidentiality_tag', '!=', ConfidentialityTag::Manila->value));
+                }
+                if ($user->is_dh_head) {
+                    $q->orWhere('confidentiality_tag', ConfidentialityTag::Manila->value);
+                }
+            });
+    }
+
+    public function render()
+    {
+        $terminal = [PanStatus::Filed, PanStatus::Withdrawn, PanStatus::Voided, PanStatus::Unserved];
+        $awaiting = [PanStatus::WithDivisionHead, PanStatus::ForConfirmation];
+
+        $pans = $this->scope()
+            ->with(['employee', 'requestedBy'])
+            ->when($this->search !== '', function (Builder $q) {
+                $q->where(fn (Builder $q) => $q
+                    ->where('reference', 'like', "%{$this->search}%")
+                    ->orWhere('action_type', 'like', '%'.str_replace(' ', '-', strtolower($this->search)).'%')
+                    ->orWhereHas('employee', fn (Builder $q) => $q->where('name', 'like', "%{$this->search}%")));
+            })
+            ->when($this->filter === 'action', fn (Builder $q) => $q->whereIn('status', $awaiting))
+            ->when($this->filter === 'completed', fn (Builder $q) => $q->whereIn('status', $terminal))
+            ->orderByDesc('id')
+            ->get();
+
+        return view('livewire.division-head.queue', [
+            'pans' => $pans,
+            'modalPan' => $this->target ? PanRequest::find($this->target) : null,
+            'stats' => [
+                'awaiting' => $this->scope()->whereIn('status', $awaiting)->count(),
+                'later' => $this->scope()->ongoing()->whereNotIn('status', $awaiting)->count(),
+                'completed' => $this->scope()->whereIn('status', $terminal)
+                    ->whereBetween('updated_at', [now()->startOfMonth(), now()->endOfMonth()])->count(),
+            ],
+            'departments' => auth()->user()->headedDepartments->pluck('name')->implode(', '),
+            'isDhHead' => auth()->user()->is_dh_head,
+        ]);
+    }
+}

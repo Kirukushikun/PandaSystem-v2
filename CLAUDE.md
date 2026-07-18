@@ -6,22 +6,37 @@ Final Approver → Served → Filed. Full behavior spec in `System_overview.md`;
 `DEVELOPMENT_PLAN.md`.
 
 ## Tech stack
-- **Target:** Laravel 12 + Livewire 3, MySQL (Laragon on Windows), Vite, Pest, `database` queue.
+- **Actual:** Laravel 13 + Livewire 4.3 (plan said 12/3 — composer won; classic class-based
+  components in `app/Livewire` work fine), MySQL (Laragon on Windows), Vite, Pest, `database` queue.
 - **Packages planned:** `spatie/laravel-backup`, `maatwebsite/excel`. Deliberately NOT using
   spatie/laravel-permission (roles are 8 fixed booleans on `users` + Gates/Policies).
 - Auth comes from the **external company system** (via `ExternalAuthService`); PANDA never stores
   passwords, only the local profile + permissions.
 
 ## Current state
-- **Built:** static UI mockup only — `panda-ui-concept.html` + `panda-ui-concept.css/.js`
-  (split out by hand from the original single file), `panda-login-concept.html`,
-  `DEVELOPMENT_PLAN.md`. No Laravel app exists yet.
-- The mockup is the **UI contract**: its "tabs" marked with `<!-- mockup only -->` comments are
-  separate routes in the real app (e.g. View Request = `/pan/{id}`). Sample data in it is the
-  intended seeder data.
-- An older PAN print replica (`#pan-print`) was removed from the HTML by an editor undo; the
-  real print layout source of truth is the user's Blade file (`print-view.blade.php`, shared in
-  conversation) — 3 copies (Employee / 201 Filing / Payroll), Courier, green borders, 4 signatories.
+- **REAL BUILD COMPLETE end-to-end** (branch `ui-scaffolds`, committed per-phase as
+  "feat: real-build Step N - …", 179 Pest tests green). Every module runs on live data:
+  Requestor, Division Head, HR Preparation (tagging/carry-over/Action Reference editor),
+  DH Confirmation, HR + Final approval (bulk, Regularization auto-Regular), serve/file,
+  print (3-copy layout, local assets), notifications (status handoffs + `panda:expiry-reminders`),
+  Admin (accounts/access/roster), Maintenance (logs, reference values, mysqldump backups via
+  `panda:backup`, danger-zone purges).
+- **Master data finalized**: farms BDL/BFC/BRD/PFC/RH; 11 departments (Accounting, Audit,
+  Feedmill, General Services, Human Resources, IT and Security Services, Poultry, Purchasing,
+  Sales & Marketing, Swine, Treasury). **One role per seeded account**: kreyes=Requestor,
+  jbautista=Division Head (heads Poultry+Feedmill), tnavarro=HR Preparer, mdelacruz=HR Head,
+  caguirre=DH Head, rocampo=HR Approver, vsalazar=Final Approver, admin_it=Admin. `db:seed`
+  seeds master data only (empty PAN slate); demo PANs via `db:seed --class=PanSeeder`.
+- **AUTH_FAKE dev mode** (local .env): login page shows a one-click dev-accounts panel; any
+  password signs in a seeded email. Hard-disabled in production. Post-login landing is
+  role-aware (`User::landingRoute()`).
+- `wire:confirm` everywhere is intercepted globally in app.js and rendered as the styled
+  `#confirm-modal` in the app layout — never edit individual buttons for confirm styling.
+- Scaffold-era docs: `UI_SCAFFOLD_CHECKLIST.md` (repo root), mockups in `project-overview/`.
+- **Remaining / deferred:** spreadsheet import-export on the Employee Directory
+  (maatwebsite/excel not installed — buttons toast "planned"); fill AUTH_API_*/TURNSTILE_*
+  in .env + recreate users with external-API-matching ids before go-live; scheduler
+  (`php artisan schedule:work` or Task Scheduler) needed for nightly backups + expiry reminders.
 
 ## Key architecture decisions
 - **One `PanStatus` enum + `PanWorkflow` state-machine service** owns every transition; build and
@@ -63,5 +78,12 @@ Final Approver → Served → Filed. Full behavior spec in `System_overview.md`;
 - Employee deletion must be blocked while an ongoing PAN exists (submitted, not yet
   filed/withdrawn/voided — drafts don't block); enforce in policy + query, not just UI.
 - Regularization final-approval **auto-finalizes status to "Regular"**, overriding earlier values.
-- The user edits mockup files by hand between sessions (CSS/JS were externalized, print view
-  vanished) — **check current file state before editing; don't assume prior structure.**
+- The user edits files by hand between sessions (CSS/JS were externalized, print view moved
+  around) — **check current file state before editing; don't assume prior structure.**
+
+## Dev-environment gotchas (Windows/Laragon)
+- Stray `php artisan serve` processes cause compiled-view rename "Access is denied" 500s —
+  kill strays, then `php artisan view:clear`.
+- Always `php artisan route:clear` after adding routes — the cache goes stale silently.
+- Don't batch-edit Blade files with PowerShell 5.1 `Get-Content`/`Set-Content` — BOM-less UTF-8
+  gets read as ANSI and em dashes/₱/· turn to mojibake. Use proper editor tooling.

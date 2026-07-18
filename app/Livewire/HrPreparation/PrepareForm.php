@@ -1,0 +1,328 @@
+<?php
+
+namespace App\Livewire\HrPreparation;
+
+use App\Enums\ConfidentialityTag;
+use App\Enums\PanStatus;
+use App\Models\PanForm;
+use App\Models\PanRequest;
+use App\Services\CarryOverService;
+use App\Services\PanWorkflow;
+use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
+use Livewire\Component;
+
+/**
+ * The preparation screen: tagging (while Awaiting Tag), then the official
+ * paperwork — employment details + the Action Reference editor that writes
+ * the pan_forms.action_reference JSON the print view consumes.
+ */
+#[Layout('layouts.app')]
+#[Title('Prepare PAN — PANDA')]
+class PrepareForm extends Component
+{
+    public PanRequest $panRequest;
+
+    /** Tag choice (only actionable while status is Awaiting Tag). */
+    public string $tag = '';
+
+    // Employment details
+    public string $date_hired = '';
+
+    public string $doe_from = '';
+
+    public string $doe_to = '';
+
+    public string $wage_no = '';
+
+    public string $remarks = '';
+
+    /** Fixed Action Reference rows: field => value. From is carried; To is typed. */
+    public array $fromValues = [];
+
+    public array $toValues = [];
+
+    /** Dynamic allowance rows: [{label, from, to}, …]. */
+    public array $allowances = [];
+
+    public string $allowanceType = 'Communication Allowance';
+
+    /** Previous-PAN "See more" inline summary. */
+    public bool $showPrev = false;
+
+    // Void modal
+    public bool $showVoid = false;
+
+    public string $reason = '';
+
+    public string $details = '';
+
+    public const ALLOWANCE_TYPES = [
+        'Communication Allowance', 'Meal Allowance', 'Living Allowance',
+        'Transportation Allowance', 'Clothing Allowance', 'Fuel Allowance',
+        'Management Allowance', 'Developmental Assignment Allowance',
+        'Professional Allowance', 'Interim Allowance', 'Training Allowance',
+        'Mancom Allowance', 'Allowance (generic)',
+    ];
+
+    public const FIXED_FIELDS = ['section', 'place', 'head', 'position', 'joblevel', 'basic'];
+
+    /** Monthly SL/VL accrual pairs (finalized 2026-07-18) — the Leave Credits "To" choices. */
+    public const LEAVE_CREDIT_OPTIONS = [
+        'SL - 5.00 | VL - 5.00',
+        'SL - 4.58 | VL - 4.58',
+        'SL - 4.17 | VL - 4.17',
+        'SL - 3.75 | VL - 3.75',
+        'SL - 3.33 | VL - 3.33',
+        'SL - 2.92 | VL - 2.92',
+        'SL - 2.50 | VL - 2.50',
+        'SL - 2.08 | VL - 2.08',
+        'SL - 1.67 | VL - 1.67',
+        'SL - 1.25 | VL - 1.25',
+        'SL - 0.83 | VL - 0.83',
+        'SL - 0.42 | VL - 0.42',
+    ];
+
+    public function mount(string $pan): void
+    {
+        $this->panRequest = PanRequest::where('reference', $pan)
+            ->with(['employee.farm', 'employee.department', 'form', 'previousPan.form.preparedBy'])
+            ->firstOrFail();
+
+        // Tagging and preparing are different rights; anything past preparation 403s here.
+        $this->authorize($this->panRequest->status === PanStatus::AwaitingTag ? 'tag' : 'prepare', $this->panRequest);
+
+        $this->hydrateForm();
+    }
+
+    private function hydrateForm(): void
+    {
+        $carry = app(CarryOverService::class);
+        $form = $this->panRequest->form;
+
+        if ($form !== null) {
+            $this->date_hired = $form->date_hired?->format('Y-m-d') ?? '';
+            $this->doe_from = $form->doe_from?->format('Y-m-d') ?? '';
+            $this->doe_to = $form->doe_to?->format('Y-m-d') ?? '';
+            $this->wage_no = (string) $form->wage_no;
+            $this->remarks = (string) $form->remarks;
+
+            foreach ($form->action_reference as $row) {
+                if (in_array($row['field'], [...self::FIXED_FIELDS, 'leavecredits'], true)) {
+                    $this->fromValues[$row['field']] = $row['from'];
+                    $this->toValues[$row['field']] = $row['to'] === $row['from'] ? '' : $row['to'];
+                } else {
+                    $this->allowances[] = ['label' => $row['field'], 'from' => $row['from'], 'to' => $row['to']];
+                }
+            }
+        } else {
+            // Fresh preparation: the previous filed PAN's "To" values seed the "From" side.
+            $this->fromValues = $carry->fromValuesFor($this->panRequest);
+            $this->date_hired = $carry->previousPanFor($this->panRequest->employee, $this->panRequest)
+                ?->form->date_hired?->format('Y-m-d') ?? '';
+        }
+
+        if ($this->panRequest->action_type->includesLeaveCredits()) {
+            $this->fromValues['leavecredits'] ??= '';
+            $this->toValues['leavecredits'] ??= '';
+        }
+    }
+
+    /** The carried employment status — locked; Regularization finalizes it later, at final approval. */
+    public function getEmploymentStatusProperty(): string
+    {
+        return ($this->panRequest->form?->employment_status
+            ?? app(CarryOverService::class)->employmentStatusFor($this->panRequest))->label();
+    }
+
+    public function applyTag(): void
+    {
+        $this->authorize('tag', $this->panRequest);
+        $this->validate(['tag' => 'required|in:tarlac,manila'], [], ['tag' => 'confidentiality tag']);
+
+        $this->panRequest->update([
+            'status' => app(PanWorkflow::class)->apply($this->panRequest->status, 'tag'),
+            'confidentiality_tag' => $this->tag,
+            'hr_preparer_id' => auth()->id(),
+        ]);
+
+        // A normal preparer who tags Manila hands the record to the HR Head — and loses it.
+        if ($this->tag === ConfidentialityTag::Manila->value && ! auth()->user()->is_hr_head) {
+            $this->js("showToast('{$this->panRequest->reference} tagged Manila — now confidential, HR Head Preparers only.')");
+            $this->redirectRoute('preparation.queue', navigate: true);
+
+            return;
+        }
+
+        $this->js("showToast('{$this->panRequest->reference} tagged — preparation unlocked.')");
+        $this->panRequest->refresh();
+    }
+
+    public function togglePrev(): void
+    {
+        $this->showPrev = ! $this->showPrev;
+    }
+
+    public function addAllowance(): void
+    {
+        $this->allowances[] = ['label' => $this->allowanceType, 'from' => '—', 'to' => ''];
+    }
+
+    public function removeAllowance(int $index): void
+    {
+        unset($this->allowances[$index]);
+        $this->allowances = array_values($this->allowances);
+    }
+
+    public function save(): void
+    {
+        $this->authorize('prepare', $this->panRequest);
+        $this->validate($this->rules());
+
+        $this->persist();
+        $this->js("showToast('{$this->panRequest->reference} saved — you can continue anytime.')");
+    }
+
+    public function submit(): void
+    {
+        $this->authorize('prepare', $this->panRequest);
+        $this->validate($this->rules());
+
+        $this->persist();
+
+        $action = $this->panRequest->status === PanStatus::ReturnedToPreparer
+            ? 'resubmit_to_hr'              // rework goes straight back to the HR Approver
+            : 'submit_for_confirmation';
+        $this->panRequest->update([
+            'status' => app(PanWorkflow::class)->apply($this->panRequest->status, $action),
+        ]);
+
+        $this->js($action === 'resubmit_to_hr'
+            ? "showToast('{$this->panRequest->reference} resubmitted to the HR Approver.')"
+            : "showToast('{$this->panRequest->reference} submitted for Division Head Confirmation.')");
+        $this->redirectRoute('preparation.queue', navigate: true);
+    }
+
+    public function void(): void
+    {
+        $this->authorize('void', $this->panRequest);
+        $this->validate([
+            'reason' => 'required|string|max:255',
+            'details' => 'required_if:reason,Custom reason…|nullable|string|max:1000',
+        ], ['details.required_if' => 'Describe the custom reason in the details field.']);
+
+        $from = $this->panRequest->status;
+        $to = app(PanWorkflow::class)->apply($from, 'void');
+
+        $this->panRequest->update(['status' => $to]);
+        $this->panRequest->returns()->create([
+            'action' => 'void',
+            'from_status' => $from,
+            'to_status' => $to,
+            'reason' => $this->reason,
+            'details' => $this->details ?: null,
+            'returned_by' => auth()->id(),
+        ]);
+
+        $this->js("showToast('{$this->panRequest->reference} voided — kept on record with the reason.')");
+        $this->redirectRoute('preparation.queue', navigate: true);
+    }
+
+    private function rules(): array
+    {
+        return [
+            'date_hired' => 'required|date',
+            'doe_from' => 'required|date',
+            'doe_to' => 'nullable|date|after_or_equal:doe_from',
+            'wage_no' => $this->panRequest->action_type->requiresWageNumber() ? 'required|string|max:50' : 'nullable|string|max:50',
+            'toValues.*' => 'nullable|string|max:255',
+            'toValues.leavecredits' => ['nullable', \Illuminate\Validation\Rule::in(self::LEAVE_CREDIT_OPTIONS)],
+            'allowances.*.to' => 'nullable|string|max:255',
+            'remarks' => 'nullable|string|max:1000',
+        ];
+    }
+
+    private function persist(): void
+    {
+        // Leave Credits sits BEFORE Basic Pay (and any allowances) in the reference order.
+        $fields = ['section', 'place', 'head', 'position', 'joblevel'];
+        if ($this->panRequest->action_type->includesLeaveCredits()) {
+            $fields[] = 'leavecredits';
+        }
+        $fields[] = 'basic';
+
+        // Blank "To" = no change: the From value carries through (print view shows both sides).
+        $reference = array_map(fn (string $field) => [
+            'field' => $field,
+            'from' => $this->fromValues[$field] !== '' ? $this->fromValues[$field] : '—',
+            'to' => trim($this->toValues[$field] ?? '') !== ''
+                ? trim($this->toValues[$field])
+                : ($this->fromValues[$field] !== '' ? $this->fromValues[$field] : '—'),
+        ], $fields);
+
+        foreach ($this->allowances as $allowance) {
+            $reference[] = [
+                'field' => $allowance['label'],
+                'from' => $allowance['from'] !== '' ? $allowance['from'] : '—',
+                'to' => trim($allowance['to']) !== '' ? trim($allowance['to']) : '—',
+            ];
+        }
+
+        PanForm::updateOrCreate(
+            ['pan_request_id' => $this->panRequest->id],
+            [
+                'date_hired' => $this->date_hired,
+                'employment_status' => $this->panRequest->form?->employment_status
+                    ?? app(CarryOverService::class)->employmentStatusFor($this->panRequest),
+                'doe_from' => $this->doe_from,
+                'doe_to' => $this->doe_to ?: null,
+                'wage_no' => $this->panRequest->action_type->requiresWageNumber() ? $this->wage_no : null,
+                'action_reference' => $reference,
+                'remarks' => $this->remarks ?: null,
+                'prepared_by' => auth()->id(),
+            ]
+        );
+
+        // First save links the carry-over chain for good.
+        if ($this->panRequest->previous_pan_id === null) {
+            $previous = app(CarryOverService::class)->previousPanFor($this->panRequest->employee, $this->panRequest);
+            if ($previous !== null) {
+                $this->panRequest->update(['previous_pan_id' => $previous->id]);
+            }
+        }
+
+        $this->panRequest->refresh();
+    }
+
+    /** The tag/role outcomes, now driven by the real record (the mockup's simulation is gone). */
+    public function lockState(): array
+    {
+        if ($this->panRequest->status === PanStatus::AwaitingTag) {
+            return [true, 'note info', 'i',
+                'Locked — tag the request (Tarlac or Manila) before preparation can begin. Any preparer may apply the initial tag.'];
+        }
+        if ($this->panRequest->confidentiality_tag === ConfidentialityTag::Manila) {
+            return [false, 'note manila', '●',
+                '<b>Tagged Manila</b>&nbsp;— unlocked for you as HR Head Preparer. The DH Head (not the regular Division Head) will act at the confirmation stage.'];
+        }
+
+        return [false, 'note info', 'i',
+            'Tagged Tarlac (routine) — unlocked. Continue with Employment Details and the Action Reference.'];
+    }
+
+    public function render()
+    {
+        [$locked, $noteClass, $noteIcon, $noteMsg] = $this->lockState();
+
+        return view('livewire.hr-preparation.prepare-form', [
+            'locked' => $locked,
+            'noteClass' => $noteClass,
+            'noteIcon' => $noteIcon,
+            'noteMsg' => $noteMsg,
+            'pan' => $this->panRequest,
+            'previous' => $this->panRequest->previousPan
+                ?? app(CarryOverService::class)->previousPanFor($this->panRequest->employee, $this->panRequest),
+            'isHrHead' => auth()->user()->is_hr_head,
+        ]);
+    }
+}

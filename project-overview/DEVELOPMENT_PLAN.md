@@ -1,7 +1,13 @@
 # PANDA v2 — Development Plan
 
-**Stack baseline:** Laravel 12 · Livewire 3 · MySQL/MariaDB (Laragon) · Vite
+**Stack baseline:** Laravel 13 · Livewire 4 *(plan originally said 12/3; composer installed 13/4.3 — classic class-based components still apply)* · MySQL/MariaDB (Laragon) · Vite
 **References:** `System_overview.md` (behavior spec) · `panda-ui-concept.html` (UI contract — the tabs marked "mockup only" become real routes)
+
+> **Status update:** a full **UI-scaffold pass (Steps 0–9, see `UI_SCAFFOLD_CHECKLIST.md` at repo
+> root) was completed before this plan's phases** — every screen below already exists as a
+> Livewire component with real routes and the mockup's hardcoded sample data. The phases in §5
+> therefore start from "replace hardcoded arrays with real models + policies", not from blank
+> screens. Deviations from this plan made during the scaffold are marked *(actual: …)* below.
 
 ---
 
@@ -60,10 +66,16 @@ app/
 │   ├── HrPreparation/           # Queue, PrepareForm, Show, Employees, EmployeeHistory
 │   ├── HrApprover/              # Queue, Show
 │   ├── FinalApprover/           # Queue (bulk actions live here), Show
-│   ├── Admin/                   # Users, UserAccess, Employees, AccessLogs, AuditTrail
-│   ├── Maintenance/             # ReferenceValues, Backups, DangerZone
-│   └── Shared/                  # NotificationBell, StatusPill, StageTracker, ActionReferenceTable,
-│                                # KebabMenu, ConfirmModal (type-to-confirm)
+│   ├── Admin/                   # Users, UserAccess, Employees
+│   │                            # (actual: AccessLogs/AuditTrail moved under Maintenance — the
+│   │                            #  mockup put Logs & Audit in the Maintenance tab strip)
+│   ├── Maintenance/             # Logs, ReferenceValues, Backups, DangerZone
+│   ├── Help/                    # Glossary (actual: full-page Livewire component, not plain Blade)
+│   └── Shared/                  # NotificationBell (Livewire — it has state)
+│                                # (actual: StatusPill, StageTracker, TagDot, Kebab, Modal,
+│                                #  ActionReference tables etc. are ANONYMOUS BLADE components in
+│                                #  resources/views/components/ — they're stateless, so Blade is
+│                                #  the right tool; promote to Livewire only if they gain behavior)
 │
 ├── Services/
 │   ├── PanWorkflow.php          # THE state machine: every transition, who may do it, side effects
@@ -88,8 +100,12 @@ app/
 
 resources/views/
 ├── layouts/app.blade.php        # sidebar shell, theme toggle, notification bell
+├── components/…                 # anonymous Blade components (shared UI — see note above)
 ├── livewire/…                   # mirrors app/Livewire
-└── pan/print.blade.php          # the existing print view (3 copies, signatories)
+├── login.blade.php              # standalone sign-in page (from panda-login-concept.html)
+└── pan-print.blade.php          # (actual path) the real print view — 3 copies, signatories;
+                                 # currently static sample + CDN assets; wire data + localize
+                                 # assets in Phase 6
 
 routes/web.php                   # thin: route → Livewire full-page component, all behind middleware
 ```
@@ -178,15 +194,22 @@ Employee    1─* PanRequest ──1 PanForm
 | User Accounts / User Access | `/admin/users`, `/admin/users/{user}` | `Admin\{Users,UserAccess}` |
 | Employee Directory | `/admin/employees` | `Admin\Employees` |
 | Maintenance tabs | `/maintenance/{logs,reference,backups,danger}` | `Maintenance\*` |
-| Glossary | `/help/glossary` | static Blade — no component needed |
-| Print | `/pan/{pan}/print` | Blade view (existing `print-view`) behind the same policy |
-| Return/Dispute, Update PAN, Add Employee modals | — | nested Livewire components or Alpine modals within the parent |
+| Glossary | `/help/glossary` | *(actual)* `Help\Glossary` full-page Livewire component |
+| Maintenance Logs & Audit | `/maintenance/logs` | *(actual)* `Maintenance\Logs` (Access Log + Audit Trail panes) |
+| Login | `/login` | *(actual)* standalone Blade view, no layout |
+| Print | `/pan/{pan}/print` | *(actual)* Blade view `pan-print.blade.php`, behind the same policy |
+| Return/Dispute, Update PAN, Add Employee modals | — | *(actual)* shared `x-modal` Blade component (open/close via global JS); type-to-confirm modals are Livewire state within their page component |
 
 ---
 
 ## 5. Build order
 
 Each phase ends runnable and demoable. Don't start a phase before the previous one's tests pass — especially phases 3–6, which all lean on the state machine.
+
+> **Note (post-scaffold):** every screen mentioned below already exists as a scaffold component.
+> "Build X module" now means: add the migrations/models/policies, then swap that component's
+> hardcoded arrays for real queries and its `showToast(…)` stubs for real actions — keeping the
+> markup, shared components, and sample data (as seeders) intact.
 
 ### Phase 0 — Foundation *(everything depends on this)*
 - Laravel + Livewire scaffold, the app layout ported from the mockup (sidebar, theme toggle, tokens → `app.css`).

@@ -1,57 +1,82 @@
-{{-- Static sample body (N. Fernandez / Change of Position) until the real build. --}}
 <div>
   <p class="crumb">HR Approver</p>
   <div class="htop">
-    <div><h2>View Request — <span class="ref" style="font-size:18px">{{ $pan }}</span></h2>
-    <p>The request together with its HR-prepared details, awaiting your approval.</p></div>
+    <div><h2>View Request — <span class="ref" style="font-size:18px">{{ $pan->reference }}</span></h2>
+    <p>{{ $form ? 'The request together with its HR-prepared details.' : 'The request as submitted.' }}</p></div>
     <div class="spacer"></div>
-    <x-status-pill status="for-hr-approval">Awaiting HR approval</x-status-pill>
+    @can('approveHr', $pan)
+      <x-status-pill status="for-hr-approval">Awaiting HR approval</x-status-pill>
+    @else
+      <x-status-pill :status="$pan->status->value" />
+    @endcan
   </div>
 
   <x-stage-tracker :stages="['Submitted','Division approved','HR prepared','DH confirmed','HR Approval','Final Approval']" current="HR Approval" />
 
+  @foreach ($pan->returns->reverse() as $return)
+  <div class="note warn"><span class="ic">!</span><span><b>{{ $return->from_status->label() }} → returned by {{ $return->returnedBy->name }}:</b>&nbsp;{{ $return->reason }}@if ($return->details) — {{ $return->details }}@endif <small style="color:var(--ink-3)">({{ $return->created_at->format('M j, Y') }})</small></span></div>
+  @endforeach
+
   <div class="card">
     {{-- Same "Request details" block shown to the HR Preparer — identical contents on both ends --}}
-    <x-pan.request-details sect
-      employee="N. Fernandez" employee-id="EMP-10490" department="Corporate Office"
-      action="Change of Position" requested-by="L. Madrigal" submitted="Jul 6, 2026 · 10:23"
-      justification="Role elevated to Senior HR Officer per the approved 2026 organizational structure."
+    <x-pan.request-details
+      :sect="$form !== null"
+      :employee="$pan->employee->name"
+      :employee-id="$pan->employee->employee_no"
+      :department="$pan->employee->department->name"
+      :action="$pan->action_type->label()"
+      :requested-by="$pan->requestedBy?->name ?? 'HR-originated'"
+      :submitted="$pan->submitted_at?->format('M j, Y · H:i') ?? '—'"
+      :justification="$pan->justification ?? '—'"
       :justification-rows="2"
-      document="org_structure_memo_fernandez.pdf" document-size="512 KB" />
+      :document="$pan->attachment_path ? basename($pan->attachment_path) : null"
+      :document-url="$pan->attachment_path ? route('pan.attachment', $pan->reference) : null" />
 
+    @if ($form !== null)
     <x-pan.prepared-details
-      prepared-by="M. Dela Cruz · Jul 14, 2026" date-hired="Mar 16, 2024"
-      employment-status="Regular" effectivity="Aug 1, 2026 — open-ended"
+      :prepared-by="$form->preparedBy->name.' · '.$form->updated_at->format('M j, Y')"
+      :date-hired="$form->date_hired?->format('M j, Y') ?? '—'"
+      :employment-status="$form->employment_status?->label() ?? '—'"
+      :effectivity="($form->doe_from?->format('M j, Y') ?? '—').' — '.($form->doe_to?->format('M j, Y') ?? 'open-ended')"
+      :wage-no="$pan->action_type->requiresWageNumber() ? ($form->wage_no ?? '—') : null"
       ref-heading="Action Reference — prepared changes"
-      :rows="[
-        ['label' => 'Section',                  'from' => 'HR Operations', 'to' => 'HR Operations'],
-        ['label' => 'Place of Assignment',      'from' => 'Main Office',   'to' => 'Main Office'],
-        ['label' => 'Immediate Head',           'from' => 'R. Ocampo',     'to' => 'V. Salazar', 'chg' => true],
-        ['label' => 'Position',                 'from' => 'HR Generalist', 'to' => 'Senior HR Officer', 'chg' => true],
-        ['label' => 'Job Level',                'from' => 'JL-6',          'to' => 'JL-8', 'chg' => true],
-        ['label' => 'Basic Pay',                'from' => '₱ 28,500.00',   'to' => '₱ 34,200.00', 'chg' => true, 'num' => true],
-        ['label' => 'Transportation Allowance', 'from' => '—',             'to' => '₱ 2,000.00', 'chg' => true, 'num' => true],
-      ]" />
+      :rows="$rows"
+      :remarks="$form->remarks" />
+    @endif
 
     <div class="formfoot">
       <a class="btn" href="{{ route('hr-approval.queue') }}" wire:navigate style="text-decoration:none">← Back to queue</a>
       <div class="spacer"></div>
-      <button class="btn danger" type="button" data-modal-open="return-prep-modal">Return to HR Preparer…</button>
-      <button class="btn primary" type="button" onclick="showToast('Approved — forwarded to Final Approver (UI scaffold — nothing is persisted yet).')">Approve</button>
+      @if ($form)
+      <x-print-btn href="{{ route('pan.print', $pan->reference) }}" />
+      @endif
+      @can('approveHr', $pan)
+        <button class="btn danger" type="button" data-modal-open="reason-modal">Return to HR Preparer…</button>
+        <button class="btn primary" type="button" wire:click="approve" wire:confirm="Approve {{ $pan->reference }} and forward it to the Final Approver?">Approve</button>
+      @endcan
     </div>
   </div>
 
-  <x-modal id="return-prep-modal" title="Return to HR Preparer — {{ $pan }}">
+  <x-modal id="reason-modal" title="Return to HR Preparer — {{ $pan->reference }}">
     <div class="formgrid" style="padding:16px;grid-template-columns:1fr">
       <div class="field"><label>Reason <em>*</em></label>
-        <select><option>Prepared values are incorrect</option><option>Wage number mismatch</option><option>Wrong effectivity date</option><option>Missing allowance line</option><option>Custom reason…</option></select></div>
-      <div class="field"><label>Details (optional)</label>
-        <textarea rows="3"></textarea></div>
+        <select wire:model="reason">
+          <option value="">Select a reason…</option>
+          <option>Prepared values are incorrect</option>
+          <option>Wage number mismatch</option>
+          <option>Wrong effectivity date</option>
+          <option>Missing allowance line</option>
+          <option>Custom reason…</option>
+        </select>
+        @error('reason')<span class="hint" style="color:var(--bad)">{{ $message }}</span>@enderror</div>
+      <div class="field"><label>Details @if ($reason === 'Custom reason…')<em>*</em>@else (optional)@endif</label>
+        <textarea rows="3" wire:model="details"></textarea>
+        @error('details')<span class="hint" style="color:var(--bad)">{{ $message }}</span>@enderror</div>
     </div>
     <x-slot:footer>
       <button class="btn" type="button" data-close>Cancel</button>
       <div class="spacer"></div>
-      <button class="btn danger" type="button" data-close onclick="showToast('Returned to HR Preparer with reason (UI scaffold — nothing is persisted yet).')">Return to HR Preparer</button>
+      <button class="btn danger" type="button" wire:click="submitReason">Return to HR Preparer</button>
     </x-slot:footer>
   </x-modal>
 </div>

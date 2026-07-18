@@ -146,6 +146,29 @@ class PanRequestPolicy
         return $user->is_hr_preparer;
     }
 
+    // Approval stages — no confidentiality distinction here (spec rule): any
+    // HR/Final approver acts on any PAN sitting at their stage.
+
+    public function approveHr(User $user, PanRequest $pan): bool
+    {
+        return $pan->status === PanStatus::ForHrApproval && $user->is_hr_approver;
+    }
+
+    public function returnToPreparer(User $user, PanRequest $pan): bool
+    {
+        return $pan->status === PanStatus::ForHrApproval && $user->is_hr_approver;
+    }
+
+    public function approveFinal(User $user, PanRequest $pan): bool
+    {
+        return $pan->status === PanStatus::ForFinalApproval && $user->is_final_approver;
+    }
+
+    public function rejectFinal(User $user, PanRequest $pan): bool
+    {
+        return $pan->status === PanStatus::ForFinalApproval && $user->is_final_approver;
+    }
+
     private function preparesFor(User $user, PanRequest $pan): bool
     {
         if ($pan->confidentiality_tag === ConfidentialityTag::Manila) {

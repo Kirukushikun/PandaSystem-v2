@@ -2,6 +2,11 @@
 
 namespace App\Livewire\FinalApprover;
 
+use App\Enums\PanStatus;
+use App\Livewire\FinalApprover\Concerns\GivesFinalApproval;
+use App\Models\PanRequest;
+use App\Models\PanReturn;
+use App\Services\PanWorkflow;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -10,62 +15,137 @@ use Livewire\Component;
 #[Title('Final Sign-off — PANDA')]
 class Queue extends Component
 {
-    /**
-     * Mockup sample rows — live state, so approving actually removes them from the
-     * queue and the empty state becomes reachable. Real build: the queue query.
-     */
-    public array $rows = [
-        ['ref' => 'PAN-2026-00335', 'name' => 'G. Padilla', 'dept' => 'Sales & Distribution', 'type' => 'Regularization', 'eff' => 'Aug 1, 2026',  'pay' => '19,000 → 21,500'],
-        ['ref' => 'PAN-2026-00327', 'name' => 'B. Estrada', 'dept' => 'Hatchery',             'type' => 'Regularization', 'eff' => 'Aug 1, 2026',  'pay' => '18,200 → 20,400'],
-        ['ref' => 'PAN-2026-00325', 'name' => 'F. Domingo', 'dept' => 'Feedmill',             'type' => 'Regularization', 'eff' => 'Aug 1, 2026',  'pay' => '18,900 → 21,100'],
-        ['ref' => 'PAN-2026-00322', 'name' => 'S. Lim',     'dept' => 'Feedmill',             'type' => 'Wage Order',     'eff' => 'Jul 15, 2026', 'pay' => '610/day → 645/day'],
-        ['ref' => 'PAN-2026-00318', 'name' => 'E. Garcia',  'dept' => 'Broiler Operations',   'type' => 'Promotion',      'eff' => 'Aug 16, 2026', 'pay' => '28,100 → 31,600'],
-    ];
+    use GivesFinalApproval;
 
-    /** Bulk selection state — the mockup shows the first three Regularizations preselected. */
-    public array $selected = ['PAN-2026-00335', 'PAN-2026-00327', 'PAN-2026-00325'];
+    /** Bulk selection — PAN ids as strings (checkbox values dehydrate as strings). */
+    public array $selected = [];
 
-    public function toggleAll()
+    // Reject reason modal; empty targets = "reject selected"
+    public array $rejectTargets = [];
+
+    public string $reason = '';
+
+    public string $details = '';
+
+    protected function queue()
     {
-        $all = array_column($this->rows, 'ref');
+        return PanRequest::where('status', PanStatus::ForFinalApproval)
+            ->with(['employee.department', 'form'])
+            ->orderByDesc('id')
+            ->get();
+    }
+
+    public function toggleAll(): void
+    {
+        $all = $this->queue()->pluck('id')->map(fn (int $id) => (string) $id)->all();
         $this->selected = count($this->selected) === count($all) ? [] : $all;
     }
 
     /** "Select all of type…" — replaces the selection with every row of that action type. */
-    public function selectType(string $type)
+    public function selectType(string $type): void
     {
         if ($type === '') {
             return;
         }
-        $this->selected = array_column(
-            array_filter($this->rows, fn ($row) => $row['type'] === $type),
-            'ref'
-        );
+        $this->selected = $this->queue()
+            ->where('action_type.value', $type)
+            ->pluck('id')->map(fn (int $id) => (string) $id)->values()->all();
     }
 
-    public function approveSelected()
+    public function approveOne(int $id): void
     {
-        $count = count($this->selected);
-        if ($count === 0) {
+        $pan = PanRequest::findOrFail($id);
+        $this->giveFinalApproval($pan);
+
+        $this->selected = array_values(array_diff($this->selected, [(string) $id]));
+        $this->js("showToast('Final approval given — {$pan->reference} moves on to serving.')");
+    }
+
+    public function approveSelected(): void
+    {
+        if ($this->selected === []) {
             $this->js("showToast('Select at least one PAN first.')");
 
             return;
         }
-        $this->rows = array_values(array_filter($this->rows, fn ($row) => ! in_array($row['ref'], $this->selected)));
+
+        $pans = PanRequest::findMany($this->selected);
+        foreach ($pans as $pan) {
+            $this->giveFinalApproval($pan);
+        }
+
+        $count = $pans->count();
         $this->selected = [];
-        $this->js("showToast('{$count} PAN(s) approved and cleared from the queue (UI scaffold — nothing is persisted yet). Regularizations auto-finalize status to Regular.')");
+        $this->js("showToast('{$count} PAN(s) given final approval — Regularizations auto-finalized to Regular.')");
     }
 
-    /** Approving one row directly (the row's filled verb) also clears it. */
-    public function approveOne(string $ref)
+    /** Arms the reject modal — for one row, or for the current selection when id is null. */
+    public function startReject(?int $id = null): void
     {
-        $this->rows = array_values(array_filter($this->rows, fn ($row) => $row['ref'] !== $ref));
-        $this->selected = array_values(array_diff($this->selected, [$ref]));
-        $this->js("showToast('Final approval given — {$ref} cleared from the queue (UI scaffold — nothing is persisted yet).')");
+        $this->rejectTargets = $id !== null ? [(string) $id] : $this->selected;
+        $this->reason = '';
+        $this->details = '';
+        $this->resetErrorBag();
+
+        if ($this->rejectTargets === []) {
+            $this->js("showToast('Select at least one PAN first.')");
+        }
+    }
+
+    public function submitReject(): void
+    {
+        if ($this->rejectTargets === []) {
+            return;
+        }
+
+        $this->validate([
+            'reason' => 'required|string|max:255',
+            'details' => 'required_if:reason,Custom reason…|nullable|string|max:1000',
+        ], ['details.required_if' => 'Describe the custom reason in the details field.']);
+
+        $pans = PanRequest::findMany($this->rejectTargets);
+        foreach ($pans as $pan) {
+            $this->authorize('rejectFinal', $pan);
+
+            $from = $pan->status;
+            $to = app(PanWorkflow::class)->apply($from, 'reject_final');
+
+            $pan->update(['status' => $to]);
+            $pan->returns()->create([
+                'action' => 'reject_final',
+                'from_status' => $from,
+                'to_status' => $to,
+                'reason' => $this->reason,
+                'details' => $this->details ?: null,
+                'returned_by' => auth()->id(),
+            ]);
+        }
+
+        $count = $pans->count();
+        $this->selected = array_values(array_diff($this->selected, $this->rejectTargets));
+        $this->js("document.getElementById('reject-modal')?.classList.remove('on')");
+        $this->js("showToast('{$count} PAN(s) rejected — returned to HR Preparation with your reason.')");
+        $this->reset('rejectTargets', 'reason', 'details');
     }
 
     public function render()
     {
-        return view('livewire.final-approver.queue');
+        $pans = $this->queue();
+
+        return view('livewire.final-approver.queue', [
+            'pans' => $pans,
+            'typeCounts' => $pans->groupBy(fn (PanRequest $pan) => $pan->action_type->value)
+                ->map->count(),
+            'stats' => [
+                'awaiting' => $pans->count(),
+                'approved' => PanRequest::whereNotNull('final_approver_id')
+                    ->whereIn('status', [PanStatus::Approved, PanStatus::Served, PanStatus::Filed, PanStatus::Unserved])
+                    ->whereBetween('updated_at', [now()->startOfQuarter(), now()->endOfQuarter()])
+                    ->count(),
+                'rejected' => PanReturn::where('action', 'reject_final')
+                    ->whereBetween('created_at', [now()->startOfQuarter(), now()->endOfQuarter()])
+                    ->count(),
+            ],
+        ]);
     }
 }

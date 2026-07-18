@@ -122,6 +122,7 @@ test('an admin has no implicit PAN access — administration is not PAN visibili
 
 test('print and attachment routes enforce the same policy per record', function () {
     $pan = PanRequest::factory()->tarlac()->status(PanStatus::InPreparation)->create();
+    App\Models\PanForm::factory()->create(['pan_request_id' => $pan->id]);
     $outsider = User::factory()->requestor()->create();
 
     $this->actingAs($outsider)->get('/pan/'.$pan->reference.'/print')->assertForbidden();
@@ -130,4 +131,10 @@ test('print and attachment routes enforce the same policy per record', function 
     $this->actingAs($pan->requestedBy)->get('/pan/'.$pan->reference.'/print')->assertOk();
     // owner without an uploaded file: authorized but nothing to download
     $this->actingAs($pan->requestedBy)->get('/pan/'.$pan->reference.'/attachment')->assertNotFound();
+});
+
+test('printing a PAN with no prepared paperwork is a 404, not a blank sheet', function () {
+    $pan = PanRequest::factory()->tarlac()->status(PanStatus::WithDivisionHead)->create();
+
+    $this->actingAs($pan->requestedBy)->get('/pan/'.$pan->reference.'/print')->assertNotFound();
 });

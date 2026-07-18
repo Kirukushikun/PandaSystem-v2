@@ -94,7 +94,7 @@ footer{margin-top:22px;text-align:center;font-size:11px;color:var(--ink-3)}
       <input id="p" name="password" type="password" required autocomplete="current-password" placeholder="••••••••">
     </div>
     @if ($turnstileSiteKey)
-      <div id="turnstile-box" style="margin:2px 0 14px"></div>
+      <div id="turnstile-box" style="margin:2px 7px"></div>
       @if ($errors->has('turnstile_token'))
         <p style="margin:0 0 14px;font-size:12.5px;color:var(--red)">{{ $errors->first('turnstile_token') }}</p>
       @endif

@@ -3,11 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Notice of Personnel Action</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<title>Notice of Personnel Action — {{ $pan->reference }}</title>
+{{-- Assets are fully local (no CDN): Tailwind Play runtime vendored to public/vendor,
+     Font Awesome icons replaced with inline glyphs, Google Fonts import dropped
+     (body text is system Courier; the screen-only Back/Print menu uses the UI stack). --}}
+<script src="{{ asset('vendor/tailwind.js') }}"></script>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400;1,700&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900&display=swap');
 *{ font-family: 'Courier'; font-weight: 700; }
 body{ height: auto;  padding: 40px 15%;   display: flex; background-color: #F1F2F6;
     flex-direction: column;
@@ -27,7 +28,7 @@ img{ width: 280px; margin: 40px 0 20px; }
 .confirmation-field{ margin: 75px 0 25px; border-top: 2px solid; }
 .signatories{ display: flex; flex-direction: column; gap: 20px; position: relative; }
 .signatories img{ position: absolute; top: -30px; left: 10px; width: 120px; }
-.home-btn{ font-family: 'Poppins' !important; font-weight: 500; }
+.home-btn{ font-family: "Segoe UI Variable Text","Segoe UI",-apple-system,sans-serif !important; font-weight: 500; }
 .page-1 { display: none; }
 .page-2 { display: none; }
 .copy{ opacity: 0; right: 30px; }
@@ -105,398 +106,32 @@ img{ width: 280px; margin: 40px 0 20px; }
     <ul class="py-2">
       <li>
         <div class="home-btn text-left px-4 py-2 select-none cursor-pointer text-gray-500 text-[17px] hover:text-gray-800 hover:scale-105 hover:bg-gray-100 transition-transform duration-200" onclick="window.history.back()">
-          <i class="fa-solid fa-arrow-right-to-bracket rotate-180 ml-1"></i> Back
+          ⭠ Back
         </div>
       </li>
       <li>
         <div class="home-btn text-left px-4 py-2 select-none cursor-pointer text-gray-500 text-[17px] hover:text-gray-800 hover:scale-105 hover:bg-gray-100 transition-transform duration-200" onclick="window.print()">
-          <i class="fa-solid fa-print"></i> Print
+          ⎙ Print
         </div>
       </li>
     </ul>
   </div>
 
-  <div class="inner-border px-3 py-5 flex flex-col items-center">
-    <div class="copy absolute text-lg font-bold text-gray-400 tracking-widest">
-      <p>EMPLOYEE COPY</p>
-    </div>
-
-    <div class="print-header">
-      <img src="{{asset('images/BGC.png')}}" alt="">
-      <h3 class="font-courier">
-        BROOKSIDE FARMS CORPORATION <br>
-        Anupul, Bamban, Tarlac
-      </h3>
-      <h1 class="font-courier">NOTICE OF PERSONNEL ACTION</h1>
-      <h2 class="font-courier text-[#70ad47]">WAGE ORDER NO. 24</h2>
-    </div>
-
-    <table>
-      <tr>
-        <td>Name: Juan Dela Cruz</td>
-        <td>Employee No: 2024-00123</td>
-      </tr>
-      <tr>
-        <td>Date Hired: 03/15/2021</td>
-        <td>Division: Production</td>
-      </tr>
-      <tr>
-        <td>Employment Status: Regular</td>
-        <td>Date of Effectivity: 08/01/2026</td>
-      </tr>
-    </table>
-
-    <table class="text-center">
-      <tr>
-        <td class="!bg-[#e2efd9]">FROM</td>
-        <td class="!bg-[#e2efd9]">ACTION REFERENCE</td>
-        <td class="!bg-[#e2efd9]">TO</td>
-      </tr>
-      <tr>
-        <td>Farm 1 - Anupul</td>
-        <td class="!bg-[#e2efd9] capitalize">Place of Assignment</td>
-        <td>Farm 3 - Bamban</td>
-      </tr>
-      <tr>
-        <td>Maria Santos</td>
-        <td class="!bg-[#e2efd9] capitalize">Immediate Head</td>
-        <td>Pedro Reyes</td>
-      </tr>
-      <tr>
-        <td>Level 3</td>
-        <td class="!bg-[#e2efd9] capitalize">Job Level</td>
-        <td>Level 4</td>
-      </tr>
-      <tr>
-        <td>10 days</td>
-        <td class="!bg-[#e2efd9] capitalize">Leave Credits</td>
-        <td>15 days</td>
-      </tr>
-    </table>
-
-    <table class="text-center">
-      <tr><td class="!bg-[#e2efd9]">REMARKS AND OTHER CONSIDERATION</td></tr>
-      <tr>
-        <td>
-          <div class="w-full text-center remarks-text" style="word-break: break-word; min-height: 1.5em;">
-            Adjustment pursuant to Wage Order No. 24.<br>
-            • Effective on the date indicated above.<br>
-            • All other terms and conditions remain unchanged.
-          </div>
-        </td>
-      </tr>
-    </table>
-
-    <table class="text-center">
-      <tr><td class="!bg-[#e2efd9]">CONFIRMATION OF APPOINTMENT</td></tr>
-      <tr>
-        <td class="flex items-center justify-around">
-          <div class="confirmation-field">(SIGNATURE OVER PRINTED NAME)</div>
-          <div class="confirmation-field">(DATE RECEIVE)</div>
-        </td>
-      </tr>
-    </table>
-
-    <div class="grid grid-cols-4 text-sm w-full px-6">
-      <div class="signatories">
-        <label>Prepared By:</label>
-        <div>
-          <img src="storage/esign/hr.png" alt="Unavailable">
-          <p>Ana Lopez</p>
-          <p>HR Assistant</p>
-        </div>
-      </div>
-      <div class="signatories">
-        <label>Noted By:</label>
-        <div>
-          <img src="storage/esign/hra.png" alt="Unavailable">
-          <p>Carlo Mendoza</p>
-          <p>Head, Human Resources</p>
-        </div>
-      </div>
-      <div class="signatories">
-        <label>Recommended By:</label>
-        <div>
-          <img src="storage/esign/divisionhead.png" alt="Unavailable">
-          <p>Ramon Garcia</p>
-          <p>Division Head</p>
-        </div>
-      </div>
-      <div class="signatories">
-        <label>Approved By:</label>
-        <div>
-          <img src="storage/esign/approver.png" alt="Unavailable">
-          <p>Elena Cruz</p>
-          <p>President</p>
-        </div>
-      </div>
-    </div>
-
-    <span>
-      &ldquo;Disclosing these confidential records to unauthorized personnel is punishable with Termination under Code of Discipline Section IV
-      No. 4.15 Betrayal of company&rsquo;s trust and confidence Unauthorized disclosure of restricted company information such as but not limited to
-      development plans, budgets, details of finances and marketing strategies, test questionnaires and records, voluntarily and willingly to outsiders,
-      competitors and/or those who are not authorized to possess such information.&rdquo;
-    </span>
-  </div>
+  @include('pan-print.copy', ['label' => 'EMPLOYEE COPY'])
 </div>
 
 <!-- PAGE 2 : FOR 201 FILING -->
 <div class="page page-1 outer-border p-[3px] relative">
-  <div class="inner-border px-3 py-5 flex flex-col items-center">
-    <div class="copy absolute text-lg font-bold text-gray-400 tracking-widest">
-      <p>FOR 201 FILING</p>
-    </div>
-
-    <div class="print-header">
-      <img src="{{asset('images/BGC.png')}}" alt="">
-      <h3 class="font-courier">
-        BROOKSIDE FARMS CORPORATION <br>
-        Anupul, Bamban, Tarlac
-      </h3>
-      <h1 class="font-courier">NOTICE OF PERSONNEL ACTION</h1>
-      <h2 class="font-courier text-[#70ad47]">WAGE ORDER NO. 24</h2>
-    </div>
-
-    <table>
-      <tr>
-        <td>Name: Juan Dela Cruz</td>
-        <td>Employee No: 2024-00123</td>
-      </tr>
-      <tr>
-        <td>Date Hired: 03/15/2021</td>
-        <td>Division: Production</td>
-      </tr>
-      <tr>
-        <td>Employment Status: Regular</td>
-        <td>Date of Effectivity: 08/01/2026</td>
-      </tr>
-    </table>
-
-    <table class="text-center">
-      <tr>
-        <td class="!bg-[#e2efd9]">FROM</td>
-        <td class="!bg-[#e2efd9]">ACTION REFERENCE</td>
-        <td class="!bg-[#e2efd9]">TO</td>
-      </tr>
-      <tr>
-        <td>Farm 1 - Anupul</td>
-        <td class="!bg-[#e2efd9] capitalize">Place of Assignment</td>
-        <td>Farm 3 - Bamban</td>
-      </tr>
-      <tr>
-        <td>Maria Santos</td>
-        <td class="!bg-[#e2efd9] capitalize">Immediate Head</td>
-        <td>Pedro Reyes</td>
-      </tr>
-      <tr>
-        <td>Level 3</td>
-        <td class="!bg-[#e2efd9] capitalize">Job Level</td>
-        <td>Level 4</td>
-      </tr>
-      <tr>
-        <td>10 days</td>
-        <td class="!bg-[#e2efd9] capitalize">Leave Credits</td>
-        <td>15 days</td>
-      </tr>
-    </table>
-
-    <table class="text-center">
-      <tr><td class="!bg-[#e2efd9]">REMARKS AND OTHER CONSIDERATION</td></tr>
-      <tr>
-        <td>
-          <div class="w-full text-center remarks-text" style="word-break: break-word; min-height: 1.5em;">
-            Adjustment pursuant to Wage Order No. 24.<br>
-            • Effective on the date indicated above.<br>
-            • All other terms and conditions remain unchanged.
-          </div>
-        </td>
-      </tr>
-    </table>
-
-    <table class="text-center">
-      <tr><td class="!bg-[#e2efd9]">CONFIRMATION OF APPOINTMENT</td></tr>
-      <tr>
-        <td class="flex items-center justify-around">
-          <div class="confirmation-field">(SIGNATURE OVER PRINTED NAME)</div>
-          <div class="confirmation-field">(DATE RECEIVE)</div>
-        </td>
-      </tr>
-    </table>
-
-    <div class="grid grid-cols-4 w-full px-6">
-      <div class="signatories">
-        <label>Prepared By:</label>
-        <div>
-          <img src="storage/esign/hr.png" alt="Unavailable">
-          <p>Ana Lopez</p>
-          <p>HR Assistant</p>
-        </div>
-      </div>
-      <div class="signatories">
-        <label>Noted By:</label>
-        <div>
-          <img src="storage/esign/hra.png" alt="Unavailable">
-          <p>Carlo Mendoza</p>
-          <p>Head, Human Resources</p>
-        </div>
-      </div>
-      <div class="signatories">
-        <label>Recommended By:</label>
-        <div>
-          <img src="storage/esign/divisionhead.png" alt="">
-          <p>Ramon Garcia</p>
-          <p>Division Head</p>
-        </div>
-      </div>
-      <div class="signatories">
-        <label>Approved By:</label>
-        <div>
-          <img src="storage/esign/approver.png" alt="Unavailable">
-          <p>Elena Cruz</p>
-          <p>President</p>
-        </div>
-      </div>
-    </div>
-
-    <span>
-      &ldquo;Disclosing these confidential records to unauthorized personnel is punishable with Termination under Code of Discipline Section IV
-      No. 4.15 Betrayal of company&rsquo;s trust and confidence Unauthorized disclosure of restricted company information such as but not limited to
-      development plans, budgets, details of finances and marketing strategies, test questionnaires and records, voluntarily and willingly to outsiders,
-      competitors and/or those who are not authorized to possess such information.&rdquo;
-    </span>
-  </div>
+  @include('pan-print.copy', ['label' => 'FOR 201 FILING'])
 </div>
 
 <!-- PAGE 3 : PAYROLL COPY -->
 <div class="page page-2 outer-border p-[3px] relative">
-  <div class="inner-border px-3 py-5 flex flex-col items-center">
-    <div class="copy absolute text-lg font-bold text-gray-400 tracking-widest">
-      <p>PAYROLL COPY</p>
-    </div>
-
-    <div class="print-header">
-      <img src="{{asset('images/BGC.png')}}" alt="">
-      <h3 class="font-courier">
-        BROOKSIDE FARMS CORPORATION <br>
-        Anupul, Bamban, Tarlac
-      </h3>
-      <h1 class="font-courier">NOTICE OF PERSONNEL ACTION</h1>
-      <h2 class="font-courier text-[#70ad47]">WAGE ORDER NO. 24</h2>
-    </div>
-
-    <table>
-      <tr>
-        <td>Name: Juan Dela Cruz</td>
-        <td>Employee No: 2024-00123</td>
-      </tr>
-      <tr>
-        <td>Date Hired: 03/15/2021</td>
-        <td>Division: Production</td>
-      </tr>
-      <tr>
-        <td>Employment Status: Regular</td>
-        <td>Date of Effectivity: 08/01/2026</td>
-      </tr>
-    </table>
-
-    <table class="text-center">
-      <tr>
-        <td class="!bg-[#e2efd9]">FROM</td>
-        <td class="!bg-[#e2efd9]">ACTION REFERENCE</td>
-        <td class="!bg-[#e2efd9]">TO</td>
-      </tr>
-      <tr>
-        <td>Farm 1 - Anupul</td>
-        <td class="!bg-[#e2efd9] capitalize">Place of Assignment</td>
-        <td>Farm 3 - Bamban</td>
-      </tr>
-      <tr>
-        <td>Maria Santos</td>
-        <td class="!bg-[#e2efd9] capitalize">Immediate Head</td>
-        <td>Pedro Reyes</td>
-      </tr>
-      <tr>
-        <td>Level 3</td>
-        <td class="!bg-[#e2efd9] capitalize">Job Level</td>
-        <td>Level 4</td>
-      </tr>
-      <tr>
-        <td>10 days</td>
-        <td class="!bg-[#e2efd9] capitalize">Leave Credits</td>
-        <td>15 days</td>
-      </tr>
-    </table>
-
-    <table class="text-center">
-      <tr><td class="!bg-[#e2efd9]">REMARKS AND OTHER CONSIDERATION</td></tr>
-      <tr>
-        <td>
-          <div class="w-full text-center remarks-text" style="word-break: break-word; min-height: 1.5em;">
-            Adjustment pursuant to Wage Order No. 24.<br>
-            • Effective on the date indicated above.<br>
-            • All other terms and conditions remain unchanged.
-          </div>
-        </td>
-      </tr>
-    </table>
-
-    <table class="text-center">
-      <tr><td class="!bg-[#e2efd9]">CONFIRMATION OF APPOINTMENT</td></tr>
-      <tr>
-        <td class="flex items-center justify-around">
-          <div class="confirmation-field">(SIGNATURE OVER PRINTED NAME)</div>
-          <div class="confirmation-field">(DATE RECEIVE)</div>
-        </td>
-      </tr>
-    </table>
-
-    <div class="grid grid-cols-4 w-full px-6">
-      <div class="signatories">
-        <label>Prepared By:</label>
-        <div>
-          <img src="storage/esign/hr.png" alt="Unavailable">
-          <p>Ana Lopez</p>
-          <p>HR Assistant</p>
-        </div>
-      </div>
-      <div class="signatories">
-        <label>Noted By:</label>
-        <div>
-          <img src="storage/esign/hra.png" alt="Unavailable">
-          <p>Carlo Mendoza</p>
-          <p>Head, Human Resources</p>
-        </div>
-      </div>
-      <div class="signatories">
-        <label>Recommended By:</label>
-        <div>
-          <img src="storage/esign/divisionhead.png" alt="">
-          <p>Ramon Garcia</p>
-          <p>Division Head</p>
-        </div>
-      </div>
-      <div class="signatories">
-        <label>Approved By:</label>
-        <div>
-          <img src="storage/esign/approver.png" alt="Unavailable">
-          <p>Elena Cruz</p>
-          <p>President</p>
-        </div>
-      </div>
-    </div>
-
-    <span>
-      &ldquo;Disclosing these confidential records to unauthorized personnel is punishable with Termination under Code of Discipline Section IV
-      No. 4.15 Betrayal of company&rsquo;s trust and confidence Unauthorized disclosure of restricted company information such as but not limited to
-      development plans, budgets, details of finances and marketing strategies, test questionnaires and records, voluntarily and willingly to outsiders,
-      competitors and/or those who are not authorized to possess such information.&rdquo;
-    </span>
-  </div>
+  @include('pan-print.copy', ['label' => 'PAYROLL COPY'])
 </div>
 
 <script>
-const remarksLen = 148;
+const remarksLen = {{ mb_strlen($pan->form->remarks ?? '') }};
 
 let cls = null;
 if      (remarksLen > 250) cls = 'remarks-lg';

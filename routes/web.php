@@ -69,11 +69,22 @@ Route::middleware('auth')->group(function () {
     })->name('pan.attachment');
 
     Route::get('/pan/{pan}/print', function (string $pan) {
-        $panRequest = PanRequest::where('reference', $pan)->firstOrFail();
+        $panRequest = PanRequest::where('reference', $pan)
+            ->with(['employee.department', 'form.preparedBy', 'divisionHead', 'hrApprover', 'finalApprover'])
+            ->firstOrFail();
         Gate::authorize('view', $panRequest);
+        abort_if($panRequest->form === null, 404); // nothing to print until HR has prepared it
 
         return view('pan-print', ['pan' => $panRequest]);
     })->name('pan.print');
+
+    // Participant e-signatures for the print view (private disk; viewer already
+    // passed the print policy — the image route just requires a signed-in user).
+    Route::get('/users/{user}/esign', function (App\Models\User $user) {
+        abort_unless($user->esign_path && Storage::exists($user->esign_path), 404);
+
+        return Storage::response($user->esign_path);
+    })->name('user.esign');
 
     Route::get('/help/glossary', App\Livewire\Help\Glossary::class)->name('help.glossary');
 });

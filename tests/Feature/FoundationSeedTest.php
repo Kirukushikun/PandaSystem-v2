@@ -17,7 +17,7 @@ test('the seeders mirror the mockup sample data', function () {
     expect(Farm::count())->toBe(4)
         ->and(Department::count())->toBe(7)
         ->and(User::count())->toBe(7)
-        ->and(Employee::count())->toBe(8); // 6 directory rows + A. Santos & C. Mercado from the Requestor list
+        ->and(Employee::count())->toBe(10); // 6 directory rows + 2 from the Requestor list + 2 from the Division queue
 });
 
 test('K. Reyes matches the User Access screen: permissions and department assignments', function () {

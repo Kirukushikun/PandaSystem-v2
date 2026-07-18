@@ -25,7 +25,9 @@ class AppServiceProvider extends ServiceProvider
         // PanWorkflow's 'by' keys. Route groups check these; per-record rules
         // (ownership, Manila/Tarlac) live in the policies — never in the sidebar.
         Gate::define('requestor', fn (User $u) => $u->is_requestor);
-        Gate::define('division_head', fn (User $u) => $u->is_division_head);
+        // DH Head works the same Division Head screens (Manila-only lens),
+        // so the route gate admits both; the policy decides per record.
+        Gate::define('division_head', fn (User $u) => $u->is_division_head || $u->is_dh_head);
         Gate::define('hr_preparer', fn (User $u) => $u->is_hr_preparer);
         Gate::define('hr_approver', fn (User $u) => $u->is_hr_approver);
         Gate::define('final_approver', fn (User $u) => $u->is_final_approver);

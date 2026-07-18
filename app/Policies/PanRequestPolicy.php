@@ -81,6 +81,39 @@ class PanRequestPolicy
         return $this->owns($user, $pan) && $pan->status === PanStatus::ReturnedToRequestor;
     }
 
+    // Division stages — the deciding head depends on the tag: Manila PANs belong to
+    // the DH Head (any department), everything else to the department's own head(s).
+
+    public function approveDivision(User $user, PanRequest $pan): bool
+    {
+        return $pan->status === PanStatus::WithDivisionHead && $this->headsStageFor($user, $pan);
+    }
+
+    public function returnToRequestor(User $user, PanRequest $pan): bool
+    {
+        return $pan->status === PanStatus::WithDivisionHead && $this->headsStageFor($user, $pan);
+    }
+
+    public function confirm(User $user, PanRequest $pan): bool
+    {
+        return $pan->status === PanStatus::ForConfirmation && $this->headsStageFor($user, $pan);
+    }
+
+    public function dispute(User $user, PanRequest $pan): bool
+    {
+        return $pan->status === PanStatus::ForConfirmation && $this->headsStageFor($user, $pan);
+    }
+
+    private function headsStageFor(User $user, PanRequest $pan): bool
+    {
+        if ($pan->confidentiality_tag === ConfidentialityTag::Manila) {
+            return $user->is_dh_head;
+        }
+
+        return $user->is_division_head
+            && $user->headedDepartments()->whereKey($pan->department_id)->exists();
+    }
+
     private function owns(User $user, PanRequest $pan): bool
     {
         return $user->is_requestor && $pan->requested_by === $user->id;

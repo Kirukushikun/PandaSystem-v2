@@ -4,8 +4,10 @@ namespace Database\Seeders;
 
 use App\Enums\ActionType;
 use App\Enums\ConfidentialityTag;
+use App\Enums\EmploymentStatus;
 use App\Enums\PanStatus;
 use App\Models\Employee;
+use App\Models\PanForm;
 use App\Models\PanRequest;
 use App\Models\PanReturn;
 use App\Models\User;
@@ -37,6 +39,11 @@ class PanSeeder extends Seeder
             ['reference' => 'PAN-2026-00341', 'employee' => 'EMP-10490', 'type' => ActionType::ChangeOfPosition, 'status' => PanStatus::InPreparation,       'by' => $mdelacruz, 'submitted' => '2026-07-07', 'tag' => ConfidentialityTag::Manila],
             ['reference' => 'PAN-2026-00338', 'employee' => 'EMP-10233', 'type' => ActionType::WageOrder,        'status' => PanStatus::ReturnedToPreparer,  'by' => $mdelacruz, 'submitted' => '2026-07-05', 'tag' => ConfidentialityTag::Tarlac],
             ['reference' => 'PAN-2026-00311', 'employee' => 'EMP-10064', 'type' => ActionType::Regularization,   'status' => PanStatus::Approved,            'by' => $mdelacruz, 'submitted' => '2026-06-24', 'tag' => ConfidentialityTag::Tarlac],
+
+            // Division Head queue rows unique to that screen (seeded under mdelacruz so
+            // K. Reyes's Requestor list stays exactly the mockup's five)
+            ['reference' => 'PAN-2026-00344', 'employee' => 'EMP-10255', 'type' => ActionType::LateralTransfer,  'status' => PanStatus::WithDivisionHead,    'by' => $mdelacruz, 'submitted' => '2026-07-06'],
+            ['reference' => 'PAN-2026-00339', 'employee' => 'EMP-10198', 'type' => ActionType::Promotion,        'status' => PanStatus::ForConfirmation,     'by' => $mdelacruz, 'submitted' => '2026-07-03', 'tag' => ConfidentialityTag::Tarlac],
         ];
 
         foreach ($pans as $data) {
@@ -53,6 +60,50 @@ class PanSeeder extends Seeder
                     'submitted_at' => $data['submitted'],
                     'filed_at' => $data['filed'] ?? null,
                 ]
+            );
+        }
+
+        // Prepared PAN forms — the two rows whose Show view appends the "+ PAN Details"
+        // extension in the mockup (E. Garcia's promotion, D. Torres's regularization).
+        $tnavarro = User::where('username', 'tnavarro')->first();
+
+        $forms = [
+            'PAN-2026-00339' => [
+                'date_hired' => '2023-02-02',
+                'employment_status' => EmploymentStatus::Regular,
+                'doe_from' => '2026-08-16',
+                'action_reference' => [
+                    ['field' => 'section', 'from' => 'Broiler Production A', 'to' => 'Broiler Production A'],
+                    ['field' => 'place', 'from' => 'San Rafael Farm', 'to' => 'San Rafael Farm'],
+                    ['field' => 'head', 'from' => 'K. Reyes', 'to' => 'K. Reyes'],
+                    ['field' => 'position', 'from' => 'Farm Technician II', 'to' => 'Senior Farm Technician'],
+                    ['field' => 'joblevel', 'from' => 'JL-4', 'to' => 'JL-5'],
+                    ['field' => 'basic', 'from' => '28,100.00', 'to' => '31,600.00'],
+                ],
+                'remarks' => 'Per Q2 2026 performance review cycle. Effectivity aligned with payroll cutoff.',
+            ],
+            'PAN-2026-00311' => [
+                'date_hired' => '2025-12-16',
+                'employment_status' => EmploymentStatus::Regular,
+                'doe_from' => '2026-07-01',
+                'action_reference' => [
+                    ['field' => 'section', 'from' => 'Broiler Production B', 'to' => 'Broiler Production B'],
+                    ['field' => 'place', 'from' => 'San Rafael Farm', 'to' => 'San Rafael Farm'],
+                    ['field' => 'head', 'from' => 'K. Reyes', 'to' => 'K. Reyes'],
+                    ['field' => 'position', 'from' => 'Poultry Caretaker', 'to' => 'Poultry Caretaker'],
+                    ['field' => 'joblevel', 'from' => 'JL-2', 'to' => 'JL-2'],
+                    ['field' => 'basic', 'from' => '17,800.00', 'to' => '18,900.00'],
+                    ['field' => 'leavecredits', 'from' => '—', 'to' => '5 VL / 5 SL'],
+                ],
+                'remarks' => 'Completed the 6-month probationary period with a passing evaluation.',
+            ],
+        ];
+
+        foreach ($forms as $reference => $form) {
+            $pan = PanRequest::where('reference', $reference)->first();
+            PanForm::updateOrCreate(
+                ['pan_request_id' => $pan->id],
+                [...$form, 'prepared_by' => $tnavarro->id]
             );
         }
 

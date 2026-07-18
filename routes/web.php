@@ -17,7 +17,8 @@ Route::get('/app-login/{id}', [AuthenticationController::class, 'app_login'])->n
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
-    Route::redirect('/', '/requests');
+    // Role-aware landing — a one-role account must never land on a module it can't open
+    Route::get('/', fn () => redirect(auth()->user()->landingRoute()))->name('home');
 
     Route::middleware('can:requestor')->group(function () {
         Route::get('/requests', App\Livewire\Requestor\Index::class)->name('requests.index');

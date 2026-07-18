@@ -15,7 +15,7 @@ class AuthenticationController extends Controller
     public function app_login(?string $id = null)
     {
         if (Auth::check()) {
-            return redirect()->intended(route('requests.index'));
+            return redirect()->intended(Auth::user()->landingRoute());
         }
 
         try {
@@ -31,7 +31,7 @@ class AuthenticationController extends Controller
         }
 
         if (Auth::loginUsingId($user->id)) {
-            return redirect()->intended(route('requests.index'));
+            return redirect()->intended(Auth::user()->landingRoute());
         }
 
         return 'Login Error [1]. System login error.';

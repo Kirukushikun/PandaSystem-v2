@@ -62,6 +62,23 @@ class User extends Authenticatable
     }
 
     /**
+     * Where this account lands after signing in — its role's own queue, never a
+     * module it can't open (one-role accounts 403'd on the old /requests default).
+     */
+    public function landingRoute(): string
+    {
+        return match (true) {
+            $this->is_requestor => route('requests.index'),
+            $this->is_division_head, $this->is_dh_head => route('division.queue'),
+            $this->is_hr_preparer => route('preparation.queue'),
+            $this->is_hr_approver => route('hr-approval.queue'),
+            $this->is_final_approver => route('final-approval.queue'),
+            $this->is_admin => route('admin.users'),
+            default => route('help.glossary'), // no roles: the one page everyone may see
+        };
+    }
+
+    /**
      * Bridge to PanWorkflow's transition table: checks the stage-permission key
      * an action carries ('requestor', 'division_head', …) against the booleans.
      */

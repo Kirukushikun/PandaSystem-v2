@@ -90,7 +90,7 @@ test('a valid company login with NO local user row is rejected — local users t
 });
 
 test('app-to-app login signs in via encrypted user id', function () {
-    $user = User::factory()->create();
+    $user = User::factory()->requestor()->create();
 
     $this->get('/app-login/'.Crypt::encryptString((string) $user->id))
         ->assertRedirect(route('requests.index'));
@@ -135,7 +135,7 @@ test('when Turnstile is enabled, a failed challenge blocks login before the auth
 
 test('when Turnstile passes, login proceeds to the external auth flow', function () {
     config(['services.turnstile.verify' => true, 'services.turnstile.secret' => 's3cret']);
-    $user = User::factory()->create(['email' => 'kreyes@bfcgroup.org']);
+    $user = User::factory()->requestor()->create(['email' => 'kreyes@bfcgroup.org']);
     Http::fake([
         'https://challenges.cloudflare.com/turnstile/v0/siteverify' => Http::response(['success' => true]),
         'https://auth.test/api/v1/auth/login' => Http::response(['token' => 'tok-123', 'email' => 'kreyes@bfcgroup.org']),

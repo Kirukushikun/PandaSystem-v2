@@ -31,6 +31,25 @@ test('fake mode still rejects emails with no local user row', function () {
     expect(AccessLog::sole()->success)->toBeFalse();
 });
 
+test('each role lands on its own queue after login — never a 403 module', function (string $state, string $routeName) {
+    User::factory()->{$state}()->create(['email' => 'role@bfcgroup.org']);
+
+    $this->post('/login', ['email' => 'role@bfcgroup.org', 'password' => 'x'])
+        ->assertRedirect(route($routeName));
+
+    // and the landing actually opens for them
+    $this->get(route($routeName))->assertOk();
+    auth()->logout();
+})->with([
+    'requestor' => ['requestor', 'requests.index'],
+    'division head' => ['divisionHead', 'division.queue'],
+    'dh head' => ['dhHead', 'division.queue'],
+    'hr preparer' => ['hrPreparer', 'preparation.queue'],
+    'hr approver' => ['hrApprover', 'hr-approval.queue'],
+    'final approver' => ['finalApprover', 'final-approval.queue'],
+    'admin' => ['admin', 'admin.users'],
+]);
+
 test('the login page offers one-click dev accounts only in fake mode', function () {
     User::factory()->requestor()->create(['name' => 'K. Reyes', 'email' => 'kreyes@bfcgroup.org']);
 

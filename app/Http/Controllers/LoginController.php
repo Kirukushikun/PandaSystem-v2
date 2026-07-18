@@ -162,7 +162,7 @@ class LoginController extends Controller
             Auth::loginUsingId($user->id);
             $request->session()->regenerate();
 
-            return redirect()->intended(route('requests.index'));
+            return redirect()->intended(Auth::user()->landingRoute());
 
         } catch (\Exception $e) {
             $this->incrementAttempts($email);
@@ -193,7 +193,7 @@ class LoginController extends Controller
         Auth::loginUsingId($user->id);
         $request->session()->regenerate();
 
-        return redirect()->intended(route('requests.index'));
+        return redirect()->intended(Auth::user()->landingRoute());
     }
 
     public function logout(Request $request): RedirectResponse

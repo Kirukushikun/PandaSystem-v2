@@ -5,34 +5,44 @@
 
   <div class="htop">
     <div><h2>Backup &amp; Restore</h2>
-      <p>Scheduled backups run automatically every night; from here you can also trigger one manually or restore from an uploaded backup.</p></div>
+      <p>Scheduled backups run automatically every night at 01:00; from here you can also trigger one manually or restore from an uploaded backup.</p></div>
   </div>
 
   <div class="stats">
-    <x-stat value="Healthy" label="Backup health check" tone="ok" />
+    <x-stat :value="$stats['health']" label="Backup health check" :tone="$stats['healthTone']" />
     <x-stat value="01:00" label="Nightly schedule" />
-    <x-stat value="14" label="Backups retained" />
-    <x-stat value="318 MB" label="Latest backup size" tone="acc" />
+    <x-stat :value="$stats['retained']" label="Backups retained" />
+    <x-stat :value="$stats['size']" label="Latest backup size" tone="acc" />
   </div>
 
   <div class="twocol">
     <div class="pane">
       <h3>Recent backups</h3>
       <div>
-        <div class="logrow"><time>Jul 15 · 01:00</time><span style="flex:1">pandav2_2026-07-15.sql.gz · 318 MB</span><span class="pill p-appr">OK</span></div>
-        <div class="logrow"><time>Jul 14 · 01:00</time><span style="flex:1">pandav2_2026-07-14.sql.gz · 317 MB</span><span class="pill p-appr">OK</span></div>
-        <div class="logrow"><time>Jul 13 · 01:00</time><span style="flex:1">pandav2_2026-07-13.sql.gz · 317 MB</span><span class="pill p-appr">OK</span></div>
-        <div class="logrow"><time>Jul 12 · 01:00</time><span style="flex:1">pandav2_2026-07-12.sql.gz · 315 MB</span><span class="pill p-appr">OK</span></div>
+        @forelse ($backups as $backup)
+        <div class="logrow" wire:key="b-{{ $backup['file'] }}"><time>{{ date('M j · H:i', $backup['at']) }}</time>
+          <span style="flex:1">{{ basename($backup['file']) }} · {{ round($backup['size'] / 1048576, 1) }} MB</span>
+          <a class="btn ghost" style="padding:2px 8px;font-size:12px;text-decoration:none" href="{{ route('maintenance.backups.download', basename($backup['file'])) }}">Download</a></div>
+        @empty
+        <div class="logrow"><span style="color:var(--ink-3)">No backups yet — run one now, or wait for the nightly schedule.</span></div>
+        @endforelse
       </div>
       <div style="display:flex;gap:8px;padding:14px 16px;border-top:1px solid var(--line-soft)">
-        <button class="btn primary" type="button" wire:click="runBackup">Run Backup Now</button>
-        <button class="btn" type="button" onclick="showToast('Download arrives with the real build.')">Download latest</button>
+        <button class="btn primary" type="button" wire:click="runBackup" wire:loading.attr="disabled" wire:target="runBackup">
+          <span wire:loading.remove wire:target="runBackup">Run Backup Now</span>
+          <span wire:loading wire:target="runBackup">Backing up…</span>
+        </button>
       </div>
     </div>
     <div class="pane">
       <h3>Import / Restore</h3>
       <div class="pad" style="display:flex;flex-direction:column;gap:12px;padding-top:14px">
-        <div class="upload"><b>Choose a backup file</b> or drag it here — .sql.gz produced by this system</div>
+        <label class="upload" style="cursor:pointer">
+          <b>{{ $restoreFile ? $restoreFile->getClientOriginalName() : 'Choose a backup file' }}</b>
+          {{ $restoreFile ? '— ready to restore' : 'or drag it here — .sql produced by this system' }}
+          <input type="file" accept=".sql" wire:model="restoreFile" style="display:none">
+        </label>
+        @error('restoreFile')<span class="hint" style="color:var(--bad)">{{ $message }}</span>@enderror
         <div class="note warn" style="margin:0"><span class="ic">!</span>Restoring overwrites current data with the backup's contents. A safety backup is taken automatically first.</div>
         <div style="display:flex;justify-content:flex-end">
           <button class="btn danger" type="button" wire:click="openRestore">Restore from Backup…</button>
@@ -52,7 +62,7 @@
       </div>
       <div class="dz-mfoot" style="padding-bottom:20px">
         <button class="btn" type="button" wire:click="closeRestore">Cancel</button>
-        <button class="dz-action red" type="button" wire:click="queueRestore" @disabled($confirmInput !== 'RESTORE')>Queue Restore</button>
+        <button class="dz-action red" type="button" wire:click="runRestore" @disabled($confirmInput !== 'RESTORE')>Restore Now</button>
       </div>
     </div>
   </div>

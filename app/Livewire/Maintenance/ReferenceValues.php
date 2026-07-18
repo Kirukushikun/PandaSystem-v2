@@ -2,79 +2,74 @@
 
 namespace App\Livewire\Maintenance;
 
+use App\Models\Department;
+use App\Models\Farm;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
+/**
+ * The option lists the rest of the system draws from. A value in use — by
+ * employees, users, PANs, or department assignments — can't be deleted;
+ * the isInUse() guards on the models are the authority, not the button.
+ */
 #[Layout('layouts.app')]
 #[Title('Reference Values — PANDA')]
 class ReferenceValues extends Component
 {
-    /**
-     * Live lists (scaffold state only). A value in use by employees or PANs
-     * can't be deleted — enforced in the real build by policy + query.
-     */
-    public array $farms = [
-        ['name' => 'San Rafael Farm',      'note' => '214 employees', 'inUse' => true],
-        ['name' => 'Sta. Maria Feedmill',  'note' => '121 employees', 'inUse' => true],
-        ['name' => 'Main Office',          'note' => '77 employees',  'inUse' => true],
-        ['name' => 'Pampanga Grower Site', 'note' => '0 employees',   'inUse' => false],
-    ];
-
-    public array $depts = [
-        ['name' => 'Broiler Operations',   'note' => '3 heads · 188 employees', 'inUse' => true],
-        ['name' => 'Hatchery',             'note' => '1 head · 64 employees',   'inUse' => true],
-        ['name' => 'Feedmill',             'note' => '2 heads · 96 employees',  'inUse' => true],
-        ['name' => 'Sales & Distribution', 'note' => '1 head · 41 employees',   'inUse' => true],
-        ['name' => 'Corporate Office',     'note' => '2 heads · 23 employees',  'inUse' => true],
-        ['name' => 'Aqua Ventures',        'note' => '0 heads · 0 employees',   'inUse' => false],
-    ];
-
     public string $newFarm = '';
+
     public string $newDept = '';
 
     public function addFarm(): void
     {
-        $name = trim($this->newFarm);
-        if ($name === '') {
-            $this->js("showToast('Type a name first.')");
-            return;
-        }
-        $this->farms[] = ['name' => $name, 'note' => '0 employees', 'inUse' => false];
+        $this->validate(['newFarm' => 'required|string|max:80|unique:farms,name'], [], ['newFarm' => 'farm name']);
+
+        Farm::create(['name' => trim($this->newFarm)]);
         $this->newFarm = '';
-        $this->js("showToast('Value added (UI scaffold — nothing is persisted yet).')");
+        $this->js("showToast('Farm added.')");
     }
 
     public function addDept(): void
     {
-        $name = trim($this->newDept);
-        if ($name === '') {
-            $this->js("showToast('Type a name first.')");
+        $this->validate(['newDept' => 'required|string|max:80|unique:departments,name'], [], ['newDept' => 'department name']);
+
+        Department::create(['name' => trim($this->newDept)]);
+        $this->newDept = '';
+        $this->js("showToast('Department added.')");
+    }
+
+    public function removeFarm(int $id): void
+    {
+        $farm = Farm::findOrFail($id);
+        if ($farm->isInUse()) {
+            $this->js("showToast('{$farm->name} is in use — it cannot be deleted.')");
+
             return;
         }
-        $this->depts[] = ['name' => $name, 'note' => '0 heads · 0 employees', 'inUse' => false];
-        $this->newDept = '';
-        $this->js("showToast('Value added (UI scaffold — nothing is persisted yet).')");
+
+        $farm->delete();
+        $this->js("showToast('{$farm->name} deleted.')");
     }
 
-    public function removeFarm(int $i): void
+    public function removeDept(int $id): void
     {
-        if (isset($this->farms[$i]) && ! $this->farms[$i]['inUse']) {
-            array_splice($this->farms, $i, 1);
-            $this->js("showToast('Value deleted (UI scaffold — nothing is persisted yet).')");
-        }
-    }
+        $department = Department::findOrFail($id);
+        if ($department->isInUse()) {
+            $this->js("showToast('{$department->name} is in use — it cannot be deleted.')");
 
-    public function removeDept(int $i): void
-    {
-        if (isset($this->depts[$i]) && ! $this->depts[$i]['inUse']) {
-            array_splice($this->depts, $i, 1);
-            $this->js("showToast('Value deleted (UI scaffold — nothing is persisted yet).')");
+            return;
         }
+
+        $department->delete();
+        $this->js("showToast('{$department->name} deleted.')");
     }
 
     public function render()
     {
-        return view('livewire.maintenance.reference-values');
+        return view('livewire.maintenance.reference-values', [
+            'farms' => Farm::withCount('employees')->orderBy('name')->get(),
+            'departments' => Department::withCount(['employees', 'heads'])->orderBy('name')->get(),
+        ]);
     }
 }

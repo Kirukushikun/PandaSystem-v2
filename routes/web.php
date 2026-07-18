@@ -55,6 +55,12 @@ Route::middleware('auth')->group(function () {
         Route::get('/maintenance/logs', App\Livewire\Maintenance\Logs::class)->name('maintenance.logs');
         Route::get('/maintenance/reference', App\Livewire\Maintenance\ReferenceValues::class)->name('maintenance.reference');
         Route::get('/maintenance/backups', App\Livewire\Maintenance\Backups::class)->name('maintenance.backups');
+        Route::get('/maintenance/backups/{file}/download', function (string $file) {
+            $path = App\Services\BackupService::DIR.'/'.basename($file); // no traversal
+            abort_unless(Storage::exists($path), 404);
+
+            return Storage::download($path);
+        })->name('maintenance.backups.download');
         Route::get('/maintenance/danger', App\Livewire\Maintenance\DangerZone::class)->name('maintenance.danger');
     });
 

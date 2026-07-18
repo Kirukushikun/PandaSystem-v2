@@ -36,18 +36,18 @@
 
       @if ($modes[$g] === 'range')
       <div class="formgrid" style="padding:0;grid-template-columns:1fr 1fr;max-width:440px">
-        <div class="field"><label>From Date</label><input type="date"></div>
-        <div class="field"><label>To Date</label><input type="date"></div>
+        <div class="field"><label>From Date</label><input type="date" wire:model.live="from.{{ $g }}"></div>
+        <div class="field"><label>To Date</label><input type="date" wire:model.live="to.{{ $g }}"></div>
       </div>
       @elseif ($modes[$g] === 'year')
       <div class="field" style="max-width:200px"><label>Select Year</label>
-        <select><option>2022</option><option>2023</option><option>2024</option><option>2025</option><option>2026</option></select></div>
+        <select wire:model.live="year.{{ $g }}"><option value="">— Select Year —</option>@for ($y = 2022; $y <= now()->year; $y++)<option>{{ $y }}</option>@endfor</select></div>
       @elseif ($modes[$g] === 'quarter')
       <div class="formgrid" style="padding:0;grid-template-columns:1fr 1fr;max-width:440px">
         <div class="field"><label>Select Year</label>
-          <select wire:model.live="attachYear"><option value="">— Select Year —</option><option>2022</option><option>2023</option><option>2024</option><option>2025</option><option>2026</option></select></div>
+          <select wire:model.live="attachYear"><option value="">— Select Year —</option>@for ($y = 2022; $y <= now()->year; $y++)<option>{{ $y }}</option>@endfor</select></div>
         <div class="field"><label>Select Quarter</label>
-          <select @disabled($attachYear === '')><option value="">— Select Quarter —</option><option>Q1 — Jan–Mar</option><option>Q2 — Apr–Jun</option><option>Q3 — Jul–Sep</option><option>Q4 — Oct–Dec</option></select></div>
+          <select wire:model.live="attachQuarter" @disabled($attachYear === '')><option value="">— Select Quarter —</option><option value="1">Q1 — Jan–Mar</option><option value="2">Q2 — Apr–Jun</option><option value="3">Q3 — Jul–Sep</option><option value="4">Q4 — Oct–Dec</option></select></div>
       </div>
       @endif
 

@@ -47,6 +47,10 @@ class PanForm extends Model
      */
     public function displayRows(): array
     {
+        // Money rows = Basic Pay AND every dynamic allowance (any non-fixed field).
+        $money = fn (string $field) => ! in_array($field, ['section', 'place', 'head', 'position', 'joblevel', 'leavecredits'], true);
+        $peso = fn (string $value) => in_array($value, ['', '—'], true) ? '—' : '₱ '.$value;
+
         return array_map(fn (array $row) => [
             'label' => match ($row['field']) {
                 'section' => 'Section',
@@ -58,10 +62,10 @@ class PanForm extends Model
                 'leavecredits' => 'Leave Credits',
                 default => $row['field'],
             },
-            'from' => $row['field'] === 'basic' ? '₱ '.$row['from'] : $row['from'],
-            'to' => $row['field'] === 'basic' ? '₱ '.$row['to'] : $row['to'],
+            'from' => $money($row['field']) ? $peso($row['from']) : $row['from'],
+            'to' => $money($row['field']) ? $peso($row['to']) : $row['to'],
             'chg' => $row['from'] !== $row['to'],
-            'num' => $row['field'] === 'basic',
+            'num' => $money($row['field']),
         ], $this->action_reference ?? []);
     }
 }

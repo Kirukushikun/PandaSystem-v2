@@ -31,6 +31,17 @@ test('fake mode still rejects emails with no local user row', function () {
     expect(AccessLog::sole()->success)->toBeFalse();
 });
 
+test('the login page offers one-click dev accounts only in fake mode', function () {
+    User::factory()->requestor()->create(['name' => 'K. Reyes', 'email' => 'kreyes@bfcgroup.org']);
+
+    $this->get('/login')
+        ->assertSee('Dev accounts')
+        ->assertSee('kreyes@bfcgroup.org');
+
+    config(['services.auth_api.fake' => false]);
+    $this->get('/login')->assertDontSee('Dev accounts');
+});
+
 test('fake mode is ignored in production — the external API path runs instead', function () {
     $this->app['env'] = 'production';
     config(['services.auth_api.base_uri' => 'https://auth.test']);

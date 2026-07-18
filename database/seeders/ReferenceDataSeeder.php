@@ -7,31 +7,35 @@ use App\Models\Farm;
 use Illuminate\Database\Seeder;
 
 /**
- * Farms/Sites and Departments from the mockup's Reference Values screen
- * (+ Accounting, which appears in the Add Employee modal's department list).
+ * The finalized reference values (settled 2026-07-18, replacing the mockup's
+ * sample farms/departments). DatabaseSeeder prunes rows not on these lists
+ * once users/employees have been remapped.
  */
 class ReferenceDataSeeder extends Seeder
 {
+    public const FARMS = ['BDL', 'BFC', 'BRD', 'PFC', 'RH'];
+
+    public const DEPARTMENTS = [
+        'Accounting',
+        'Audit',
+        'Feedmill',
+        'General Services',
+        'Human Resources',
+        'IT and Security Services',
+        'Poultry',
+        'Purchasing',
+        'Sales & Marketing',
+        'Swine',
+        'Treasury',
+    ];
+
     public function run(): void
     {
-        foreach ([
-            'San Rafael Farm',
-            'Sta. Maria Feedmill',
-            'Main Office',
-            'Pampanga Grower Site', // 0 employees — the deletable sample row
-        ] as $farm) {
+        foreach (self::FARMS as $farm) {
             Farm::firstOrCreate(['name' => $farm]);
         }
 
-        foreach ([
-            'Broiler Operations',
-            'Hatchery',
-            'Feedmill',
-            'Sales & Distribution',
-            'Corporate Office',
-            'Accounting',
-            'Aqua Ventures', // 0 heads · 0 employees — the deletable sample row
-        ] as $department) {
+        foreach (self::DEPARTMENTS as $department) {
             Department::firstOrCreate(['name' => $department]);
         }
     }

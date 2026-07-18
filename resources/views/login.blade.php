@@ -58,6 +58,17 @@ button:hover{filter:brightness(.95)}
 button:focus-visible,.field input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .hint{margin:16px 0 0;text-align:center;font-size:11.5px;color:var(--ink-3)}
 footer{margin-top:22px;text-align:center;font-size:11px;color:var(--ink-3)}
+.dev{width:100%;max-width:380px;margin-top:14px;background:var(--panel);border:1px dashed var(--line);
+  border-radius:14px;padding:16px 18px}
+.dev h2{margin:0 0 2px;font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-2)}
+.dev p{margin:0 0 10px;font-size:11.5px;color:var(--ink-3)}
+.dev .grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.dev button{width:100%;background:var(--accent-soft);color:var(--ink);border:1px solid var(--line);
+  border-radius:8px;font:inherit;font-size:12.5px;padding:7px 8px;text-align:left;cursor:pointer}
+.dev button b{display:block;font-size:12px;color:var(--accent)}
+.dev button small{color:var(--ink-3);font-size:10.5px}
+.dev button:hover{border-color:var(--accent);filter:none}
+.dev button.on{outline:2px solid var(--accent);outline-offset:1px}
 </style>
 </head>
 <body>
@@ -92,6 +103,33 @@ footer{margin-top:22px;text-align:center;font-size:11px;color:var(--ink-3)}
     <button type="submit">Sign in</button>
     <p class="hint">Company account required — access is managed by IT Administration.</p>
   </form>
+
+  {{-- Dev-mode only (AUTH_FAKE, never in production): one click fills the credentials,
+       then press Sign in. Any password is accepted in fake mode. --}}
+  @if ($devAccounts)
+  <div class="dev">
+    <h2>Dev accounts — AUTH_FAKE</h2>
+    <p>Click a role to generate its credentials, then Sign in.</p>
+    <div class="grid">
+      @foreach ($devAccounts as $account)
+      <button type="button" class="fill" data-email="{{ $account['email'] }}">
+        <b>{{ $account['role'] }}</b>{{ $account['name'] }}<br><small>{{ $account['email'] }}</small>
+      </button>
+      @endforeach
+    </div>
+  </div>
+  <script>
+    document.querySelectorAll('.dev .fill').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        document.getElementById('email').value = btn.dataset.email;
+        document.getElementById('p').value = 'password'; // any password passes in AUTH_FAKE mode
+        document.querySelectorAll('.dev .fill').forEach(function (b) { b.classList.remove('on'); });
+        btn.classList.add('on');
+        document.querySelector('.card button[type=submit]').focus();
+      });
+    });
+  </script>
+  @endif
   <footer>PANDA v2 · BFC Group internal</footer>
 </div>
 @if ($turnstileSiteKey)

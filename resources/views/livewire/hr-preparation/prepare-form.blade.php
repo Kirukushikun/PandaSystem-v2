@@ -105,25 +105,39 @@
       <tbody>
         @foreach ([
           'section' => 'Section', 'place' => 'Place of Assignment', 'head' => 'Immediate Head',
-          'position' => 'Position', 'joblevel' => 'Job Level', 'basic' => 'Basic Pay',
+          'position' => 'Position', 'joblevel' => 'Job Level',
         ] as $field => $label)
         <tr wire:key="fixed-{{ $field }}">
           <td class="lbl">{{ $label }}</td>
-          <td @if ($field === 'basic') class="num" @endif>{{ ($fromValues[$field] ?? '') !== '' ? ($field === 'basic' ? '₱ ' : '').$fromValues[$field] : '—' }}</td>
+          <td>{{ ($fromValues[$field] ?? '') !== '' ? $fromValues[$field] : '—' }}</td>
           <td class="arrow">→</td>
-          <td @if ($field === 'basic') class="num" @endif><input class="toin @if (($toValues[$field] ?? '') !== '') filled @endif @if ($field === 'basic') numin @endif" wire:model="toValues.{{ $field }}" placeholder="{{ $field === 'basic' ? '₱ 0.00' : 'No change' }}"></td>
+          <td><input class="toin @if (($toValues[$field] ?? '') !== '') filled @endif" wire:model="toValues.{{ $field }}" placeholder="No change"></td>
           <td></td>
         </tr>
         @endforeach
+        {{-- Leave Credits (Regularization only) sits BEFORE Basic Pay / any allowances --}}
         @if ($pan->action_type->includesLeaveCredits())
         <tr wire:key="fixed-leavecredits">
           <td class="lbl">Leave Credits</td>
           <td>{{ ($fromValues['leavecredits'] ?? '') !== '' ? $fromValues['leavecredits'] : '—' }}</td>
           <td class="arrow">→</td>
-          <td><input class="toin @if (($toValues['leavecredits'] ?? '') !== '') filled @endif" wire:model="toValues.leavecredits" placeholder="e.g. 5 VL / 5 SL"></td>
+          <td><select class="toin @if (($toValues['leavecredits'] ?? '') !== '') filled @endif" wire:model.live="toValues.leavecredits" style="width:100%">
+            <option value="">No change</option>
+            @foreach (\App\Livewire\HrPreparation\PrepareForm::LEAVE_CREDIT_OPTIONS as $option)
+            <option>{{ $option }}</option>
+            @endforeach
+          </select>
+          @error('toValues.leavecredits')<span class="hint" style="color:var(--bad)">{{ $message }}</span>@enderror</td>
           <td></td>
         </tr>
         @endif
+        <tr wire:key="fixed-basic">
+          <td class="lbl">Basic Pay</td>
+          <td class="num">{{ ($fromValues['basic'] ?? '') !== '' ? '₱ '.$fromValues['basic'] : '—' }}</td>
+          <td class="arrow">→</td>
+          <td class="num"><input class="toin numin @if (($toValues['basic'] ?? '') !== '') filled @endif" wire:model="toValues.basic" placeholder="₱ 0.00"></td>
+          <td></td>
+        </tr>
         @foreach ($allowances as $i => $allowance)
         <tr wire:key="allowance-{{ $i }}"><td class="lbl">{{ $allowance['label'] }}</td>
           <td class="num">{{ $allowance['from'] }}</td><td class="arrow">→</td>

@@ -65,6 +65,22 @@ class PrepareForm extends Component
 
     public const FIXED_FIELDS = ['section', 'place', 'head', 'position', 'joblevel', 'basic'];
 
+    /** Monthly SL/VL accrual pairs (finalized 2026-07-18) — the Leave Credits "To" choices. */
+    public const LEAVE_CREDIT_OPTIONS = [
+        'SL - 5.00 | VL - 5.00',
+        'SL - 4.58 | VL - 4.58',
+        'SL - 4.17 | VL - 4.17',
+        'SL - 3.75 | VL - 3.75',
+        'SL - 3.33 | VL - 3.33',
+        'SL - 2.92 | VL - 2.92',
+        'SL - 2.50 | VL - 2.50',
+        'SL - 2.08 | VL - 2.08',
+        'SL - 1.67 | VL - 1.67',
+        'SL - 1.25 | VL - 1.25',
+        'SL - 0.83 | VL - 0.83',
+        'SL - 0.42 | VL - 0.42',
+    ];
+
     public function mount(string $pan): void
     {
         $this->panRequest = PanRequest::where('reference', $pan)
@@ -218,6 +234,7 @@ class PrepareForm extends Component
             'doe_to' => 'nullable|date|after_or_equal:doe_from',
             'wage_no' => $this->panRequest->action_type->requiresWageNumber() ? 'required|string|max:50' : 'nullable|string|max:50',
             'toValues.*' => 'nullable|string|max:255',
+            'toValues.leavecredits' => ['nullable', \Illuminate\Validation\Rule::in(self::LEAVE_CREDIT_OPTIONS)],
             'allowances.*.to' => 'nullable|string|max:255',
             'remarks' => 'nullable|string|max:1000',
         ];
@@ -225,10 +242,12 @@ class PrepareForm extends Component
 
     private function persist(): void
     {
-        $fields = self::FIXED_FIELDS;
+        // Leave Credits sits BEFORE Basic Pay (and any allowances) in the reference order.
+        $fields = ['section', 'place', 'head', 'position', 'joblevel'];
         if ($this->panRequest->action_type->includesLeaveCredits()) {
             $fields[] = 'leavecredits';
         }
+        $fields[] = 'basic';
 
         // Blank "To" = no change: the From value carries through (print view shows both sides).
         $reference = array_map(fn (string $field) => [

@@ -26,7 +26,43 @@ class LoginController extends Controller
     {
         return view('login', [
             'turnstileSiteKey' => config('services.turnstile.site_key'),
+            'devAccounts' => $this->devAccounts(),
         ]);
+    }
+
+    /**
+     * One-click credentials for the seeded role accounts — rendered ONLY in
+     * AUTH_FAKE dev mode (never in production), where any password signs in.
+     */
+    private function devAccounts(): array
+    {
+        if (! config('services.auth_api.fake') || app()->isProduction()) {
+            return [];
+        }
+
+        return User::orderBy('id')->get()
+            ->map(fn (User $u) => [
+                'role' => match (true) {
+                    $u->is_admin => 'Admin',
+                    $u->is_hr_head => 'HR Head',
+                    $u->is_dh_head => 'DH Head',
+                    $u->is_final_approver => 'Final Approver',
+                    $u->is_hr_approver => 'HR Approver',
+                    $u->is_hr_preparer => 'HR Preparer',
+                    $u->is_division_head => 'Division Head',
+                    $u->is_requestor => 'Requestor',
+                    default => null,
+                },
+                'name' => $u->name,
+                'email' => $u->email,
+            ])
+            ->filter(fn (array $a) => $a['role'] !== null)
+            ->sortBy(fn (array $a) => array_search($a['role'], [
+                'Requestor', 'Division Head', 'HR Preparer', 'HR Head',
+                'DH Head', 'HR Approver', 'Final Approver', 'Admin',
+            ]))
+            ->values()
+            ->all();
     }
 
     public function postLogin(Request $request): RedirectResponse

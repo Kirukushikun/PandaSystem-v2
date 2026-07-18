@@ -13,49 +13,58 @@ beforeEach(function () {
     $this->seed(DatabaseSeeder::class);
 });
 
-test('the seeders mirror the mockup sample data', function () {
-    expect(Farm::count())->toBe(4)
-        ->and(Department::count())->toBe(7)
-        ->and(User::count())->toBe(7)
-        ->and(Employee::count())->toBe(10); // 6 directory rows + 2 from the Requestor list + 2 from the Division queue
+test('the seeders build the finalized master data', function () {
+    expect(Farm::pluck('name')->all())->toEqualCanonicalizing(['BDL', 'BFC', 'BRD', 'PFC', 'RH'])
+        ->and(Department::count())->toBe(11)
+        ->and(Department::pluck('name'))->toContain('Poultry', 'Feedmill', 'Swine', 'Human Resources', 'Treasury')
+        ->and(User::count())->toBe(8)
+        ->and(Employee::count())->toBe(10);
 });
 
-test('K. Reyes matches the User Access screen: permissions and department assignments', function () {
+test('one role per account: each stage has exactly one holder', function () {
+    expect(User::where('is_requestor', true)->sole()->username)->toBe('kreyes')
+        ->and(User::where('is_division_head', true)->sole()->username)->toBe('jbautista')
+        ->and(User::where('is_dh_head', true)->sole()->username)->toBe('caguirre')
+        ->and(User::where('is_hr_head', true)->sole()->username)->toBe('mdelacruz')
+        ->and(User::where('is_hr_approver', true)->sole()->username)->toBe('rocampo')
+        ->and(User::where('is_final_approver', true)->sole()->username)->toBe('vsalazar')
+        ->and(User::where('is_admin', true)->sole()->username)->toBe('admin_it')
+        // HR Head Preparer is one role: mdelacruz carries the preparer flag alongside tnavarro
+        ->and(User::where('is_hr_preparer', true)->pluck('username')->all())
+        ->toEqualCanonicalizing(['tnavarro', 'mdelacruz']);
+});
+
+test('reseeding resets stale permissions instead of stacking them', function () {
+    // kreyes was Requestor + Division Head before the one-role split — reseed must clear it
+    User::where('username', 'kreyes')->first()->update(['is_division_head' => true]);
+
+    $this->seed(DatabaseSeeder::class);
+
     $kreyes = User::where('username', 'kreyes')->first();
-
     expect($kreyes->is_requestor)->toBeTrue()
-        ->and($kreyes->is_division_head)->toBeTrue()
-        ->and($kreyes->is_hr_preparer)->toBeFalse()
-        ->and($kreyes->is_admin)->toBeFalse()
-        ->and($kreyes->farm->name)->toBe('San Rafael Farm')
-        ->and($kreyes->requestorDepartments->pluck('name')->all())
-        ->toEqualCanonicalizing(['Broiler Operations', 'Hatchery'])
-        ->and($kreyes->headedDepartments->pluck('name')->all())
-        ->toBe(['Broiler Operations']);
+        ->and($kreyes->is_division_head)->toBeFalse();
 });
 
-test('flags land on the right people: HR Head, DH Head, Admin', function () {
-    expect(User::where('username', 'mdelacruz')->first()->is_hr_head)->toBeTrue()
-        ->and(User::where('username', 'caguirre')->first()->is_dh_head)->toBeTrue()
-        ->and(User::where('username', 'admin_it')->first()->is_admin)->toBeTrue()
-        ->and(User::where('is_hr_head', true)->count())->toBe(1)
-        ->and(User::where('is_dh_head', true)->count())->toBe(1)
-        ->and(User::where('is_admin', true)->count())->toBe(1);
+test('department assignments: the requestor raises for Poultry + Feedmill; the division head heads both', function () {
+    expect(User::where('username', 'kreyes')->first()->requestorDepartments->pluck('name')->all())
+        ->toEqualCanonicalizing(['Poultry', 'Feedmill'])
+        ->and(User::where('username', 'jbautista')->first()->headedDepartments->pluck('name')->all())
+        ->toEqualCanonicalizing(['Poultry', 'Feedmill'])
+        ->and(User::where('username', 'caguirre')->first()->headedDepartments)->toBeEmpty();
 });
 
-test('employees are linked to their mockup farm and department', function () {
+test('employees are linked to the finalized farms and departments', function () {
     $lim = Employee::where('employee_no', 'EMP-10233')->first();
 
     expect($lim->name)->toBe('S. Lim')
         ->and($lim->department->name)->toBe('Feedmill')
-        ->and($lim->farm->name)->toBe('Sta. Maria Feedmill');
+        ->and($lim->farm->name)->toBe('PFC');
 });
 
-test('reference values in use are guarded; the 0-use samples are deletable', function () {
-    expect(Farm::where('name', 'San Rafael Farm')->first()->isInUse())->toBeTrue()
-        ->and(Farm::where('name', 'Pampanga Grower Site')->first()->isInUse())->toBeFalse()
-        ->and(Department::where('name', 'Broiler Operations')->first()->isInUse())->toBeTrue()
-        ->and(Department::where('name', 'Aqua Ventures')->first()->isInUse())->toBeFalse();
+test('reference values in use are guarded; unstaffed departments are deletable', function () {
+    expect(Farm::where('name', 'BFC')->first()->isInUse())->toBeTrue()
+        ->and(Department::where('name', 'Poultry')->first()->isInUse())->toBeTrue()
+        ->and(Department::where('name', 'Treasury')->first()->isInUse())->toBeFalse();
 });
 
 test('stage permissions bridge to the PanWorkflow permission keys', function () {
@@ -63,8 +72,8 @@ test('stage permissions bridge to the PanWorkflow permission keys', function () 
     $vsalazar = User::where('username', 'vsalazar')->first();
 
     expect($kreyes->hasStagePermission('requestor'))->toBeTrue()
-        ->and($kreyes->hasStagePermission('division_head'))->toBeTrue()
-        ->and($kreyes->hasStagePermission('final_approver'))->toBeFalse()
+        ->and($kreyes->hasStagePermission('division_head'))->toBeFalse()
+        ->and(User::where('username', 'jbautista')->first()->hasStagePermission('division_head'))->toBeTrue()
         ->and($vsalazar->hasStagePermission('final_approver'))->toBeTrue()
         ->and($vsalazar->hasStagePermission('nonsense'))->toBeFalse();
 });

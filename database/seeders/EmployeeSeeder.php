@@ -8,7 +8,8 @@ use App\Models\Farm;
 use Illuminate\Database\Seeder;
 
 /**
- * The 6 roster rows from the mockup's Employee Directory.
+ * The sample roster, remapped onto the finalized farms/departments
+ * (BDL/BFC/BRD/PFC/RH · Poultry/Feedmill/Swine/…).
  */
 class EmployeeSeeder extends Seeder
 {
@@ -18,18 +19,16 @@ class EmployeeSeeder extends Seeder
         $departments = Department::pluck('id', 'name');
 
         $employees = [
-            ['employee_no' => 'EMP-10233', 'name' => 'S. Lim',        'department' => 'Feedmill',           'position' => 'Mill Operator',     'farm' => 'Sta. Maria Feedmill'],
-            ['employee_no' => 'EMP-10490', 'name' => 'N. Fernandez',  'department' => 'Corporate Office',   'position' => 'HR Generalist',     'farm' => 'Main Office'],
-            ['employee_no' => 'EMP-10064', 'name' => 'D. Torres',     'department' => 'Broiler Operations', 'position' => 'Poultry Caretaker', 'farm' => 'San Rafael Farm'],
-            ['employee_no' => 'EMP-10387', 'name' => 'J. Ramos',      'department' => 'Hatchery',           'position' => 'Hatchery Aide',     'farm' => 'San Rafael Farm'],
-            ['employee_no' => 'EMP-10077', 'name' => 'L. Bautista',   'department' => 'Broiler Operations', 'position' => 'Farm Technician I', 'farm' => 'San Rafael Farm'],
-            ['employee_no' => 'EMP-10422', 'name' => 'R. Villanueva', 'department' => 'Broiler Operations', 'position' => 'Farm Helper',       'farm' => 'San Rafael Farm'],
-            // These two appear in the mockup's Requestor list (not the Directory screen)
-            ['employee_no' => 'EMP-10301', 'name' => 'A. Santos',     'department' => 'Broiler Operations', 'position' => 'Poultry Caretaker', 'farm' => 'San Rafael Farm'],
-            ['employee_no' => 'EMP-10119', 'name' => 'C. Mercado',    'department' => 'Hatchery',           'position' => 'Hatchery Aide',     'farm' => 'San Rafael Farm'],
-            // These two appear only in the mockup's Division Head queue
-            ['employee_no' => 'EMP-10255', 'name' => 'P. Aquino',     'department' => 'Broiler Operations', 'position' => 'Farm Technician I', 'farm' => 'San Rafael Farm'],
-            ['employee_no' => 'EMP-10198', 'name' => 'E. Garcia',     'department' => 'Broiler Operations', 'position' => 'Farm Technician II', 'farm' => 'San Rafael Farm'],
+            ['employee_no' => 'EMP-10233', 'name' => 'S. Lim',        'department' => 'Feedmill',        'position' => 'Mill Operator',      'farm' => 'PFC'],
+            ['employee_no' => 'EMP-10490', 'name' => 'N. Fernandez',  'department' => 'Human Resources', 'position' => 'HR Generalist',      'farm' => 'BFC'],
+            ['employee_no' => 'EMP-10064', 'name' => 'D. Torres',     'department' => 'Poultry',         'position' => 'Poultry Caretaker',  'farm' => 'BFC'],
+            ['employee_no' => 'EMP-10387', 'name' => 'J. Ramos',      'department' => 'Poultry',         'position' => 'Hatchery Aide',      'farm' => 'BRD'],
+            ['employee_no' => 'EMP-10077', 'name' => 'L. Bautista',   'department' => 'Poultry',         'position' => 'Farm Technician I',  'farm' => 'BFC'],
+            ['employee_no' => 'EMP-10422', 'name' => 'R. Villanueva', 'department' => 'Poultry',         'position' => 'Farm Helper',        'farm' => 'BFC'],
+            ['employee_no' => 'EMP-10301', 'name' => 'A. Santos',     'department' => 'Poultry',         'position' => 'Poultry Caretaker',  'farm' => 'BFC'],
+            ['employee_no' => 'EMP-10119', 'name' => 'C. Mercado',    'department' => 'Swine',           'position' => 'Farmhand',           'farm' => 'BDL'],
+            ['employee_no' => 'EMP-10255', 'name' => 'P. Aquino',     'department' => 'Swine',           'position' => 'Farm Technician I',  'farm' => 'RH'],
+            ['employee_no' => 'EMP-10198', 'name' => 'E. Garcia',     'department' => 'Feedmill',        'position' => 'Farm Technician II', 'farm' => 'PFC'],
         ];
 
         foreach ($employees as $data) {

@@ -92,8 +92,9 @@ class PanSeeder extends Seeder
                     ['field' => 'head', 'from' => 'K. Reyes', 'to' => 'K. Reyes'],
                     ['field' => 'position', 'from' => 'Poultry Caretaker', 'to' => 'Poultry Caretaker'],
                     ['field' => 'joblevel', 'from' => 'JL-2', 'to' => 'JL-2'],
+                    // Leave Credits sits BEFORE Basic Pay in the finalized reference order
+                    ['field' => 'leavecredits', 'from' => '—', 'to' => 'SL - 1.25 | VL - 1.25'],
                     ['field' => 'basic', 'from' => '17,800.00', 'to' => '18,900.00'],
-                    ['field' => 'leavecredits', 'from' => '—', 'to' => '5 VL / 5 SL'],
                 ],
                 'remarks' => 'Completed the 6-month probationary period with a passing evaluation.',
             ],

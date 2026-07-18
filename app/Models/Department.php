@@ -30,11 +30,18 @@ class Department extends Model
         return $this->belongsToMany(User::class, 'department_user_head');
     }
 
+    public function panRequests(): HasMany
+    {
+        return $this->hasMany(PanRequest::class);
+    }
+
     /** Reference value guard: a department in use can't be deleted. */
     public function isInUse(): bool
     {
         return $this->employees()->exists()
             || $this->requestors()->exists()
-            || $this->heads()->exists();
+            || $this->heads()->exists()
+            // soft-deleted PANs still hold the FK — they count as "in use"
+            || $this->panRequests()->withTrashed()->exists();
     }
 }

@@ -5,8 +5,9 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 
 /**
- * Seeds the mockup's sample data (panda-ui-concept.html is the UI contract),
- * so every real screen can be compared 1:1 against the scaffold/mockup.
+ * Seeds the master data only (accounts, reference values, roster) — PANs start
+ * from an empty slate. To restore the mockup's sample PANs for 1:1 screen
+ * comparison, run: php artisan db:seed --class=PanSeeder
  */
 class DatabaseSeeder extends Seeder
 {
@@ -16,7 +17,6 @@ class DatabaseSeeder extends Seeder
             ReferenceDataSeeder::class,
             UserSeeder::class,
             EmployeeSeeder::class,
-            PanSeeder::class,
         ]);
     }
 }

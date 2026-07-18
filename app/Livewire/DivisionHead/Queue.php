@@ -20,6 +20,8 @@ class Queue extends Component
     public string $filter = 'action'; // action | all | completed
 
     // Shared reason modal (Return to Requestor / Dispute — both demand a reason)
+    public bool $showModal = false;
+
     public ?int $target = null;
 
     public string $modalAction = '';
@@ -49,7 +51,7 @@ class Queue extends Component
         $this->js("showToast('{$pan->reference} confirmed — forwarded to HR Approver.')");
     }
 
-    /** Arms the reason modal for a row; the modal itself is opened by data-modal-open. */
+    /** Arms and opens the reason modal — server state, so re-renders can't shut it. */
     public function startReason(int $id, string $action): void
     {
         $this->target = $id;
@@ -57,6 +59,7 @@ class Queue extends Component
         $this->reason = '';
         $this->details = '';
         $this->resetErrorBag();
+        $this->showModal = true;
     }
 
     public function submitReason(): void
@@ -82,11 +85,10 @@ class Queue extends Component
             'returned_by' => auth()->id(),
         ]);
 
-        $this->js("document.getElementById('reason-modal')?.classList.remove('on')");
         $this->js($this->modalAction === 'dispute'
             ? "showToast('{$pan->reference} disputed — sent back to HR Preparer.')"
             : "showToast('{$pan->reference} returned to the Requestor with your reason.')");
-        $this->reset('target', 'modalAction', 'reason', 'details');
+        $this->reset('showModal', 'target', 'modalAction', 'reason', 'details');
     }
 
     /**

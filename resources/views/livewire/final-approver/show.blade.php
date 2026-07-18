@@ -55,13 +55,13 @@
       <x-print-btn href="{{ route('pan.print', $pan->reference) }}" />
       @endif
       @can('approveFinal', $pan)
-        <button class="btn danger" type="button" data-modal-open="reject-modal">Reject — back to HR Preparation…</button>
+        <button class="btn danger" type="button" wire:click="$set('showModal', true)">Reject — back to HR Preparation…</button>
         <button class="btn primary" type="button" wire:click="approve" wire:confirm="Give final approval to {{ $pan->reference }}?{{ $pan->action_type->autoFinalizesToRegular() ? ' Employment status auto-finalizes to Regular.' : '' }}">Give Final Approval</button>
       @endcan
     </div>
   </div>
 
-  <x-modal id="reject-modal" title="Reject — back to HR Preparation — {{ $pan->reference }}">
+  <x-modal id="reject-modal" :open="$showModal" close="$set('showModal', false)" title="Reject — back to HR Preparation — {{ $pan->reference }}">
     <div class="formgrid" style="padding:16px;grid-template-columns:1fr">
       <div class="field"><label>Reason <em>*</em></label>
         <select wire:model="reason">
@@ -78,7 +78,7 @@
         @error('details')<span class="hint" style="color:var(--bad)">{{ $message }}</span>@enderror</div>
     </div>
     <x-slot:footer>
-      <button class="btn" type="button" data-close>Cancel</button>
+      <button class="btn" type="button" wire:click="$set('showModal', false)">Cancel</button>
       <div class="spacer"></div>
       <button class="btn danger" type="button" wire:click="submitReject">Reject to HR Preparation</button>
     </x-slot:footer>

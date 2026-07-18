@@ -51,13 +51,13 @@
       <x-print-btn href="{{ route('pan.print', $pan->reference) }}" />
       @endif
       @can('approveHr', $pan)
-        <button class="btn danger" type="button" data-modal-open="reason-modal">Return to HR Preparer…</button>
+        <button class="btn danger" type="button" wire:click="$set('showModal', true)">Return to HR Preparer…</button>
         <button class="btn primary" type="button" wire:click="approve" wire:confirm="Approve {{ $pan->reference }} and forward it to the Final Approver?">Approve</button>
       @endcan
     </div>
   </div>
 
-  <x-modal id="reason-modal" title="Return to HR Preparer — {{ $pan->reference }}">
+  <x-modal id="reason-modal" :open="$showModal" close="$set('showModal', false)" title="Return to HR Preparer — {{ $pan->reference }}">
     <div class="formgrid" style="padding:16px;grid-template-columns:1fr">
       <div class="field"><label>Reason <em>*</em></label>
         <select wire:model="reason">
@@ -74,7 +74,7 @@
         @error('details')<span class="hint" style="color:var(--bad)">{{ $message }}</span>@enderror</div>
     </div>
     <x-slot:footer>
-      <button class="btn" type="button" data-close>Cancel</button>
+      <button class="btn" type="button" wire:click="$set('showModal', false)">Cancel</button>
       <div class="spacer"></div>
       <button class="btn danger" type="button" wire:click="submitReason">Return to HR Preparer</button>
     </x-slot:footer>

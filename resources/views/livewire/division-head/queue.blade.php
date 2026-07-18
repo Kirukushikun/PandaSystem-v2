@@ -49,11 +49,11 @@
           <a class="btn ghost" href="{{ route('division.show', $pan->reference) }}" wire:navigate style="text-decoration:none">View</a>
           @can('approveDivision', $pan)
             <button class="btn primary" type="button" wire:click="approve({{ $pan->id }})" wire:confirm="Approve {{ $pan->reference }} and forward it to HR Preparation?">Approve</button>
-            <x-kebab><x-kebab.item danger wire:click="startReason({{ $pan->id }}, 'return_to_requestor')" data-modal-open="reason-modal">Return to Requestor…</x-kebab.item></x-kebab>
+            <x-kebab><x-kebab.item danger wire:click="startReason({{ $pan->id }}, 'return_to_requestor')">Return to Requestor…</x-kebab.item></x-kebab>
           @endcan
           @can('confirm', $pan)
             <button class="btn primary" type="button" wire:click="confirmPrepared({{ $pan->id }})" wire:confirm="Confirm the prepared PAN {{ $pan->reference }} and forward it to the HR Approver?">Confirm</button>
-            <x-kebab><x-kebab.item danger wire:click="startReason({{ $pan->id }}, 'dispute')" data-modal-open="reason-modal">Dispute…</x-kebab.item></x-kebab>
+            <x-kebab><x-kebab.item danger wire:click="startReason({{ $pan->id }}, 'dispute')">Dispute…</x-kebab.item></x-kebab>
           @endcan
         </x-row-actions>
       </tr>
@@ -62,7 +62,7 @@
   </table></div></div>
   @endif
 
-  <x-modal id="reason-modal" title="{{ $modalAction === 'dispute' ? 'Dispute' : 'Return to Requestor' }}{{ $modalPan ? ' — '.$modalPan->reference : '' }}">
+  <x-modal id="reason-modal" :open="$showModal" close="$set('showModal', false)" title="{{ $modalAction === 'dispute' ? 'Dispute' : 'Return to Requestor' }}{{ $modalPan ? ' — '.$modalPan->reference : '' }}">
     <div class="formgrid" style="padding:16px;grid-template-columns:1fr">
       <div class="field"><label>Reason <em>*</em></label>
         <select wire:model="reason">
@@ -86,7 +86,7 @@
         @error('details')<span class="hint" style="color:var(--bad)">{{ $message }}</span>@enderror</div>
     </div>
     <x-slot:footer>
-      <button class="btn" type="button" data-close>Cancel</button>
+      <button class="btn" type="button" wire:click="$set('showModal', false)">Cancel</button>
       <div class="spacer"></div>
       <button class="btn danger" type="button" wire:click="submitReason">
         {{ $modalAction === 'dispute' ? 'Send back to HR Preparer' : 'Return to Requestor' }}

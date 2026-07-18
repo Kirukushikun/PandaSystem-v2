@@ -58,18 +58,18 @@
       <a class="btn" href="{{ route('division.queue') }}" wire:navigate style="text-decoration:none">← Back to queue</a>
       <div class="spacer"></div>
       @can('approveDivision', $pan)
-        <button class="btn danger" type="button" data-modal-open="reason-modal">Return…</button>
+        <button class="btn danger" type="button" wire:click="$set('showModal', true)">Return…</button>
         <button class="btn primary" type="button" wire:click="approve" wire:confirm="Approve {{ $pan->reference }} and forward it to HR Preparation?">Approve</button>
       @endcan
       @can('confirm', $pan)
-        <button class="btn danger" type="button" data-modal-open="reason-modal">Dispute…</button>
+        <button class="btn danger" type="button" wire:click="$set('showModal', true)">Dispute…</button>
         <button class="btn primary" type="button" wire:click="confirmPrepared" wire:confirm="Confirm the prepared PAN {{ $pan->reference }} and forward it to the HR Approver?">Confirm</button>
       @endcan
     </div>
   </div>
 
   @php $disputing = $pan->status === App\Enums\PanStatus::ForConfirmation; @endphp
-  <x-modal id="reason-modal" title="{{ $disputing ? 'Dispute' : 'Return to Requestor' }} — {{ $pan->reference }}">
+  <x-modal id="reason-modal" :open="$showModal" close="$set('showModal', false)" title="{{ $disputing ? 'Dispute' : 'Return to Requestor' }} — {{ $pan->reference }}">
     <div class="formgrid" style="padding:16px;grid-template-columns:1fr">
       <div class="field"><label>Reason <em>*</em></label>
         <select wire:model="reason">
@@ -93,7 +93,7 @@
         @error('details')<span class="hint" style="color:var(--bad)">{{ $message }}</span>@enderror</div>
     </div>
     <x-slot:footer>
-      <button class="btn" type="button" data-close>Cancel</button>
+      <button class="btn" type="button" wire:click="$set('showModal', false)">Cancel</button>
       <div class="spacer"></div>
       <button class="btn danger" type="button" wire:click="submitReason">
         {{ $disputing ? 'Send back to HR Preparer' : 'Return to Requestor' }}

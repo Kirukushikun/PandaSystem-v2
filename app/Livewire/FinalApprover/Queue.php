@@ -21,6 +21,8 @@ class Queue extends Component
     public array $selected = [];
 
     // Reject reason modal; empty targets = "reject selected"
+    public bool $showModal = false;
+
     public array $rejectTargets = [];
 
     public string $reason = '';
@@ -89,7 +91,11 @@ class Queue extends Component
 
         if ($this->rejectTargets === []) {
             $this->js("showToast('Select at least one PAN first.')");
+
+            return;
         }
+
+        $this->showModal = true; // server state — re-renders can't shut it
     }
 
     public function submitReject(): void
@@ -123,9 +129,8 @@ class Queue extends Component
 
         $count = $pans->count();
         $this->selected = array_values(array_diff($this->selected, $this->rejectTargets));
-        $this->js("document.getElementById('reject-modal')?.classList.remove('on')");
         $this->js("showToast('{$count} PAN(s) rejected — returned to HR Preparation with your reason.')");
-        $this->reset('rejectTargets', 'reason', 'details');
+        $this->reset('showModal', 'rejectTargets', 'reason', 'details');
     }
 
     public function render()

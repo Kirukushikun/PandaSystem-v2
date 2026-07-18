@@ -15,6 +15,8 @@ class Show extends Component
     public PanRequest $panRequest;
 
     // Return-to-preparer reason modal
+    public bool $showModal = false;
+
     public string $reason = '';
 
     public string $details = '';

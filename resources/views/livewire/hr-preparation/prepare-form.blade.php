@@ -162,7 +162,7 @@
     </div>
     <div class="formfoot">
       @can('void', $pan)
-      <button class="btn danger" type="button" data-modal-open="void-modal">Delete / Void…</button>
+      <button class="btn danger" type="button" wire:click="$set('showVoid', true)">Delete / Void…</button>
       @endcan
       <div class="spacer"></div>
       <a class="btn" href="{{ route('preparation.queue') }}" wire:navigate style="text-decoration:none">← Back to queue</a>
@@ -176,7 +176,7 @@
     </div>
   </div>
 
-  <x-modal id="void-modal" title="Void / Delete — {{ $pan->reference }}">
+  <x-modal id="void-modal" :open="$showVoid" close="$set('showVoid', false)" title="Void / Delete — {{ $pan->reference }}">
     <div class="formgrid" style="padding:16px;grid-template-columns:1fr">
       <div class="field"><label>Reason <em>*</em></label>
         <select wire:model="reason">
@@ -192,7 +192,7 @@
         @error('details')<span class="hint" style="color:var(--bad)">{{ $message }}</span>@enderror</div>
     </div>
     <x-slot:footer>
-      <button class="btn" type="button" data-close>Cancel</button>
+      <button class="btn" type="button" wire:click="$set('showVoid', false)">Cancel</button>
       <div class="spacer"></div>
       <button class="btn danger" type="button" wire:click="void">Void this PAN</button>
     </x-slot:footer>

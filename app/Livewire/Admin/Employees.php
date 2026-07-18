@@ -26,7 +26,9 @@ class Employees extends Component
 
     public ?int $farmFilter = null;
 
-    // Shared Add/Edit modal state
+    // Shared Add/Edit modal state (server-driven open flag — re-renders can't shut it)
+    public bool $showModal = false;
+
     public ?int $editingId = null;
 
     public string $name = '';
@@ -44,6 +46,7 @@ class Employees extends Component
         $this->authorize('create', Employee::class);
         $this->reset('editingId', 'name', 'employee_no', 'department_id', 'position', 'farm_id');
         $this->resetErrorBag();
+        $this->showModal = true;
     }
 
     public function startEdit(int $id): void
@@ -58,6 +61,7 @@ class Employees extends Component
         $this->position = $employee->position;
         $this->farm_id = $employee->farm_id;
         $this->resetErrorBag();
+        $this->showModal = true;
     }
 
     public function save(): void
@@ -88,9 +92,8 @@ class Employees extends Component
             $employee = Employee::create($data);
         }
 
-        $this->js("document.getElementById('emp-modal')?.classList.remove('on')");
         $this->js("showToast('{$employee->name} saved to the roster.')");
-        $this->reset('editingId', 'name', 'employee_no', 'department_id', 'position', 'farm_id');
+        $this->reset('showModal', 'editingId', 'name', 'employee_no', 'department_id', 'position', 'farm_id');
     }
 
     public function remove(int $id): void

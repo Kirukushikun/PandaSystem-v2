@@ -20,6 +20,8 @@ class Queue extends Component
     public string $filter = 'all'; // all | prepare | approval | serve
 
     // Shared reason modal (Void / Mark Unserved — both demand a reason)
+    public bool $showModal = false;
+
     public ?int $target = null;
 
     public string $modalAction = '';
@@ -49,7 +51,7 @@ class Queue extends Component
         $this->js("showToast('{$pan->reference} filed — the cycle is complete.')");
     }
 
-    /** Arms the reason modal for a row; the modal itself is opened by data-modal-open. */
+    /** Arms and opens the reason modal — server state, so re-renders can't shut it. */
     public function startReason(int $id, string $action): void
     {
         $this->target = $id;
@@ -57,6 +59,7 @@ class Queue extends Component
         $this->reason = '';
         $this->details = '';
         $this->resetErrorBag();
+        $this->showModal = true;
     }
 
     public function submitReason(): void
@@ -82,11 +85,10 @@ class Queue extends Component
             'returned_by' => auth()->id(),
         ]);
 
-        $this->js("document.getElementById('reason-modal')?.classList.remove('on')");
         $this->js($this->modalAction === 'void'
             ? "showToast('{$pan->reference} voided — kept on record with the reason.')"
             : "showToast('{$pan->reference} marked Unserved with the reason on record.')");
-        $this->reset('target', 'modalAction', 'reason', 'details');
+        $this->reset('showModal', 'target', 'modalAction', 'reason', 'details');
     }
 
     /**

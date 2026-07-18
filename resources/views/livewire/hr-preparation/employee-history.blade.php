@@ -5,7 +5,7 @@
     <p>Every PAN on record for this employee, newest first. Each PAN's "From" values chain from the previous one's "To" values.</p></div>
     <div class="spacer"></div>
     @can('createHr', App\Models\PanRequest::class)
-    <button class="btn primary" type="button" wire:click="startUpdate({{ $employee->id }})" data-modal-open="update-modal">Update PAN</button>
+    <button class="btn primary" type="button" wire:click="startUpdate({{ $employee->id }})">Update PAN</button>
     @endcan
   </div>
 

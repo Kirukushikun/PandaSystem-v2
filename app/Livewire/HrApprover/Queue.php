@@ -19,6 +19,8 @@ class Queue extends Component
     public string $filter = 'awaiting'; // awaiting | later
 
     // Return-to-preparer reason modal
+    public bool $showModal = false;
+
     public ?int $target = null;
 
     public string $reason = '';
@@ -37,13 +39,14 @@ class Queue extends Component
         $this->js("showToast('{$pan->reference} approved — forwarded to the Final Approver.')");
     }
 
-    /** Arms the reason modal for a row; the modal itself is opened by data-modal-open. */
+    /** Arms and opens the reason modal — server state, so re-renders can't shut it. */
     public function startReason(int $id): void
     {
         $this->target = $id;
         $this->reason = '';
         $this->details = '';
         $this->resetErrorBag();
+        $this->showModal = true;
     }
 
     public function submitReason(): void
@@ -69,9 +72,8 @@ class Queue extends Component
             'returned_by' => auth()->id(),
         ]);
 
-        $this->js("document.getElementById('reason-modal')?.classList.remove('on')");
         $this->js("showToast('{$pan->reference} returned to the HR Preparer with your reason.')");
-        $this->reset('target', 'reason', 'details');
+        $this->reset('showModal', 'target', 'reason', 'details');
     }
 
     public function render()

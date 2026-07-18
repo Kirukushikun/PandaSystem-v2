@@ -51,6 +51,8 @@ class PrepareForm extends Component
     public bool $showPrev = false;
 
     // Void modal
+    public bool $showVoid = false;
+
     public string $reason = '';
 
     public string $details = '';

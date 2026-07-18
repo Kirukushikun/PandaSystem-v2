@@ -35,7 +35,7 @@
           <a class="btn ghost" href="{{ route('hr-approval.show', $pan->reference) }}" wire:navigate style="text-decoration:none">View</a>
           @can('approveHr', $pan)
             <button class="btn primary" type="button" wire:click="approve({{ $pan->id }})" wire:confirm="Approve {{ $pan->reference }} and forward it to the Final Approver?">Approve</button>
-            <x-kebab><x-kebab.item danger wire:click="startReason({{ $pan->id }})" data-modal-open="reason-modal">Return to HR Preparer…</x-kebab.item></x-kebab>
+            <x-kebab><x-kebab.item danger wire:click="startReason({{ $pan->id }})">Return to HR Preparer…</x-kebab.item></x-kebab>
           @endcan
           @if ($pan->form)
             <x-print-btn href="{{ route('pan.print', $pan->reference) }}" />
@@ -49,7 +49,7 @@
 
   <div class="note info" style="margin-top:14px"><span class="ic">i</span>Returning a PAN here sends it one step back to the HR Preparer with a mandatory reason — not all the way back to the Requestor.</div>
 
-  <x-modal id="reason-modal" title="Return to HR Preparer{{ $modalPan ? ' — '.$modalPan->reference : '' }}">
+  <x-modal id="reason-modal" :open="$showModal" close="$set('showModal', false)" title="Return to HR Preparer{{ $modalPan ? ' — '.$modalPan->reference : '' }}">
     <div class="formgrid" style="padding:16px;grid-template-columns:1fr">
       <div class="field"><label>Reason <em>*</em></label>
         <select wire:model="reason">
@@ -66,7 +66,7 @@
         @error('details')<span class="hint" style="color:var(--bad)">{{ $message }}</span>@enderror</div>
     </div>
     <x-slot:footer>
-      <button class="btn" type="button" data-close>Cancel</button>
+      <button class="btn" type="button" wire:click="$set('showModal', false)">Cancel</button>
       <div class="spacer"></div>
       <button class="btn danger" type="button" wire:click="submitReason">Return to HR Preparer</button>
     </x-slot:footer>

@@ -20,13 +20,15 @@ trait StartsHrPan
 {
     use WithFileUploads;
 
+    public bool $showUpdateModal = false;
+
     public ?int $updateEmployeeId = null;
 
     public string $updateAction = '';
 
     public $updateAttachment = null; // Livewire temporary upload
 
-    /** Arms the modal for an employee; the modal itself is opened by data-modal-open. */
+    /** Arms and opens the modal — server state, so the upload's re-render can't shut it. */
     public function startUpdate(int $employeeId): void
     {
         $this->authorize('createHr', PanRequest::class);
@@ -35,6 +37,7 @@ trait StartsHrPan
         $this->updateAction = '';
         $this->updateAttachment = null;
         $this->resetErrorBag();
+        $this->showUpdateModal = true;
     }
 
     public function createHrPan(): void

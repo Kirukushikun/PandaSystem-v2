@@ -33,7 +33,7 @@
         <td class="num">{{ $employee->pan_requests_count }}</td>
         <x-row-actions>
           <a class="btn ghost" href="{{ route('employees.history', $employee->employee_no) }}" wire:navigate style="text-decoration:none">View PANs</a>
-          <button class="btn primary" type="button" wire:click="startUpdate({{ $employee->id }})" data-modal-open="update-modal">Update PAN</button>
+          <button class="btn primary" type="button" wire:click="startUpdate({{ $employee->id }})">Update PAN</button>
         </x-row-actions>
       </tr>
       @endforeach

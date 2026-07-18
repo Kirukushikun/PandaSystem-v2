@@ -8,7 +8,7 @@
     <div class="spacer"></div>
     <button class="btn" type="button" onclick="showToast('Spreadsheet import is planned (maatwebsite/excel) — not yet installed.')">Import from spreadsheet…</button>
     <button class="btn" type="button" onclick="showToast('Export is planned alongside the spreadsheet import.')">Export</button>
-    <button class="btn primary" type="button" wire:click="startCreate" data-modal-open="emp-modal">+ Add Employee</button>
+    <button class="btn primary" type="button" wire:click="startCreate">+ Add Employee</button>
   </div>
 
   <div class="stats">
@@ -42,7 +42,7 @@
         <td>{{ $employee->department->name }}</td><td>{{ $employee->position }}</td><td>{{ $employee->farm->name }}</td>
         <td><span class="pill {{ $pill }}">{{ $pillLabel }}</span></td>
         <x-row-actions>
-          <button class="btn ghost" type="button" wire:click="startEdit({{ $employee->id }})" data-modal-open="emp-modal">Edit</button>
+          <button class="btn ghost" type="button" wire:click="startEdit({{ $employee->id }})">Edit</button>
           <x-kebab>
             @can('delete', $employee)
             <x-kebab.item danger wire:click="remove({{ $employee->id }})" wire:confirm="Remove {{ $employee->name }} from the roster? PAN history is kept; they can no longer be selected for new PANs.">Remove employee</x-kebab.item>
@@ -60,7 +60,7 @@
   <div class="note info" style="margin-top:14px"><span class="ic">i</span><span><b>Remove is disabled while an employee has an ongoing PAN</b>&nbsp;— anything submitted and not yet filed, withdrawn, or voided blocks removal (drafts don't count). Removing an employee never deletes their PAN history; they simply can no longer be selected for new PANs.</span></div>
 
   {{-- One modal for Add and Edit (state decides the title) --}}
-  <x-modal id="emp-modal" title="{{ $editingId ? 'Edit Employee' : 'Add Employee' }}">
+  <x-modal id="emp-modal" :open="$showModal" close="$set('showModal', false)" title="{{ $editingId ? 'Edit Employee' : 'Add Employee' }}">
     <div class="formgrid" style="padding:16px;grid-template-columns:1fr 1fr">
       <div class="field full"><label>Full Name <em>*</em></label><input wire:model="name" placeholder="Surname, First Name M.I.">
         @error('name')<span class="hint" style="color:var(--bad)">{{ $message }}</span>@enderror</div>
@@ -86,7 +86,7 @@
         @error('farm_id')<span class="hint" style="color:var(--bad)">{{ $message }}</span>@enderror</div>
     </div>
     <x-slot:footer>
-      <button class="btn" type="button" data-close>Cancel</button>
+      <button class="btn" type="button" wire:click="$set('showModal', false)">Cancel</button>
       <div class="spacer"></div>
       <button class="btn primary" type="button" wire:click="save">Save Employee</button>
     </x-slot:footer>

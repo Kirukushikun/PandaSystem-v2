@@ -16,6 +16,8 @@ class Show extends Component
     public PanRequest $panRequest;
 
     // Reason modal (Return to Requestor while awaiting decision; Dispute while confirming)
+    public bool $showModal = false;
+
     public string $reason = '';
 
     public string $details = '';

@@ -24,7 +24,7 @@
       @endforeach
     </select>
     <button class="btn primary" type="button" wire:click="approveSelected" wire:confirm="Give final approval to the selected PAN(s)? Regularizations auto-finalize to Regular.">Approve selected</button>
-    <button class="btn danger" type="button" wire:click="startReject" data-modal-open="reject-modal">Reject selected…</button>
+    <button class="btn danger" type="button" wire:click="startReject">Reject selected…</button>
   </div>
 
   <div class="card"><div class="twrap"><table>
@@ -43,7 +43,7 @@
         <x-row-actions>
           <a class="btn ghost" href="{{ route('final-approval.show', $pan->reference) }}" wire:navigate style="text-decoration:none">View</a>
           <button class="btn primary" type="button" wire:click="approveOne({{ $pan->id }})" wire:confirm="Give final approval to {{ $pan->reference }}?">Approve</button>
-          <x-kebab><x-kebab.item danger wire:click="startReject({{ $pan->id }})" data-modal-open="reject-modal">Reject — back to HR Prep…</x-kebab.item></x-kebab>
+          <x-kebab><x-kebab.item danger wire:click="startReject({{ $pan->id }})">Reject — back to HR Prep…</x-kebab.item></x-kebab>
         </x-row-actions>
       </tr>
       @endforeach
@@ -53,7 +53,7 @@
 
   <div class="note info" style="margin-top:14px"><span class="ic">i</span>Approving a <b>&nbsp;Regularization&nbsp;</b> automatically finalizes the employee's status as "Regular", overriding any tentative status set earlier.</div>
 
-  <x-modal id="reject-modal" title="Reject — back to HR Preparation{{ count($rejectTargets) === 1 ? '' : ' ('.count($rejectTargets).' selected)' }}">
+  <x-modal id="reject-modal" :open="$showModal" close="$set('showModal', false)" title="Reject — back to HR Preparation{{ count($rejectTargets) === 1 ? '' : ' ('.count($rejectTargets).' selected)' }}">
     <div class="formgrid" style="padding:16px;grid-template-columns:1fr">
       <div class="field"><label>Reason <em>*</em></label>
         <select wire:model="reason">
@@ -70,7 +70,7 @@
         @error('details')<span class="hint" style="color:var(--bad)">{{ $message }}</span>@enderror</div>
     </div>
     <x-slot:footer>
-      <button class="btn" type="button" data-close>Cancel</button>
+      <button class="btn" type="button" wire:click="$set('showModal', false)">Cancel</button>
       <div class="spacer"></div>
       <button class="btn danger" type="button" wire:click="submitReject">Reject to HR Preparation</button>
     </x-slot:footer>

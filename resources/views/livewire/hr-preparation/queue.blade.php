@@ -65,10 +65,10 @@
             <x-print-btn href="{{ route('pan.print', $pan->reference) }}" />
           @endif
           @can('void', $pan)
-            <x-kebab><x-kebab.item danger wire:click="startReason({{ $pan->id }}, 'void')" data-modal-open="reason-modal">Void / Delete…</x-kebab.item></x-kebab>
+            <x-kebab><x-kebab.item danger wire:click="startReason({{ $pan->id }}, 'void')">Void / Delete…</x-kebab.item></x-kebab>
           @endcan
           @can('markUnserved', $pan)
-            <x-kebab><x-kebab.item wire:click="startReason({{ $pan->id }}, 'mark_unserved')" data-modal-open="reason-modal">Mark Unserved…<small>AWOL, resigned, terminated, or custom</small></x-kebab.item></x-kebab>
+            <x-kebab><x-kebab.item wire:click="startReason({{ $pan->id }}, 'mark_unserved')">Mark Unserved…<small>AWOL, resigned, terminated, or custom</small></x-kebab.item></x-kebab>
           @endcan
           @if ($pan->status === App\Enums\PanStatus::Filed)
             <x-kebab><x-kebab.item wire:navigate href="{{ route('employees.history', $pan->employee->employee_no) }}">Start Follow-up PAN<small>New cycle for this employee</small></x-kebab.item></x-kebab>
@@ -83,7 +83,7 @@
   <p class="locknote" style="margin:8px 2px 0">Tag colors — <x-tag-dot tag="manila" /> Manila (confidential) · <x-tag-dot tag="tarlac" /> Tarlac (routine) · <x-tag-dot /> untagged. Visible to HR Head Preparers only. Once tagged Manila, ordinary preparers can no longer open the record.</p>
   @endif
 
-  <x-modal id="reason-modal" title="{{ $modalAction === 'void' ? 'Void / Delete' : 'Mark Unserved' }}{{ $modalPan ? ' — '.$modalPan->reference : '' }}">
+  <x-modal id="reason-modal" :open="$showModal" close="$set('showModal', false)" title="{{ $modalAction === 'void' ? 'Void / Delete' : 'Mark Unserved' }}{{ $modalPan ? ' — '.$modalPan->reference : '' }}">
     <div class="formgrid" style="padding:16px;grid-template-columns:1fr">
       <div class="field"><label>Reason <em>*</em></label>
         <select wire:model="reason">
@@ -105,7 +105,7 @@
         @error('details')<span class="hint" style="color:var(--bad)">{{ $message }}</span>@enderror</div>
     </div>
     <x-slot:footer>
-      <button class="btn" type="button" data-close>Cancel</button>
+      <button class="btn" type="button" wire:click="$set('showModal', false)">Cancel</button>
       <div class="spacer"></div>
       <button class="btn danger" type="button" wire:click="submitReason">
         {{ $modalAction === 'void' ? 'Void this PAN' : 'Mark Unserved' }}

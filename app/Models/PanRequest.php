@@ -6,6 +6,8 @@ use App\Enums\ActionType;
 use App\Enums\ConfidentialityTag;
 use App\Enums\PanOrigin;
 use App\Enums\PanStatus;
+use App\Observers\PanRequestObserver;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -14,6 +16,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+#[ObservedBy(PanRequestObserver::class)]
 class PanRequest extends Model
 {
     use HasFactory, SoftDeletes;

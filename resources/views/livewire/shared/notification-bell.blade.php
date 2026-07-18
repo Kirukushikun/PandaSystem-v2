@@ -1,4 +1,3 @@
-@php $unread = count(array_filter($notifications, fn ($n) => $n['unread'])); @endphp
 <div>
   <button class="iconbtn" id="notif-btn" title="Notifications"
     style="position:fixed;top:16px;right:64px;z-index:70;width:36px;height:36px;border-radius:99px;box-shadow:var(--shadow)">
@@ -9,11 +8,19 @@
   <div class="npanel" id="notif-panel">
     <div class="nhead">
       <b>Notifications</b>
+      @if ($unread > 0)
       <button class="btn ghost" type="button" style="padding:2px 8px;font-size:12px" wire:click="markAllRead">Mark all read</button>
+      @endif
     </div>
-    @foreach ($notifications as $n)
-    <div class="nrow @if ($n['unread']) unread @endif"><span class="ndot"></span>
-      <div><p>{!! $n['text'] !!}</p><small>{{ $n['meta'] }}</small></div></div>
-    @endforeach
+    @forelse ($notifications as $n)
+    <div class="nrow @if ($n->unread()) unread @endif" wire:key="n-{{ $n->id }}"><span class="ndot"></span>
+      <div>
+        <p><b>{{ $n->data['title'] }}</b> — {{ $n->data['body'] }}</p>
+        <small>{{ $n->created_at->diffForHumans() }} · {{ $n->data['context'] }}</small>
+      </div>
+    </div>
+    @empty
+    <div class="nrow"><div><p style="color:var(--ink-3)">Nothing yet — activity on your PANs will show up here.</p></div></div>
+    @endforelse
   </div>
 </div>

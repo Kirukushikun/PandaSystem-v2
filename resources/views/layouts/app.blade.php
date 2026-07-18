@@ -91,5 +91,20 @@
 
 <div class="toast" id="toast"><span class="ok">✓</span><span id="toast-msg"></span></div>
 
+{{-- Styled replacement for every wire:confirm browser prompt (see app.js interceptor).
+     Closes via the shared overlay JS: Cancel button, backdrop click, or Escape. --}}
+<div class="overlay" id="confirm-modal">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="confirm-title" style="max-width:420px">
+    <h3><span id="confirm-title">Please confirm</span>
+      <button class="x" type="button" data-close title="Close">×</button></h3>
+    <p id="confirm-msg" style="margin:0;padding:16px 18px;font-size:13.5px;color:var(--ink-2)"></p>
+    <div class="formfoot">
+      <button class="btn" type="button" data-close>Cancel</button>
+      <div class="spacer"></div>
+      <button class="btn primary" type="button" id="confirm-ok">Continue</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>

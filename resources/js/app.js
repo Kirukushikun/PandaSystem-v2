@@ -95,3 +95,33 @@ window.showToast = function (msg) {
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => t.classList.remove('on'), 3500);
 };
+
+/* ---------- styled wire:confirm (global interceptor) ----------
+   Every wire:confirm in the app gets the styled dialog instead of the browser
+   prompt, with zero per-button changes: the click is intercepted in the capture
+   phase, our modal asks, and on Continue the click is replayed with the native
+   confirm() temporarily answering yes. Markup lives in layouts/app (#confirm-modal). */
+let confirmBypass = null;
+document.addEventListener('click', (e) => {
+    const el = e.target.closest('[wire\\:confirm]');
+    if (!el || el === confirmBypass) { confirmBypass = null; return; }
+
+    const modal = document.getElementById('confirm-modal');
+    if (!modal) return; // standalone pages (login/print) fall back to the native prompt
+
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    e.stopPropagation();
+
+    document.getElementById('confirm-msg').textContent = el.getAttribute('wire:confirm');
+    modal.classList.add('on');
+
+    document.getElementById('confirm-ok').onclick = () => {
+        modal.classList.remove('on');
+        confirmBypass = el;
+        const native = window.confirm;
+        window.confirm = () => true; // answer Livewire's own prompt for this replay only
+        el.click();
+        window.confirm = native;
+    };
+}, true);

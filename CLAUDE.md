@@ -14,24 +14,29 @@ Final Approver → Served → Filed. Full behavior spec in `System_overview.md`;
   passwords, only the local profile + permissions.
 
 ## Current state
-- **UI scaffold COMPLETE** (branch `ui-scaffolds`, committed per-step as "feat: Phase N - …"):
-  the whole mockup ported to Livewire components with real routes — **hardcoded sample data,
-  no database/models/policies yet**. Plan + what each step delivered: `UI_SCAFFOLD_CHECKLIST.md`
-  (repo root). Mockups/planning docs live in `project-overview/`.
-- Shared UI = anonymous Blade components in `resources/views/components/` (x-status-pill,
-  x-tag-dot, x-stage-tracker, x-modal, x-pan.request-details, x-pan.prepared-details, …);
-  only NotificationBell is a Livewire component. Livewire interactivity exists where state
-  matters: prep-form tag/role sim, final-approver bulk selection, danger-zone type-to-confirm,
-  user-access toggles, reference-values lists.
-- The mockup remains the **UI contract**: its "tabs" marked with `<!-- mockup only -->` comments
-  are separate routes (e.g. View Request = `/pan/{id}`). Its sample data is the intended seeder
-  data — scaffold screens match it 1:1 for comparison.
-- The real print layout now lives in the repo at `resources/views/pan-print.blade.php`
-  (user-ported; 3 copies Employee / 201 Filing / Payroll, Courier, green borders, signatories,
-  compact print modes). Served by `/pan/{pan}/print`. Still static sample data + CDN assets
-  (Tailwind CDN, Font Awesome, Google Fonts) — wire real data and localize assets in the real build.
-- **Next:** the real build per `DEVELOPMENT_PLAN.md` — start with the `PanStatus` enum +
-  `PanWorkflow` state machine (tested), then migrations/seeders, then wire modules to data.
+- **REAL BUILD COMPLETE end-to-end** (branch `ui-scaffolds`, committed per-phase as
+  "feat: real-build Step N - …", 179 Pest tests green). Every module runs on live data:
+  Requestor, Division Head, HR Preparation (tagging/carry-over/Action Reference editor),
+  DH Confirmation, HR + Final approval (bulk, Regularization auto-Regular), serve/file,
+  print (3-copy layout, local assets), notifications (status handoffs + `panda:expiry-reminders`),
+  Admin (accounts/access/roster), Maintenance (logs, reference values, mysqldump backups via
+  `panda:backup`, danger-zone purges).
+- **Master data finalized**: farms BDL/BFC/BRD/PFC/RH; 11 departments (Accounting, Audit,
+  Feedmill, General Services, Human Resources, IT and Security Services, Poultry, Purchasing,
+  Sales & Marketing, Swine, Treasury). **One role per seeded account**: kreyes=Requestor,
+  jbautista=Division Head (heads Poultry+Feedmill), tnavarro=HR Preparer, mdelacruz=HR Head,
+  caguirre=DH Head, rocampo=HR Approver, vsalazar=Final Approver, admin_it=Admin. `db:seed`
+  seeds master data only (empty PAN slate); demo PANs via `db:seed --class=PanSeeder`.
+- **AUTH_FAKE dev mode** (local .env): login page shows a one-click dev-accounts panel; any
+  password signs in a seeded email. Hard-disabled in production. Post-login landing is
+  role-aware (`User::landingRoute()`).
+- `wire:confirm` everywhere is intercepted globally in app.js and rendered as the styled
+  `#confirm-modal` in the app layout — never edit individual buttons for confirm styling.
+- Scaffold-era docs: `UI_SCAFFOLD_CHECKLIST.md` (repo root), mockups in `project-overview/`.
+- **Remaining / deferred:** spreadsheet import-export on the Employee Directory
+  (maatwebsite/excel not installed — buttons toast "planned"); fill AUTH_API_*/TURNSTILE_*
+  in .env + recreate users with external-API-matching ids before go-live; scheduler
+  (`php artisan schedule:work` or Task Scheduler) needed for nightly backups + expiry reminders.
 
 ## Key architecture decisions
 - **One `PanStatus` enum + `PanWorkflow` state-machine service** owns every transition; build and

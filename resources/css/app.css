@@ -101,6 +101,11 @@ main{flex:1;min-width:0;padding:24px 28px 48px}
 .btn[disabled]{opacity:.45;cursor:not-allowed}
 .btn:focus-visible,.chip:focus-visible,.navbtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
+/* pagination per-page selector — green outline, no fill, matches .btn.ghost's accent treatment */
+.pager-select{border:1px solid var(--accent);background:none;color:var(--accent);border-radius:7px;
+  padding:4px 8px;font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.pager-select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
 /* table */
 .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);overflow:hidden}
 .twrap{overflow-x:auto}

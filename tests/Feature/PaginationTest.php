@@ -48,3 +48,18 @@ test('the per-page selector changes page size and rejects tampered values', func
     $component->set('perPage', 9999);
     expect($component->get('perPage'))->toBe(25);
 });
+
+test('the pager renders numbered page buttons and gotoPage jumps directly', function () {
+    $user = User::factory()->requestor()->create();
+    PanRequest::factory()->count(30)->create([
+        'requested_by' => $user->id,
+        'action_type' => 'promotion',
+    ]);
+
+    Livewire::actingAs($user)->test(App\Livewire\Requestor\Index::class)
+        ->set('perPage', 10) // 3 pages, small enough to render every number without an ellipsis
+        ->assertSeeHtml('wire:click="gotoPage(2)"')
+        ->assertSeeHtml('wire:click="gotoPage(3)"')
+        ->call('gotoPage', 3)
+        ->assertViewHas('pans', fn ($pans) => $pans->currentPage() === 3);
+});

@@ -4,11 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\AccessLog;
 use App\Models\User;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 
 /**
@@ -71,11 +73,18 @@ class LoginController extends Controller
 
         // Cloudflare Turnstile — no-op while TURNSTILE_VERIFY=false
         if (config('services.turnstile.verify')) {
-            $verify = Http::asForm()->post('https://challenges.cloudflare.com/turnstile/v0/siteverify', [
-                'secret' => config('services.turnstile.secret'),
-                'response' => $request->input('turnstile_token', ''),
-                'remoteip' => $request->ip(),
-            ]);
+            try {
+                $verify = Http::asForm()->timeout(5)->connectTimeout(3)
+                    ->post('https://challenges.cloudflare.com/turnstile/v0/siteverify', [
+                        'secret' => config('services.turnstile.secret'),
+                        'response' => $request->input('turnstile_token', ''),
+                        'remoteip' => $request->ip(),
+                    ]);
+            } catch (ConnectionException $e) {
+                Log::warning('Turnstile verification unreachable', ['error' => $e->getMessage()]);
+
+                return back()->withErrors(['turnstile_token' => 'Human verification service is unreachable. Please try again shortly.'])->withInput();
+            }
             if (! ($verify->json('success') ?? false)) {
                 return back()->withErrors(['turnstile_token' => 'Human verification failed. Please complete the challenge and try again.'])->withInput();
             }
@@ -104,6 +113,7 @@ class LoginController extends Controller
                 'Accept' => 'application/json',
                 'Content-Type' => 'application/json',
             ])->withOptions(['verify' => storage_path('cacert.pem')])
+                ->timeout(10)->connectTimeout(5)
                 ->post($base_uri.'/api/v1/auth/login', [
                     'email' => $email,
                     'password' => $request->input('password'),
@@ -138,6 +148,7 @@ class LoginController extends Controller
                 'Accept' => 'application/json',
                 'Content-Type' => 'application/json',
             ])->withOptions(['verify' => storage_path('cacert.pem')])
+                ->timeout(10)->connectTimeout(5)
                 ->get($base_uri.'/api/v1/users/get-user-id', ['email' => $email]);
 
             if (! $userResponse->successful()) {
@@ -164,9 +175,19 @@ class LoginController extends Controller
 
             return redirect()->intended(Auth::user()->landingRoute());
 
-        } catch (\Exception $e) {
+        } catch (ConnectionException $e) {
+            // Network-level failure (timeout, DNS, refused) — the API is down, not the user's fault.
+            // Don't count this against their lockout: they didn't get a real chance to authenticate.
+            $this->logAccess($email, false, $request);
+            Log::warning('Auth API unreachable', ['email' => $email, 'error' => $e->getMessage()]);
+
+            return back()->withErrors([
+                'email' => 'Authentication service is currently unreachable. Please try again shortly.',
+            ])->withInput();
+        } catch (\Throwable $e) {
             $this->incrementAttempts($email);
             $this->logAccess($email, false, $request);
+            Log::error('Auth login flow failed unexpectedly', ['email' => $email, 'error' => $e->getMessage()]);
 
             return back()->withErrors([
                 'email' => 'Authentication service error. Please try again.',

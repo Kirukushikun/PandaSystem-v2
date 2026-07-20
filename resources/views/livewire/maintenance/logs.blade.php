@@ -20,6 +20,7 @@
         <div class="logrow"><span style="color:var(--ink-3)">No sign-in attempts recorded yet.</span></div>
         @endforelse
       </div>
+      {{ $accessLogs->links('components.pagination') }}
     </div>
     <div class="pane">
       <h3>Audit Trail — workflow actions</h3>

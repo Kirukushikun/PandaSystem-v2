@@ -9,6 +9,7 @@ use App\Services\PanWorkflow;
 use Illuminate\Database\Eloquent\Builder;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
+use App\Livewire\Concerns\WithPerPage;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -17,6 +18,7 @@ use Livewire\WithPagination;
 class Queue extends Component
 {
     use WithPagination;
+    use WithPerPage;
 
     public string $search = '';
 
@@ -147,7 +149,7 @@ class Queue extends Component
             ->when($this->filter === 'action', fn (Builder $q) => $q->whereIn('status', $awaiting))
             ->when($this->filter === 'completed', fn (Builder $q) => $q->whereIn('status', $terminal))
             ->orderByDesc('id')
-            ->paginate(25);
+            ->paginate($this->perPage);
 
         // awaiting/later are pure status buckets — one grouped query covers both;
         // completed also filters on updated_at, so it keeps its own count.

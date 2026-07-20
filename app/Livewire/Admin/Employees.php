@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
+use App\Livewire\Concerns\WithPerPage;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -24,6 +25,7 @@ use Livewire\WithPagination;
 class Employees extends Component
 {
     use WithPagination;
+    use WithPerPage;
 
     public string $search = '';
 
@@ -168,7 +170,7 @@ class Employees extends Component
             })
             ->when($this->farmFilter, fn (Builder $q) => $q->where('farm_id', $this->farmFilter))
             ->orderBy('name')
-            ->paginate(25);
+            ->paginate($this->perPage);
 
         return view('livewire.admin.employees', [
             'employees' => $employees,

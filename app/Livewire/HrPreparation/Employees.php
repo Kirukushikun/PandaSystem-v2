@@ -7,6 +7,7 @@ use App\Models\Department;
 use App\Models\Employee;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
+use App\Livewire\Concerns\WithPerPage;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -20,6 +21,7 @@ class Employees extends Component
 {
     use StartsHrPan;
     use WithPagination;
+    use WithPerPage;
 
     public string $search = '';
 
@@ -48,7 +50,7 @@ class Employees extends Component
             })
             ->when($this->departmentFilter, fn ($q) => $q->where('department_id', $this->departmentFilter))
             ->orderBy('name')
-            ->paginate(25);
+            ->paginate($this->perPage);
 
         return view('livewire.hr-preparation.employees', [
             'employees' => $employees,

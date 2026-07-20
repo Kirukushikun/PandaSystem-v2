@@ -7,6 +7,7 @@ use App\Models\PanRequest;
 use App\Services\PanWorkflow;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
+use App\Livewire\Concerns\WithPerPage;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -15,6 +16,7 @@ use Livewire\WithPagination;
 class Index extends Component
 {
     use WithPagination;
+    use WithPerPage;
 
     public string $search = '';
 
@@ -65,7 +67,7 @@ class Index extends Component
                 PanStatus::Filed, PanStatus::Withdrawn, PanStatus::Voided, PanStatus::Unserved,
             ]))
             ->orderByDesc('id')
-            ->paginate(25);
+            ->paginate($this->perPage);
 
         // One grouped query instead of four counts; the buckets are summed in PHP.
         $byStatus = (clone $base)->select('status')->selectRaw('count(*) as c')

@@ -9,6 +9,7 @@ use App\Services\PanWorkflow;
 use Illuminate\Database\Eloquent\Builder;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
+use App\Livewire\Concerns\WithPerPage;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -17,6 +18,7 @@ use Livewire\WithPagination;
 class Queue extends Component
 {
     use WithPagination;
+    use WithPerPage;
 
     public string $search = '';
 
@@ -140,7 +142,7 @@ class Queue extends Component
             ->when($this->filter === 'approval', fn (Builder $q) => $q->whereIn('status', $approval))
             ->when($this->filter === 'serve', fn (Builder $q) => $q->whereIn('status', $serve))
             ->orderByDesc('id')
-            ->paginate(25);
+            ->paginate($this->perPage);
 
         // All three stats are status buckets over the same scope — one grouped query.
         $byStatus = $this->scope()->select('status')->selectRaw('count(*) as c')

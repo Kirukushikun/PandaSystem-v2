@@ -8,6 +8,7 @@ use App\Services\PanWorkflow;
 use Illuminate\Database\Eloquent\Builder;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
+use App\Livewire\Concerns\WithPerPage;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -16,6 +17,7 @@ use Livewire\WithPagination;
 class Queue extends Component
 {
     use WithPagination;
+    use WithPerPage;
 
     public string $search = '';
 
@@ -104,7 +106,7 @@ class Queue extends Component
                     ->orWhereHas('employee', fn (Builder $q) => $q->where('name', 'like', "%{$this->search}%")));
             })
             ->orderByDesc('id')
-            ->paginate(25);
+            ->paginate($this->perPage);
 
         // Three stats, one aggregate pass (conditions are mixed, so CASE sums not GROUP BY).
         $laterIn = implode(',', array_fill(0, count($later), '?'));

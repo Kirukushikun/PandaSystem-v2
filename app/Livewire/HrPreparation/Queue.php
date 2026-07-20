@@ -9,15 +9,30 @@ use App\Services\PanWorkflow;
 use Illuminate\Database\Eloquent\Builder;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
+use App\Livewire\Concerns\WithPerPage;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 #[Layout('layouts.app')]
 #[Title('Preparation Queue — PANDA')]
 class Queue extends Component
 {
+    use WithPagination;
+    use WithPerPage;
+
     public string $search = '';
 
     public string $filter = 'all'; // all | prepare | approval | serve
+
+    public function updatedSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedFilter(): void
+    {
+        $this->resetPage();
+    }
 
     // Shared reason modal (Void / Mark Unserved — both demand a reason)
     public bool $showModal = false;
@@ -127,15 +142,20 @@ class Queue extends Component
             ->when($this->filter === 'approval', fn (Builder $q) => $q->whereIn('status', $approval))
             ->when($this->filter === 'serve', fn (Builder $q) => $q->whereIn('status', $serve))
             ->orderByDesc('id')
-            ->get();
+            ->paginate($this->perPage);
+
+        // All three stats are status buckets over the same scope — one grouped query.
+        $byStatus = $this->scope()->select('status')->selectRaw('count(*) as c')
+            ->groupBy('status')->pluck('c', 'status');
+        $bucket = fn (array $statuses) => collect($statuses)->sum(fn ($s) => $byStatus[$s->value] ?? 0);
 
         return view('livewire.hr-preparation.queue', [
             'pans' => $pans,
             'modalPan' => $this->target ? PanRequest::find($this->target) : null,
             'stats' => [
-                'prepare' => $this->scope()->whereIn('status', [PanStatus::AwaitingTag, PanStatus::InPreparation])->count(),
-                'returned' => $this->scope()->where('status', PanStatus::ReturnedToPreparer)->count(),
-                'serve' => $this->scope()->whereIn('status', $serve)->count(),
+                'prepare' => $bucket([PanStatus::AwaitingTag, PanStatus::InPreparation]),
+                'returned' => $bucket([PanStatus::ReturnedToPreparer]),
+                'serve' => $bucket($serve),
             ],
             'isHrHead' => auth()->user()->is_hr_head,
         ]);

@@ -11,7 +11,9 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
+use App\Livewire\Concerns\WithPerPage;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 /**
  * Master roster (Admin owns it; the HR Preparation lens only reads it).
@@ -22,9 +24,22 @@ use Livewire\Component;
 #[Title('Employee Directory — PANDA')]
 class Employees extends Component
 {
+    use WithPagination;
+    use WithPerPage;
+
     public string $search = '';
 
     public ?int $farmFilter = null;
+
+    public function updatedSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedFarmFilter(): void
+    {
+        $this->resetPage();
+    }
 
     // Shared Add/Edit modal state (server-driven open flag — re-renders can't shut it)
     public bool $showModal = false;
@@ -124,6 +139,24 @@ class Employees extends Component
         return ['p-draft', $hasDraft ? 'None — draft only' : 'None'];
     }
 
+    /** All four header stats in one aggregate pass (distinct counts included). */
+    private function stats(): array
+    {
+        $row = Employee::query()->selectRaw('
+            count(*) as total,
+            count(distinct department_id) as departments,
+            count(distinct farm_id) as farms,
+            sum(case when created_at between ? and ? then 1 else 0 end) as added
+        ', [now()->startOfMonth(), now()->endOfMonth()])->toBase()->first();
+
+        return [
+            'total' => (int) $row->total,
+            'departments' => (int) $row->departments,
+            'farms' => (int) $row->farms,
+            'added' => (int) $row->added,
+        ];
+    }
+
     public function render()
     {
         $employees = Employee::query()
@@ -137,18 +170,13 @@ class Employees extends Component
             })
             ->when($this->farmFilter, fn (Builder $q) => $q->where('farm_id', $this->farmFilter))
             ->orderBy('name')
-            ->get();
+            ->paginate($this->perPage);
 
         return view('livewire.admin.employees', [
             'employees' => $employees,
             'departments' => Department::orderBy('name')->get(),
             'farms' => Farm::orderBy('name')->get(),
-            'stats' => [
-                'total' => Employee::count(),
-                'departments' => Employee::distinct('department_id')->count('department_id'),
-                'farms' => Employee::distinct('farm_id')->count('farm_id'),
-                'added' => Employee::whereBetween('created_at', [now()->startOfMonth(), now()->endOfMonth()])->count(),
-            ],
+            'stats' => $this->stats(),
         ]);
     }
 }

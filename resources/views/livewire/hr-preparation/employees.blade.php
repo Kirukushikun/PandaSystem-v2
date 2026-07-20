@@ -39,6 +39,7 @@
       @endforeach
     </tbody>
   </table></div></div>
+  {{ $employees->links('components.pagination') }}
   @endif
 
   @include('livewire.hr-preparation.partials.update-pan-modal')

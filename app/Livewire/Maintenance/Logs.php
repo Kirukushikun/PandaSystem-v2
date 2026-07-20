@@ -2,12 +2,14 @@
 
 namespace App\Livewire\Maintenance;
 
+use App\Livewire\Concerns\WithPerPage;
 use App\Models\AccessLog;
 use App\Models\PanRequest;
 use App\Models\PanReturn;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 /**
  * Read-only lenses. The access log is the auth table the login controller
@@ -19,6 +21,9 @@ use Livewire\Component;
 #[Title('Logs & Audit — PANDA')]
 class Logs extends Component
 {
+    use WithPagination;
+    use WithPerPage;
+
     public function exportCsv()
     {
         $logs = AccessLog::latest()->get();
@@ -52,7 +57,7 @@ class Logs extends Component
                     ." on {$return->panRequest->reference}: \"{$return->reason}\"",
             ]);
 
-        $filings = PanRequest::whereNotNull('filed_at')->latest('filed_at')->limit(6)->get()
+        $filings = PanRequest::whereNotNull('filed_at')->with('employee')->latest('filed_at')->limit(6)->get()
             ->map(fn (PanRequest $pan) => [
                 'at' => $pan->filed_at,
                 'module' => 'HR Prep',
@@ -60,7 +65,7 @@ class Logs extends Component
             ]);
 
         return view('livewire.maintenance.logs', [
-            'accessLogs' => AccessLog::latest()->limit(30)->get(),
+            'accessLogs' => AccessLog::latest()->paginate($this->perPage),
             'audit' => $returns->concat($filings)->sortByDesc('at')->take(15)->values(),
         ]);
     }

@@ -46,6 +46,40 @@ Route::middleware('auth')->group(function () {
     Route::get('/final-approval/{pan}', App\Livewire\FinalApprover\Show::class)->middleware('can:final_approver')->name('final-approval.show');
 
     Route::middleware('can:admin')->group(function () {
+        // TEMPORARY — inspect the raw User Listing API response while wiring it up.
+        // Admin-only + non-production. DELETE before go-live.
+        Route::get('/debug/user-api', function () {
+            abort_if(app()->isProduction(), 404);
+
+            if (config('services.user_api.endpoint') === '') {
+                return response()->json(['error' => 'USER_API_ENDPOINT is empty in .env']);
+            }
+
+            try {
+                $response = Illuminate\Support\Facades\Http::withHeaders(['x-api-key' => config('services.user_api.key')])
+                    ->withOptions(['verify' => storage_path('cacert.pem')])
+                    ->timeout(10)->connectTimeout(5)
+                    ->post(config('services.user_api.endpoint'));
+            } catch (Throwable $e) {
+                return response()->json(['error' => get_class($e).': '.$e->getMessage()], 502);
+            }
+
+            $body = $response->json() ?? $response->body();
+            $first = data_get($body, 'data.0') ?? (is_array($body) ? ($body[0] ?? null) : null);
+
+            return response()->json([
+                'status' => $response->status(),
+                'first_record_decrypt_check' => $first === null ? 'no records' : (function () use ($first) {
+                    try {
+                        return ['id_decrypts_to' => Illuminate\Support\Facades\Crypt::decryptString($first['id'] ?? '')];
+                    } catch (Throwable) {
+                        return 'FAILED — APP_KEY mismatch with the auth system, or id is not encrypted';
+                    }
+                })(),
+                'raw' => $body,
+            ], 200, [], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+        });
+
         Route::get('/admin/users', App\Livewire\Admin\Users::class)->name('admin.users');
         Route::get('/admin/users/{user}', App\Livewire\Admin\UserAccess::class)->name('admin.users.access');
         Route::get('/admin/employees', App\Livewire\Admin\Employees::class)->name('admin.employees');

@@ -7,15 +7,30 @@ use App\Models\PanRequest;
 use App\Services\PanWorkflow;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
+use App\Livewire\Concerns\WithPerPage;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 #[Layout('layouts.app')]
 #[Title('My PAN Requests — PANDA')]
 class Index extends Component
 {
+    use WithPagination;
+    use WithPerPage;
+
     public string $search = '';
 
     public string $filter = 'all'; // all | progress | completed
+
+    public function updatedSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedFilter(): void
+    {
+        $this->resetPage();
+    }
 
     public function deleteDraft(int $id): void
     {
@@ -52,17 +67,21 @@ class Index extends Component
                 PanStatus::Filed, PanStatus::Withdrawn, PanStatus::Voided, PanStatus::Unserved,
             ]))
             ->orderByDesc('id')
-            ->get();
+            ->paginate($this->perPage);
+
+        // One grouped query instead of four counts; the buckets are summed in PHP.
+        $byStatus = (clone $base)->select('status')->selectRaw('count(*) as c')
+            ->groupBy('status')->pluck('c', 'status');
+        $bucket = fn (array $statuses) => collect($statuses)->sum(fn ($s) => $byStatus[$s->value] ?? 0);
+        $terminal = [PanStatus::Filed, PanStatus::Withdrawn, PanStatus::Voided, PanStatus::Unserved];
 
         return view('livewire.requestor.index', [
             'pans' => $pans,
             'stats' => [
-                'total' => (clone $base)->count(),
-                'progress' => (clone $base)->ongoing()->count(),
-                'returned' => (clone $base)->where('status', PanStatus::ReturnedToRequestor)->count(),
-                'completed' => (clone $base)->whereIn('status', [
-                    PanStatus::Filed, PanStatus::Withdrawn, PanStatus::Voided, PanStatus::Unserved,
-                ])->count(),
+                'total' => $byStatus->sum(),
+                'progress' => $byStatus->sum() - $bucket([PanStatus::Draft, ...$terminal]),
+                'returned' => $byStatus[PanStatus::ReturnedToRequestor->value] ?? 0,
+                'completed' => $bucket($terminal),
             ],
             'departments' => auth()->user()->requestorDepartments->pluck('name')->implode(', '),
         ]);

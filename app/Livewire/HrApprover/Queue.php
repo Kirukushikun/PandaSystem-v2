@@ -8,15 +8,30 @@ use App\Services\PanWorkflow;
 use Illuminate\Database\Eloquent\Builder;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
+use App\Livewire\Concerns\WithPerPage;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 #[Layout('layouts.app')]
 #[Title('HR Approval Queue — PANDA')]
 class Queue extends Component
 {
+    use WithPagination;
+    use WithPerPage;
+
     public string $search = '';
 
     public string $filter = 'awaiting'; // awaiting | later
+
+    public function updatedSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedFilter(): void
+    {
+        $this->resetPage();
+    }
 
     // Return-to-preparer reason modal
     public bool $showModal = false;
@@ -91,18 +106,29 @@ class Queue extends Component
                     ->orWhereHas('employee', fn (Builder $q) => $q->where('name', 'like', "%{$this->search}%")));
             })
             ->orderByDesc('id')
-            ->get();
+            ->paginate($this->perPage);
+
+        // Three stats, one aggregate pass (conditions are mixed, so CASE sums not GROUP BY).
+        $laterIn = implode(',', array_fill(0, count($later), '?'));
+        $stats = PanRequest::query()->selectRaw("
+            sum(case when status = ? then 1 else 0 end) as awaiting,
+            sum(case when status = ? then 1 else 0 end) as with_final,
+            sum(case when status in ({$laterIn}) and hr_approver_id is not null
+                     and updated_at between ? and ? then 1 else 0 end) as approved
+        ", [
+            PanStatus::ForHrApproval->value,
+            PanStatus::ForFinalApproval->value,
+            ...array_map(fn ($s) => $s->value, $later),
+            now()->startOfMonth(), now()->endOfMonth(),
+        ])->toBase()->first();
 
         return view('livewire.hr-approver.queue', [
             'pans' => $pans,
             'modalPan' => $this->target ? PanRequest::find($this->target) : null,
             'stats' => [
-                'awaiting' => PanRequest::where('status', PanStatus::ForHrApproval)->count(),
-                'withFinal' => PanRequest::where('status', PanStatus::ForFinalApproval)->count(),
-                'approved' => PanRequest::whereIn('status', $later)
-                    ->whereNotNull('hr_approver_id')
-                    ->whereBetween('updated_at', [now()->startOfMonth(), now()->endOfMonth()])
-                    ->count(),
+                'awaiting' => (int) $stats->awaiting,
+                'withFinal' => (int) $stats->with_final,
+                'approved' => (int) $stats->approved,
             ],
         ]);
     }

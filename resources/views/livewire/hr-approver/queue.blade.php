@@ -45,6 +45,7 @@
       @endforeach
     </tbody>
   </table></div></div>
+  {{ $pans->links('components.pagination') }}
   @endif
 
   <div class="note info" style="margin-top:14px"><span class="ic">i</span>Returning a PAN here sends it one step back to the HR Preparer with a mandatory reason — not all the way back to the Requestor.</div>

@@ -31,21 +31,28 @@ class UserSeeder extends Seeder
             ['username' => 'caguirre',  'name' => 'C. Aguirre',   'position' => 'AVP — Corporate Services', 'farm' => 'BFC', 'perms' => ['is_dh_head']],
             ['username' => 'rocampo',   'name' => 'R. Ocampo',    'position' => 'HR Manager',               'farm' => 'BFC', 'perms' => ['is_hr_approver']],
             ['username' => 'vsalazar',  'name' => 'V. Salazar',   'position' => 'VP — Operations',          'farm' => 'BFC', 'perms' => ['is_final_approver']],
-            ['username' => 'admin_it',  'name' => 'IT Admin',     'position' => 'Systems Administrator',    'farm' => 'BFC', 'perms' => ['is_admin']],
+            // id pinned to the external company-system id (go-live: users.id must match the auth API)
+            ['username' => 'admin_it',  'name' => 'IT Admin',     'position' => 'Systems Administrator',    'farm' => 'BFC', 'perms' => ['is_admin'], 'id' => 61],
         ];
 
         foreach ($users as $data) {
-            User::updateOrCreate(
-                ['username' => $data['username']],
-                [
-                    'name' => $data['name'],
-                    'email' => $data['username'].'@bfcgroup.org', // org-standard login identity
-                    'position' => $data['position'],
-                    'farm_id' => $farms[$data['farm']],
-                    ...array_fill_keys(self::ALL_PERMS, false),
-                    ...array_fill_keys($data['perms'], true),
-                ]
-            );
+            $user = User::firstOrNew(['username' => $data['username']]);
+            $user->fill([
+                'name' => $data['name'],
+                'email' => $data['username'].'@bfcgroup.org', // org-standard login identity
+                'position' => $data['position'],
+                'farm_id' => $farms[$data['farm']],
+                ...array_fill_keys(self::ALL_PERMS, false),
+                ...array_fill_keys($data['perms'], true),
+            ]);
+
+            // 'id' is deliberately not fillable — set directly when a fixed id is pinned
+            // (e.g. to match the external auth-system id ahead of go-live).
+            if (isset($data['id'])) {
+                $user->id = $data['id'];
+            }
+
+            $user->save();
         }
 
         // Department assignments (independent of the booleans; co-heads supported):

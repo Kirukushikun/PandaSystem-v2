@@ -52,5 +52,6 @@
       @endforeach
     </tbody>
   </table></div></div>
+  {{ $pans->links('components.pagination') }}
   @endif
 </div>

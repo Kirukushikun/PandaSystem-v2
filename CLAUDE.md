@@ -2,8 +2,8 @@
 
 Workflow system for PANs (Personnel Action Notices) — HR requests that move through a fixed
 approval chain: Requestor → Division Head → HR Preparation → DH Confirmation → HR Approver →
-Final Approver → Served → Filed. Full behavior spec in `System_overview.md`; build sequence in
-`DEVELOPMENT_PLAN.md`.
+Final Approver → Served → Filed. Full behavior spec in `system-overview.md`; build sequence in
+`development-plan.md`.
 
 ## Tech stack
 - **Actual:** Laravel 13 + Livewire 4.3 (plan said 12/3 — composer won; classic class-based
@@ -32,7 +32,9 @@ Final Approver → Served → Filed. Full behavior spec in `System_overview.md`;
   role-aware (`User::landingRoute()`).
 - `wire:confirm` everywhere is intercepted globally in app.js and rendered as the styled
   `#confirm-modal` in the app layout — never edit individual buttons for confirm styling.
-- Scaffold-era docs: `UI_SCAFFOLD_CHECKLIST.md` (repo root), mockups in `project-overview/`.
+- Scaffold-era docs and mockups all live in `project-overview/` (kebab-case filenames):
+  `ui-scaffold-checklist.md`, `development-plan.md`, `development-playbook.md`, `asana-plan.md`,
+  `system-overview.md`, `panda-ui-concept.{html,css,js}`, `panda-login-concept.html`.
 - **Remaining / deferred:** spreadsheet import-export on the Employee Directory
   (maatwebsite/excel not installed — buttons toast "planned"); fill AUTH_API_*/TURNSTILE_*
   in .env + recreate users with external-API-matching ids before go-live; scheduler

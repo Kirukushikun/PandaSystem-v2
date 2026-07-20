@@ -3,6 +3,7 @@
 use App\Models\AccessLog;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Http;
 
@@ -110,6 +111,24 @@ test('an unknown app-login id gets no access', function () {
 
     expect($response->getContent())->toContain('Login Error [2]');
     $this->assertGuest();
+});
+
+test('an unreachable auth API gives a distinct message and does not count against lockout', function () {
+    Http::fake([
+        'https://auth.test/api/v1/auth/login' => fn () => throw new ConnectionException('Connection timed out'),
+    ]);
+
+    $response = $this->from('/login')->post('/login', ['email' => 'kreyes@bfcgroup.org', 'password' => 'secret']);
+
+    $response->assertSessionHasErrors('email');
+    expect(session('errors')->first('email'))->toContain('unreachable');
+    $this->assertGuest();
+    expect(AccessLog::sole()->success)->toBeFalse();
+
+    // A second unreachable attempt still isn't locked out — the API being down isn't the user's fault.
+    $response = $this->from('/login')->post('/login', ['email' => 'kreyes@bfcgroup.org', 'password' => 'secret']);
+    $response->assertSessionHasErrors('email');
+    expect(session('errors')->first('email'))->not->toContain('temporarily locked');
 });
 
 test('logout invalidates the session and returns to login', function () {

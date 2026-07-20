@@ -1,6 +1,6 @@
 # PANDA v2 — Asana Development Plan
 
-*(filled in from `ASANA_PLAN_TEMPLATE.md` — this is PANDA v2's actual status, not the reusable template)*
+*(PANDA v2's actual status — filled in from the reusable Asana Plan Template kept outside this repo)*
 
 **Sponsor / supervisor:** —
 **Target completion:** —
@@ -13,11 +13,11 @@ HR Approver → Final Approver → Served → Filed.
 ## Objective 1 — Overview ✅ Done
 
 **Source:** conversation with the project owner — no formal requirements doc handed down;
-captured directly as `System_overview.md`.
+captured directly as `system-overview.md`.
 
 | Status | Task | Owner | Duration | Notes |
 |---|---|---|---|---|
-| Done | Write the overview | — | — | `System_overview.md` — roles, PAN lifecycle, confidentiality tiers |
+| Done | Write the overview | — | — | `system-overview.md` — roles, PAN lifecycle, confidentiality tiers |
 
 ## Objective 2 — Mockup ✅ Done
 
@@ -30,7 +30,7 @@ captured directly as `System_overview.md`.
 
 | Status | Task | Owner | Duration | Notes |
 |---|---|---|---|---|
-| Done | UI scaffold complete (Steps 0–9) | — | — | see `UI_SCAFFOLD_CHECKLIST.md` |
+| Done | UI scaffold complete (Steps 0–9) | — | — | see `ui-scaffold-checklist.md` |
 | Done | Domain core — `PanStatus` enum + `PanWorkflow` state machine | — | — | tested before any screen touched it |
 | Done | Foundation — auth (`AUTH_FAKE` dev mode), roles, reference data | — | — | farms BDL/BFC/BRD/PFC/RH; 11 departments |
 | Done | Requestor + Division Head modules | — | — | real-build Steps 5–6 |

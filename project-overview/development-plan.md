@@ -1,9 +1,9 @@
 # PANDA v2 — Development Plan
 
 **Stack baseline:** Laravel 13 · Livewire 4 *(plan originally said 12/3; composer installed 13/4.3 — classic class-based components still apply)* · MySQL/MariaDB (Laragon) · Vite
-**References:** `System_overview.md` (behavior spec) · `panda-ui-concept.html` (UI contract — the tabs marked "mockup only" become real routes)
+**References:** `system-overview.md` (behavior spec) · `panda-ui-concept.html` (UI contract — the tabs marked "mockup only" become real routes)
 
-> **Status update:** a full **UI-scaffold pass (Steps 0–9, see `UI_SCAFFOLD_CHECKLIST.md` at repo
+> **Status update:** a full **UI-scaffold pass (Steps 0–9, see `ui-scaffold-checklist.md` at repo
 > root) was completed before this plan's phases** — every screen below already exists as a
 > Livewire component with real routes and the mockup's hardcoded sample data. The phases in §5
 > therefore start from "replace hardcoded arrays with real models + policies", not from blank

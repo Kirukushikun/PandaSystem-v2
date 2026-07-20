@@ -2,7 +2,7 @@
 
 Goal: port `project-overview/panda-ui-concept.html` into organized Livewire components with
 real routes and shared Blade components. **Pure UI — hardcoded sample data, no models, no
-migrations.** Folder structure follows `DEVELOPMENT_PLAN.md` §2; routes follow §4.
+migrations.** Folder structure follows `development-plan.md` §2; routes follow §4.
 
 Rule of the road: one step per session-ish, each step ends navigable in the browser.
 Sample data stays identical to the mockup (K. Reyes, M. Dela Cruz, S. Lim…) so screens can

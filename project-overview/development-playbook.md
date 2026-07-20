@@ -3,6 +3,12 @@
 A general, project-agnostic method for building a web app. It is distilled from how PANDA v2
 was built, but nothing in it is specific to that project — reuse it anywhere.
 
+> This is the *technical* method. It's paired with a Development Plan Template (this method,
+> filled in per-project) and an Asana Plan Template (the outcome-level status view for
+> supervisors/stakeholders), kept outside this project's repo for reuse across future projects.
+> PANDA v2's own filled-in copies live alongside this file: `development-plan.md`,
+> `ui-scaffold-checklist.md`, `asana-plan.md`.
+
 The core idea: **settle every cheap decision before making any expensive one.**
 Words are cheaper than HTML, HTML is cheaper than components, components are cheaper than
 schemas, and schemas are cheaper than production data. So the order is:
@@ -39,7 +45,7 @@ Port the mockup into the real framework as **pure UI — hardcoded sample data, 
 no auth**. This stage turns one big HTML file into the app's permanent skeleton: layout,
 routes, shared components, per-module components.
 
-1. **Write a checklist file first** (`UI_SCAFFOLD_CHECKLIST.md`-style) breaking the port into
+1. **Write a checklist file first** (`ui-scaffold-checklist.md`-style) breaking the port into
    steps, and keep it updated as the single source of "where are we". A good split:
    - Step 0 — shell: layout, theme, navigation, global JS, all routes stubbed
    - Step 1 — shared components (status pills, trackers, modals, menus, stat cards…)
@@ -62,7 +68,7 @@ routes, shared components, per-module components.
      framework wiring and survives into the real build.
 4. **Verify each step mechanically** before calling it done: hit every new route, check for
    key content strings, click the interactive bits.
-5. **Commit once per step** with a uniform message (see Working agreements).
+5. **Leave the step staged for review, then commit** with a uniform message (see Working agreements).
 
 **Exit criteria:** every mockup screen exists as a routed component; all routes return 200;
 the checklist is fully checked.
@@ -93,9 +99,15 @@ route/action is policy-authorized; the hardening checklist is all checked.
 ## Working agreements (any stage)
 
 - **Slow and steady:** one checklist step per session. Finish and verify before starting the next.
-- **Commit per step**, uniform message: `feat: Step N - what it delivered` (pick "Step" for
-  small increments; reserve "Phase" for the big stage-3 chunks). Fixes between steps are
-  `fix: …`. One logical change per commit.
+- **End each step staged for review, not auto-committed.** When a step is done and verified,
+  leave its changes uncommitted (staged is fine) and hand back control instead of committing
+  immediately — the person building the project needs a moment to see exactly which files a
+  feature touched while they're still learning the codebase; a commit that already happened
+  collapses that into history where it's harder to inspect. Draft the commit message (you have
+  the context on what the step actually delivered) and offer it, but don't run `git commit`
+  until they say to. Uniform message either way: `feat: Step N - what it delivered` (pick
+  "Step" for small increments; reserve "Phase" for the big stage-3 chunks); fixes between steps
+  are `fix: …`; one logical change per commit.
 - **The checklist file is the project's memory.** Update it (and any assistant/tooling memory)
   the moment a step lands, including deviations — a plan that no longer matches reality is
   worse than no plan.

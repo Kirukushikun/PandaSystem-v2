@@ -96,16 +96,20 @@ class Queue extends Component
      * their own departments' non-Manila PANs; a DH Head sees ONLY Manila-tagged
      * PANs across all departments. Drafts are in nobody's queue.
      */
+    /** Headed-department ids, fetched once per request no matter how often scope() runs. */
+    private ?\Illuminate\Support\Collection $headedDeptIds = null;
+
     protected function scope(): Builder
     {
         $user = auth()->user();
+        $this->headedDeptIds ??= $user->headedDepartments()->pluck('departments.id');
 
         return PanRequest::query()
             ->where('status', '!=', PanStatus::Draft->value)
             ->where(function (Builder $q) use ($user) {
                 if ($user->is_division_head) {
                     $q->orWhere(fn (Builder $q) => $q
-                        ->whereIn('department_id', $user->headedDepartments()->pluck('departments.id'))
+                        ->whereIn('department_id', $this->headedDeptIds)
                         ->where('confidentiality_tag', '!=', ConfidentialityTag::Manila->value));
                 }
                 if ($user->is_dh_head) {
@@ -132,12 +136,18 @@ class Queue extends Component
             ->orderByDesc('id')
             ->get();
 
+        // awaiting/later are pure status buckets — one grouped query covers both;
+        // completed also filters on updated_at, so it keeps its own count.
+        $byStatus = $this->scope()->select('status')->selectRaw('count(*) as c')
+            ->groupBy('status')->pluck('c', 'status');
+        $bucket = fn (array $statuses) => collect($statuses)->sum(fn ($s) => $byStatus[$s->value] ?? 0);
+
         return view('livewire.division-head.queue', [
             'pans' => $pans,
             'modalPan' => $this->target ? PanRequest::find($this->target) : null,
             'stats' => [
-                'awaiting' => $this->scope()->whereIn('status', $awaiting)->count(),
-                'later' => $this->scope()->ongoing()->whereNotIn('status', $awaiting)->count(),
+                'awaiting' => $bucket($awaiting),
+                'later' => $byStatus->sum() - $bucket([...$awaiting, ...$terminal]),
                 'completed' => $this->scope()->whereIn('status', $terminal)
                     ->whereBetween('updated_at', [now()->startOfMonth(), now()->endOfMonth()])->count(),
             ],

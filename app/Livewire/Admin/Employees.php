@@ -124,6 +124,24 @@ class Employees extends Component
         return ['p-draft', $hasDraft ? 'None — draft only' : 'None'];
     }
 
+    /** All four header stats in one aggregate pass (distinct counts included). */
+    private function stats(): array
+    {
+        $row = Employee::query()->selectRaw('
+            count(*) as total,
+            count(distinct department_id) as departments,
+            count(distinct farm_id) as farms,
+            sum(case when created_at between ? and ? then 1 else 0 end) as added
+        ', [now()->startOfMonth(), now()->endOfMonth()])->toBase()->first();
+
+        return [
+            'total' => (int) $row->total,
+            'departments' => (int) $row->departments,
+            'farms' => (int) $row->farms,
+            'added' => (int) $row->added,
+        ];
+    }
+
     public function render()
     {
         $employees = Employee::query()
@@ -143,12 +161,7 @@ class Employees extends Component
             'employees' => $employees,
             'departments' => Department::orderBy('name')->get(),
             'farms' => Farm::orderBy('name')->get(),
-            'stats' => [
-                'total' => Employee::count(),
-                'departments' => Employee::distinct('department_id')->count('department_id'),
-                'farms' => Employee::distinct('farm_id')->count('farm_id'),
-                'added' => Employee::whereBetween('created_at', [now()->startOfMonth(), now()->endOfMonth()])->count(),
-            ],
+            'stats' => $this->stats(),
         ]);
     }
 }

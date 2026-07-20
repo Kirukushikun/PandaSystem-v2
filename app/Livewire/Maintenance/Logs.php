@@ -52,7 +52,7 @@ class Logs extends Component
                     ." on {$return->panRequest->reference}: \"{$return->reason}\"",
             ]);
 
-        $filings = PanRequest::whereNotNull('filed_at')->latest('filed_at')->limit(6)->get()
+        $filings = PanRequest::whereNotNull('filed_at')->with('employee')->latest('filed_at')->limit(6)->get()
             ->map(fn (PanRequest $pan) => [
                 'at' => $pan->filed_at,
                 'module' => 'HR Prep',

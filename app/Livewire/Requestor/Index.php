@@ -54,15 +54,19 @@ class Index extends Component
             ->orderByDesc('id')
             ->get();
 
+        // One grouped query instead of four counts; the buckets are summed in PHP.
+        $byStatus = (clone $base)->select('status')->selectRaw('count(*) as c')
+            ->groupBy('status')->pluck('c', 'status');
+        $bucket = fn (array $statuses) => collect($statuses)->sum(fn ($s) => $byStatus[$s->value] ?? 0);
+        $terminal = [PanStatus::Filed, PanStatus::Withdrawn, PanStatus::Voided, PanStatus::Unserved];
+
         return view('livewire.requestor.index', [
             'pans' => $pans,
             'stats' => [
-                'total' => (clone $base)->count(),
-                'progress' => (clone $base)->ongoing()->count(),
-                'returned' => (clone $base)->where('status', PanStatus::ReturnedToRequestor)->count(),
-                'completed' => (clone $base)->whereIn('status', [
-                    PanStatus::Filed, PanStatus::Withdrawn, PanStatus::Voided, PanStatus::Unserved,
-                ])->count(),
+                'total' => $byStatus->sum(),
+                'progress' => $byStatus->sum() - $bucket([PanStatus::Draft, ...$terminal]),
+                'returned' => $byStatus[PanStatus::ReturnedToRequestor->value] ?? 0,
+                'completed' => $bucket($terminal),
             ],
             'departments' => auth()->user()->requestorDepartments->pluck('name')->implode(', '),
         ]);

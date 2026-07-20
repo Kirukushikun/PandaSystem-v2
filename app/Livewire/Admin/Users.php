@@ -48,13 +48,21 @@ class Users extends Component
             ->orderBy('name')
             ->get();
 
+        // Four stats in one aggregate pass over users (booleans are 0/1 in the DB).
+        $stats = User::query()->selectRaw('
+            count(*) as total,
+            sum(case when is_division_head = 1 or is_dh_head = 1 then 1 else 0 end) as heads,
+            sum(is_hr_preparer) as preparers,
+            sum(is_admin) as admins
+        ')->toBase()->first();
+
         return view('livewire.admin.users', [
             'users' => $users,
             'stats' => [
-                'total' => User::count(),
-                'heads' => User::where('is_division_head', true)->orWhere('is_dh_head', true)->count(),
-                'preparers' => User::where('is_hr_preparer', true)->count(),
-                'admins' => User::where('is_admin', true)->count(),
+                'total' => (int) $stats->total,
+                'heads' => (int) $stats->heads,
+                'preparers' => (int) $stats->preparers,
+                'admins' => (int) $stats->admins,
             ],
         ]);
     }

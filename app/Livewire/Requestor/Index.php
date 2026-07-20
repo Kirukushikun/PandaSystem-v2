@@ -8,14 +8,27 @@ use App\Services\PanWorkflow;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 #[Layout('layouts.app')]
 #[Title('My PAN Requests — PANDA')]
 class Index extends Component
 {
+    use WithPagination;
+
     public string $search = '';
 
     public string $filter = 'all'; // all | progress | completed
+
+    public function updatedSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedFilter(): void
+    {
+        $this->resetPage();
+    }
 
     public function deleteDraft(int $id): void
     {
@@ -52,7 +65,7 @@ class Index extends Component
                 PanStatus::Filed, PanStatus::Withdrawn, PanStatus::Voided, PanStatus::Unserved,
             ]))
             ->orderByDesc('id')
-            ->get();
+            ->paginate(25);
 
         // One grouped query instead of four counts; the buckets are summed in PHP.
         $byStatus = (clone $base)->select('status')->selectRaw('count(*) as c')

@@ -78,6 +78,7 @@
       @endforeach
     </tbody>
   </table></div></div>
+  {{ $pans->links('components.pagination') }}
   @endif
   @if ($isHrHead)
   <p class="locknote" style="margin:8px 2px 0">Tag colors — <x-tag-dot tag="manila" /> Manila (confidential) · <x-tag-dot tag="tarlac" /> Tarlac (routine) · <x-tag-dot /> untagged. Visible to HR Head Preparers only. Once tagged Manila, ordinary preparers can no longer open the record.</p>

@@ -55,6 +55,7 @@
       @endforeach
     </tbody>
   </table></div></div>
+  {{ $employees->links('components.pagination') }}
   @endif
 
   <div class="note info" style="margin-top:14px"><span class="ic">i</span><span><b>Remove is disabled while an employee has an ongoing PAN</b>&nbsp;— anything submitted and not yet filed, withdrawn, or voided blocks removal (drafts don't count). Removing an employee never deletes their PAN history; they simply can no longer be selected for new PANs.</span></div>

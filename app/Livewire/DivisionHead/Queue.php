@@ -10,14 +10,27 @@ use Illuminate\Database\Eloquent\Builder;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 #[Layout('layouts.app')]
 #[Title('Department Queue — PANDA')]
 class Queue extends Component
 {
+    use WithPagination;
+
     public string $search = '';
 
     public string $filter = 'action'; // action | all | completed
+
+    public function updatedSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedFilter(): void
+    {
+        $this->resetPage();
+    }
 
     // Shared reason modal (Return to Requestor / Dispute — both demand a reason)
     public bool $showModal = false;
@@ -134,7 +147,7 @@ class Queue extends Component
             ->when($this->filter === 'action', fn (Builder $q) => $q->whereIn('status', $awaiting))
             ->when($this->filter === 'completed', fn (Builder $q) => $q->whereIn('status', $terminal))
             ->orderByDesc('id')
-            ->get();
+            ->paginate(25);
 
         // awaiting/later are pure status buckets — one grouped query covers both;
         // completed also filters on updated_at, so it keeps its own count.

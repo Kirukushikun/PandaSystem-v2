@@ -60,6 +60,7 @@
       @endforeach
     </tbody>
   </table></div></div>
+  {{ $pans->links('components.pagination') }}
   @endif
 
   <x-modal id="reason-modal" :open="$showModal" close="$set('showModal', false)" title="{{ $modalAction === 'dispute' ? 'Dispute' : 'Return to Requestor' }}{{ $modalPan ? ' — '.$modalPan->reference : '' }}">

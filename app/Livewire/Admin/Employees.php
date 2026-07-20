@@ -12,6 +12,7 @@ use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 /**
  * Master roster (Admin owns it; the HR Preparation lens only reads it).
@@ -22,9 +23,21 @@ use Livewire\Component;
 #[Title('Employee Directory — PANDA')]
 class Employees extends Component
 {
+    use WithPagination;
+
     public string $search = '';
 
     public ?int $farmFilter = null;
+
+    public function updatedSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedFarmFilter(): void
+    {
+        $this->resetPage();
+    }
 
     // Shared Add/Edit modal state (server-driven open flag — re-renders can't shut it)
     public bool $showModal = false;
@@ -155,7 +168,7 @@ class Employees extends Component
             })
             ->when($this->farmFilter, fn (Builder $q) => $q->where('farm_id', $this->farmFilter))
             ->orderBy('name')
-            ->get();
+            ->paginate(25);
 
         return view('livewire.admin.employees', [
             'employees' => $employees,

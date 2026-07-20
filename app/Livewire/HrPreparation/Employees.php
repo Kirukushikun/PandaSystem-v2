@@ -8,6 +8,7 @@ use App\Models\Employee;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 /**
  * HR-side, read-only lens over the master roster managed in Administration →
@@ -18,10 +19,21 @@ use Livewire\Component;
 class Employees extends Component
 {
     use StartsHrPan;
+    use WithPagination;
 
     public string $search = '';
 
     public ?int $departmentFilter = null;
+
+    public function updatedSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedDepartmentFilter(): void
+    {
+        $this->resetPage();
+    }
 
     public function render()
     {
@@ -36,7 +48,7 @@ class Employees extends Component
             })
             ->when($this->departmentFilter, fn ($q) => $q->where('department_id', $this->departmentFilter))
             ->orderBy('name')
-            ->get();
+            ->paginate(25);
 
         return view('livewire.hr-preparation.employees', [
             'employees' => $employees,

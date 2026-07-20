@@ -9,14 +9,27 @@ use Illuminate\Database\Eloquent\Builder;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 #[Layout('layouts.app')]
 #[Title('HR Approval Queue — PANDA')]
 class Queue extends Component
 {
+    use WithPagination;
+
     public string $search = '';
 
     public string $filter = 'awaiting'; // awaiting | later
+
+    public function updatedSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedFilter(): void
+    {
+        $this->resetPage();
+    }
 
     // Return-to-preparer reason modal
     public bool $showModal = false;
@@ -91,7 +104,7 @@ class Queue extends Component
                     ->orWhereHas('employee', fn (Builder $q) => $q->where('name', 'like', "%{$this->search}%")));
             })
             ->orderByDesc('id')
-            ->get();
+            ->paginate(25);
 
         // Three stats, one aggregate pass (conditions are mixed, so CASE sums not GROUP BY).
         $laterIn = implode(',', array_fill(0, count($later), '?'));

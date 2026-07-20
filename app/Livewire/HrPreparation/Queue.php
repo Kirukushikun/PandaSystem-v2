@@ -10,14 +10,27 @@ use Illuminate\Database\Eloquent\Builder;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 #[Layout('layouts.app')]
 #[Title('Preparation Queue — PANDA')]
 class Queue extends Component
 {
+    use WithPagination;
+
     public string $search = '';
 
     public string $filter = 'all'; // all | prepare | approval | serve
+
+    public function updatedSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedFilter(): void
+    {
+        $this->resetPage();
+    }
 
     // Shared reason modal (Void / Mark Unserved — both demand a reason)
     public bool $showModal = false;
@@ -127,7 +140,7 @@ class Queue extends Component
             ->when($this->filter === 'approval', fn (Builder $q) => $q->whereIn('status', $approval))
             ->when($this->filter === 'serve', fn (Builder $q) => $q->whereIn('status', $serve))
             ->orderByDesc('id')
-            ->get();
+            ->paginate(25);
 
         // All three stats are status buckets over the same scope — one grouped query.
         $byStatus = $this->scope()->select('status')->selectRaw('count(*) as c')

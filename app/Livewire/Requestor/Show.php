@@ -18,7 +18,7 @@ class Show extends Component
     public function mount(string $pan): void
     {
         $this->panRequest = PanRequest::where('reference', $pan)
-            ->with(['employee.department', 'returns.returnedBy'])
+            ->with(['employee.department', 'returns.returnedBy', 'attachments'])
             ->firstOrFail();
 
         $this->authorize('view', $this->panRequest);

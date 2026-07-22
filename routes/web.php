@@ -100,12 +100,14 @@ Route::middleware('auth')->group(function () {
 
     // Attachment + print: policy-checked per record — these are the direct-link
     // entry points v1 left open. Looked up by reference, 404 when unknown.
-    Route::get('/pan/{pan}/attachment', function (string $pan) {
+    Route::get('/pan/{pan}/attachment/{attachment}', function (string $pan, int $attachment) {
         $panRequest = PanRequest::where('reference', $pan)->firstOrFail();
         Gate::authorize('view', $panRequest);
-        abort_unless($panRequest->attachment_path && Storage::exists($panRequest->attachment_path), 404);
 
-        return Storage::download($panRequest->attachment_path, basename($panRequest->attachment_path));
+        $file = $panRequest->attachments()->find($attachment); // scoped — can't reach another PAN's file by id
+        abort_unless($file && Storage::exists($file->path), 404);
+
+        return Storage::download($file->path, $file->original_name);
     })->name('pan.attachment');
 
     Route::get('/pan/{pan}/print', function (string $pan) {

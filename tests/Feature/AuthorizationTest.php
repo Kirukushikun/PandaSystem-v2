@@ -126,11 +126,21 @@ test('print and attachment routes enforce the same policy per record', function 
     $outsider = User::factory()->requestor()->create();
 
     $this->actingAs($outsider)->get('/pan/'.$pan->reference.'/print')->assertForbidden();
-    $this->actingAs($outsider)->get('/pan/'.$pan->reference.'/attachment')->assertForbidden();
+    $this->actingAs($outsider)->get('/pan/'.$pan->reference.'/attachment/1')->assertForbidden();
 
     $this->actingAs($pan->requestedBy)->get('/pan/'.$pan->reference.'/print')->assertOk();
-    // owner without an uploaded file: authorized but nothing to download
-    $this->actingAs($pan->requestedBy)->get('/pan/'.$pan->reference.'/attachment')->assertNotFound();
+    // owner, authorized, but that attachment id doesn't exist on this PAN
+    $this->actingAs($pan->requestedBy)->get('/pan/'.$pan->reference.'/attachment/1')->assertNotFound();
+});
+
+test('an attachment id belonging to a different PAN cannot be reached via this PAN\'s reference', function () {
+    $pan = PanRequest::factory()->tarlac()->status(PanStatus::InPreparation)->create();
+    $otherPan = PanRequest::factory()->tarlac()->status(PanStatus::InPreparation)->create();
+    $foreignAttachment = App\Models\PanAttachment::factory()->create(['pan_request_id' => $otherPan->id]);
+
+    $this->actingAs($pan->requestedBy)
+        ->get('/pan/'.$pan->reference.'/attachment/'.$foreignAttachment->id)
+        ->assertNotFound();
 });
 
 test('printing a PAN with no prepared paperwork is a 404, not a blank sheet', function () {

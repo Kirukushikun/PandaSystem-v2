@@ -126,7 +126,9 @@ test('purging attachments keeps the PAN records but clears the files', function 
     Storage::fake();
     $pan = PanRequest::factory()->status(PanStatus::Filed)->create();
     Storage::put('pans/'.$pan->reference.'/doc.pdf', 'x');
-    $pan->update(['attachment_path' => 'pans/'.$pan->reference.'/doc.pdf']);
+    \App\Models\PanAttachment::factory()->create([
+        'pan_request_id' => $pan->id, 'path' => 'pans/'.$pan->reference.'/doc.pdf',
+    ]);
 
     Livewire::test(DangerZone::class)
         ->call('selectMode', 'attach', 'range')
@@ -139,7 +141,7 @@ test('purging attachments keeps the PAN records but clears the files', function 
         ->call('queueConfirmed');
 
     $pan->refresh();
-    expect($pan->attachment_path)->toBeNull()
+    expect($pan->attachments)->toHaveCount(0)
         ->and(PanRequest::count())->toBe(1);
     Storage::assertMissing('pans/'.$pan->reference.'/doc.pdf');
 });

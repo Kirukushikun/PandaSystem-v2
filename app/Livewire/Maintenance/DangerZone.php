@@ -96,7 +96,7 @@ class DangerZone extends Component
 
         $query = match ($grp) {
             'wipe' => PanRequest::query(),
-            'attach' => PanRequest::query()->whereNotNull('attachment_path'),
+            'attach' => PanRequest::query()->whereHas('attachments'),
             'dlog' => AccessLog::query(),
         };
 
@@ -218,7 +218,7 @@ class DangerZone extends Component
         $query->chunkById(100, function ($pans) use (&$count) {
             foreach ($pans as $pan) {
                 Storage::deleteDirectory('pans/'.$pan->reference);
-                $pan->update(['attachment_path' => null]);
+                $pan->attachments()->delete();
                 $count++;
             }
         });

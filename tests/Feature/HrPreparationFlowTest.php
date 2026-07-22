@@ -280,7 +280,7 @@ test('Update PAN starts a new cycle directly at Awaiting Tag with origin hr', fu
     Livewire::test(Employees::class)
         ->call('startUpdate', $this->employee->id)
         ->set('updateAction', 'wage-order')
-        ->set('updateAttachment', UploadedFile::fake()->create('wage_order_issuance.pdf', 200, 'application/pdf'))
+        ->set('updateAttachments', [UploadedFile::fake()->create('wage_order_issuance.pdf', 200, 'application/pdf')])
         ->call('createHrPan')
         ->assertHasNoErrors();
 
@@ -289,15 +289,16 @@ test('Update PAN starts a new cycle directly at Awaiting Tag with origin hr', fu
         ->and($pan->status)->toBe(PanStatus::AwaitingTag)
         ->and($pan->requested_by)->toBeNull()
         ->and($pan->reference)->toBe('PAN-'.now()->year.'-00001')
-        ->and($pan->employee_id)->toBe($this->employee->id);
-    Storage::assertExists($pan->attachment_path);
+        ->and($pan->employee_id)->toBe($this->employee->id)
+        ->and($pan->attachments)->toHaveCount(1);
+    Storage::assertExists($pan->attachments->first()->path);
 });
 
 test('Update PAN requires the action type and the PDF', function () {
     Livewire::test(Employees::class)
         ->call('startUpdate', $this->employee->id)
         ->call('createHrPan')
-        ->assertHasErrors(['updateAction' => 'required', 'updateAttachment' => 'required']);
+        ->assertHasErrors(['updateAction' => 'required', 'updateAttachments']);
 
     expect(PanRequest::count())->toBe(0);
 });

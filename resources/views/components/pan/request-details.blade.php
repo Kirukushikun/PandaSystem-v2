@@ -7,8 +7,8 @@
     'requestedBy' => null,
     'justification' => '',
     'justificationRows' => 3,
-    'document' => null, 'documentSize' => null,
-    'documentUrl' => null, // real download link (policy-gated route); button stays inert without it
+    'attachments' => [], // Collection<PanAttachment>
+    'panReference' => null, // needed to build each attachment's download URL
     'sect' => false,
 ])
 @if ($sect)<div class="sect">Request details</div>@endif
@@ -23,17 +23,14 @@
   <div class="field"><label>Submitted</label><input readonly value="{{ $submitted }}"></div>
   <div class="field full"><label>Justification</label>
     <textarea rows="{{ $justificationRows }}" readonly>{{ $justification }}</textarea></div>
-  <div class="field full"><label>Supporting Document</label>
-    @if ($document)
-    <div class="attachrow"><span class="pdf">PDF</span> {{ $document }} @if ($documentSize)<small>· {{ $documentSize }}</small>@endif
+  <div class="field full"><label>Supporting Document{{ count($attachments) === 1 ? '' : 's' }}</label>
+    @forelse ($attachments as $file)
+    <div class="attachrow" style="margin-bottom:4px"><span class="pdf">PDF</span> {{ $file->original_name }}
+      <small>· {{ number_format($file->size / 1024) }} KB</small>
       <span class="spacer"></span>
-      @if ($documentUrl)
-      <a class="btn ghost" href="{{ $documentUrl }}" style="text-decoration:none">Open</a>
-      @else
-      <button class="btn ghost" type="button">Open</button>
-      @endif
+      <a class="btn ghost" href="{{ route('pan.attachment', [$panReference, $file->id]) }}" style="text-decoration:none">Open</a>
     </div>
-    @else
-    <div class="attachrow"><small style="color:var(--ink-3)">No document attached yet — required before submitting.</small></div>
-    @endif</div>
+    @empty
+    <div class="attachrow"><small style="color:var(--ink-3)">No documents attached yet — at least one is required before submitting.</small></div>
+    @endforelse</div>
 </div>

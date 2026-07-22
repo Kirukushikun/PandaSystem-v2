@@ -39,8 +39,8 @@
       :submitted="$pan->submitted_at?->format('M j, Y · H:i') ?? '—'"
       :justification="$pan->justification ?? '—'"
       :justification-rows="$form !== null ? 2 : 3"
-      :document="$pan->attachment_path ? basename($pan->attachment_path) : null"
-      :document-url="$pan->attachment_path ? route('pan.attachment', $pan->reference) : null" />
+      :attachments="$pan->attachments"
+      :pan-reference="$pan->reference" />
 
     @if ($form !== null)
     {{-- extension: appears only once HR has prepared the PAN --}}

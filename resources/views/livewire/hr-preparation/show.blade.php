@@ -24,8 +24,8 @@
       :submitted="$pan->submitted_at?->format('M j, Y · H:i') ?? '—'"
       :justification="$pan->justification ?? '—'"
       :justification-rows="2"
-      :document="$pan->attachment_path ? basename($pan->attachment_path) : null"
-      :document-url="$pan->attachment_path ? route('pan.attachment', $pan->reference) : null" />
+      :attachments="$pan->attachments"
+      :pan-reference="$pan->reference" />
 
     @if ($form !== null)
     <x-pan.prepared-details

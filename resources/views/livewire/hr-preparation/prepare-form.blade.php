@@ -42,8 +42,8 @@
       :submitted="$pan->submitted_at?->format('M j, Y · H:i') ?? '—'"
       :justification="$pan->justification ?? '—'"
       :justification-rows="2"
-      :document="$pan->attachment_path ? basename($pan->attachment_path) : null"
-      :document-url="$pan->attachment_path ? route('pan.attachment', $pan->reference) : null" />
+      :attachments="$pan->attachments"
+      :pan-reference="$pan->reference" />
 
     {{-- Locked until tagged (a normal preparer never reaches a Manila record — the policy 403s first) --}}
     <div class="lockable @if ($locked) locked @endif">

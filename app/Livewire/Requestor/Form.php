@@ -5,7 +5,9 @@ namespace App\Livewire\Requestor;
 use App\Enums\ActionType;
 use App\Enums\PanStatus;
 use App\Models\Employee;
+use App\Models\PanAttachment;
 use App\Models\PanRequest;
+use App\Services\PanAttachmentService;
 use App\Services\PanReferenceGenerator;
 use App\Services\PanWorkflow;
 use Illuminate\Validation\Rule;
@@ -16,7 +18,7 @@ use Livewire\WithFileUploads;
 
 /**
  * New PAN Request + editing own drafts/returned PANs (same screen, per the mockup).
- * Drafts save without an attachment; submitting demands the PDF.
+ * Drafts save without an attachment; submitting demands at least one (up to 3 total).
  */
 #[Layout('layouts.app')]
 #[Title('PAN Request — PANDA')]
@@ -32,12 +34,13 @@ class Form extends Component
 
     public string $justification = '';
 
-    public $attachment = null; // new upload (Livewire temporary file)
+    /** @var \Illuminate\Http\UploadedFile[] newly-picked, not yet uploaded to the PAN */
+    public array $newAttachments = [];
 
     public function mount(?string $pan = null): void
     {
         if ($pan !== null) {
-            $this->panRequest = PanRequest::where('reference', $pan)->firstOrFail();
+            $this->panRequest = PanRequest::where('reference', $pan)->with('attachments')->firstOrFail();
             $this->authorize('update', $this->panRequest);
 
             $this->employee_id = $this->panRequest->employee_id;
@@ -46,6 +49,23 @@ class Form extends Component
         } else {
             $this->authorize('create', PanRequest::class);
         }
+    }
+
+    /** Drop a just-picked file before it's ever uploaded — no server round trip needed. */
+    public function removeNewAttachment(int $index): void
+    {
+        unset($this->newAttachments[$index]);
+        $this->newAttachments = array_values($this->newAttachments);
+    }
+
+    /** Remove an already-saved document — same edit rights that unlock this whole screen. */
+    public function removeAttachment(int $id): void
+    {
+        $attachment = PanAttachment::where('pan_request_id', $this->panRequest?->id)->findOrFail($id);
+        $this->authorize('update', $this->panRequest);
+
+        app(PanAttachmentService::class)->remove($attachment);
+        $this->panRequest->refresh();
     }
 
     /** Employees selectable = those in the user's "Requests for" departments. */
@@ -86,15 +106,15 @@ class Form extends Component
 
     private function rules(bool $draft): array
     {
+        $existingCount = $this->panRequest?->attachments->count() ?? 0;
+
         return [
             'employee_id' => ['required', Rule::in($this->employees->pluck('id'))],
             'action_type' => ['required', Rule::enum(ActionType::class)],
             'justification' => $draft ? ['nullable', 'string'] : ['required', 'string', 'min:10'],
-            // drafts may omit the PDF; submission requires one (new or already uploaded)
-            'attachment' => [
-                $draft || $this->panRequest?->attachment_path ? 'nullable' : 'required',
-                'file', 'mimes:pdf', 'max:10240',
-            ],
+            // drafts may omit documents entirely; submission requires at least one, up to 3 total
+            'newAttachments' => ['array', app(PanAttachmentService::class)->countRule($existingCount, required: ! $draft)],
+            'newAttachments.*' => ['file', 'mimes:pdf', 'max:10240'],
         ];
     }
 
@@ -121,16 +141,12 @@ class Form extends Component
             ]);
         }
 
-        if ($this->attachment) {
-            // private disk — downloads only via the policy-gated route
-            $path = $this->attachment->storeAs(
-                'pans/'.$this->panRequest->reference,
-                $this->attachment->getClientOriginalName()
-            );
-            $this->panRequest->update(['attachment_path' => $path]);
+        if ($this->newAttachments !== []) {
+            app(PanAttachmentService::class)->store($this->panRequest, $this->newAttachments);
+            $this->newAttachments = [];
         }
 
-        return $this->panRequest->fresh();
+        return $this->panRequest->fresh('attachments');
     }
 
     public function render()

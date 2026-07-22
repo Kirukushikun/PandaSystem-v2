@@ -125,3 +125,27 @@ document.addEventListener('click', (e) => {
         window.confirm = native;
     };
 }, true);
+
+/* ---------- file-upload progress (Livewire's own events — no extra libs) ----------
+   Only one upload field is ever visible on screen at once in this app, so we don't
+   need to scope by which wire:model triggered it — just show/update whatever
+   .upload-progress element is currently on the page. */
+function uploadProgressEls() {
+    return document.querySelectorAll('.upload-progress');
+}
+window.addEventListener('livewire-upload-start', () => {
+    uploadProgressEls().forEach((el) => {
+        el.hidden = false;
+        el.querySelector('.upload-progress-bar').style.width = '0%';
+        el.querySelector('.upload-progress-pct').textContent = '0';
+    });
+});
+window.addEventListener('livewire-upload-progress', (e) => {
+    uploadProgressEls().forEach((el) => {
+        el.querySelector('.upload-progress-bar').style.width = e.detail.progress + '%';
+        el.querySelector('.upload-progress-pct').textContent = e.detail.progress;
+    });
+});
+['livewire-upload-finish', 'livewire-upload-error', 'livewire-upload-cancel'].forEach((name) => {
+    window.addEventListener(name, () => uploadProgressEls().forEach((el) => { el.hidden = true; }));
+});

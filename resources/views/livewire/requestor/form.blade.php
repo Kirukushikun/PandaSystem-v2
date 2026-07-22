@@ -2,7 +2,7 @@
   <p class="crumb">Requestor · {{ $departments ?: 'no departments assigned' }}</p>
   <div class="htop"><div>
     <h2>{{ $panRequest ? ($panRequest->status === App\Enums\PanStatus::ReturnedToRequestor ? 'Resolve Return — ' : 'Edit Draft — ').$panRequest->reference : 'New PAN Request' }}</h2>
-    <p>Employee list is limited to your registered department(s). A PDF attachment is required to submit; drafts may be saved without one.</p></div></div>
+    <p>Employee list is limited to your registered department(s). At least one PDF (up to 3) is required to submit; drafts may be saved without one.</p></div></div>
 
   @if ($panRequest?->status === App\Enums\PanStatus::ReturnedToRequestor && ($return = $panRequest->returns->last()))
   <div class="note warn"><span class="ic">!</span><span><b>Returned:</b>&nbsp;{{ $return->reason }}@if ($return->details) — {{ $return->details }}@endif</span></div>
@@ -31,18 +31,41 @@
       <div class="field full"><label>Justification</label>
         <textarea rows="3" wire:model="justification" placeholder="Why this action is being requested…"></textarea>
         @error('justification')<span class="hint" style="color:var(--red)">{{ $message }}</span>@enderror</div>
-      <div class="field full"><label>Supporting Document (PDF) <em>*</em></label>
+      <div class="field full"><label>Supporting Documents (PDF, up to 3) <em>*</em></label>
+
+        @php($totalCount = ($panRequest?->attachments->count() ?? 0) + count($newAttachments))
+        @if ($panRequest?->attachments->count())
+        <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px">
+          @foreach ($panRequest->attachments as $existing)
+          <div class="attachrow" wire:key="existing-{{ $existing->id }}"><span class="pdf">PDF</span> {{ $existing->original_name }}
+            <small>· {{ number_format($existing->size / 1024) }} KB</small>
+            <span class="spacer"></span>
+            <button class="btn ghost" type="button" wire:click="removeAttachment({{ $existing->id }})" wire:confirm="Remove {{ $existing->original_name }}?">Remove</button>
+          </div>
+          @endforeach
+        </div>
+        @endif
+
+        @foreach ($newAttachments as $i => $file)
+        <div class="attachrow" wire:key="new-{{ $i }}"><span class="pdf">PDF</span> {{ $file->getClientOriginalName() }}
+          <small>· {{ number_format($file->getSize() / 1024) }} KB</small> <small style="color:var(--accent)">· ready to upload</small>
+          <span class="spacer"></span>
+          <button class="btn ghost" type="button" wire:click="removeNewAttachment({{ $i }})">Remove</button>
+        </div>
+        @endforeach
+
+        @if ($totalCount < 3)
         <label class="upload" style="cursor:pointer;display:block">
-          <input type="file" accept="application/pdf" wire:model="attachment" hidden>
-          <b>Choose a PDF</b> or drag it here — performance evaluation, recommendation memo, etc.
-          @if ($attachment)
-            <br>{{ $attachment->getClientOriginalName() }} · {{ number_format($attachment->getSize() / 1024) }} KB
-          @elseif ($panRequest?->attachment_path)
-            <br>{{ basename($panRequest->attachment_path) }} (already uploaded — choose a file to replace it)
-          @endif
-          <span wire:loading wire:target="attachment"><br>Uploading…</span>
+          <input type="file" accept="application/pdf" wire:model="newAttachments" multiple hidden>
+          <b>Choose PDF{{ $totalCount > 0 ? '(s)' : '' }}</b> or drag {{ $totalCount > 0 ? 'them' : 'it' }} here — performance evaluation, recommendation memo, etc.
+          <small style="display:block;color:var(--ink-3)">{{ 3 - $totalCount }} of 3 slots remaining</small>
         </label>
-        @error('attachment')<span class="hint" style="color:var(--red)">{{ $message }}</span>@enderror</div>
+        <x-upload-progress />
+        @else
+        <small style="color:var(--ink-3)">3 of 3 attached — remove one to add another.</small>
+        @endif
+        @error('newAttachments')<span class="hint" style="color:var(--red)">{{ $message }}</span>@enderror
+        @error('newAttachments.*')<span class="hint" style="color:var(--red)">{{ $message }}</span>@enderror</div>
     </div>
     <div class="formfoot">
       @if ($panRequest?->status !== App\Enums\PanStatus::ReturnedToRequestor)

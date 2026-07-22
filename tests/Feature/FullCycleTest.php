@@ -38,7 +38,7 @@ test('a PAN travels submit → division → prepare → confirm → HR → final
         ->set('employee_id', $employee->id)
         ->set('action_type', 'regularization')
         ->set('justification', 'Completed the probationary period with a passing evaluation.')
-        ->set('attachment', UploadedFile::fake()->create('evaluation.pdf', 150, 'application/pdf'))
+        ->set('newAttachments', [UploadedFile::fake()->create('evaluation.pdf', 150, 'application/pdf')])
         ->call('submit')->assertHasNoErrors();
 
     $pan = PanRequest::sole();

@@ -21,8 +21,8 @@
       :action="$panRequest->action_type->label()"
       :submitted="$panRequest->submitted_at?->format('M j, Y · H:i') ?? 'Not yet submitted'"
       :justification="$panRequest->justification ?? '—'"
-      :document="$panRequest->attachment_path ? basename($panRequest->attachment_path) : null"
-      :document-url="$panRequest->attachment_path ? route('pan.attachment', $panRequest->reference) : null" />
+      :attachments="$panRequest->attachments"
+      :pan-reference="$panRequest->reference" />
     <div class="formfoot">
       <a class="btn" href="{{ route('requests.index') }}" wire:navigate style="text-decoration:none">← Back to my requests</a>
       <div class="spacer"></div>

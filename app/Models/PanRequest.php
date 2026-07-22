@@ -23,7 +23,7 @@ class PanRequest extends Model
 
     protected $fillable = [
         'reference', 'employee_id', 'department_id', 'action_type',
-        'justification', 'attachment_path', 'status', 'confidentiality_tag',
+        'justification', 'status', 'confidentiality_tag',
         'origin', 'requested_by', 'division_head_id', 'hr_preparer_id',
         'hr_approver_id', 'final_approver_id', 'previous_pan_id',
         'submitted_at', 'filed_at',
@@ -70,6 +70,12 @@ class PanRequest extends Model
     public function form(): HasOne
     {
         return $this->hasOne(PanForm::class);
+    }
+
+    /** Up to 3 supporting documents, oldest first. */
+    public function attachments(): HasMany
+    {
+        return $this->hasMany(PanAttachment::class)->orderBy('id');
     }
 
     /** Full back-and-forth history (returns, disputes, rejections, voids). */

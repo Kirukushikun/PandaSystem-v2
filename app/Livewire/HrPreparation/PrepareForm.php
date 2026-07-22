@@ -86,7 +86,7 @@ class PrepareForm extends Component
     public function mount(string $pan): void
     {
         $this->panRequest = PanRequest::where('reference', $pan)
-            ->with(['employee.farm', 'employee.department', 'form', 'previousPan.form.preparedBy'])
+            ->with(['employee.farm', 'employee.department', 'form', 'previousPan.form.preparedBy', 'attachments'])
             ->firstOrFail();
 
         // Tagging and preparing are different rights; anything past preparation 403s here.

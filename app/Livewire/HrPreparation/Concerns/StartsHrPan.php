@@ -6,6 +6,7 @@ use App\Enums\ActionType;
 use App\Enums\PanOrigin;
 use App\Models\Employee;
 use App\Models\PanRequest;
+use App\Services\PanAttachmentService;
 use App\Services\PanReferenceGenerator;
 use App\Services\PanWorkflow;
 use Illuminate\Validation\Rule;
@@ -26,7 +27,8 @@ trait StartsHrPan
 
     public string $updateAction = '';
 
-    public $updateAttachment = null; // Livewire temporary upload
+    /** @var \Illuminate\Http\UploadedFile[] */
+    public array $updateAttachments = [];
 
     /** Arms and opens the modal — server state, so the upload's re-render can't shut it. */
     public function startUpdate(int $employeeId): void
@@ -35,9 +37,16 @@ trait StartsHrPan
 
         $this->updateEmployeeId = $employeeId;
         $this->updateAction = '';
-        $this->updateAttachment = null;
+        $this->updateAttachments = [];
         $this->resetErrorBag();
         $this->showUpdateModal = true;
+    }
+
+    /** Drop a just-picked file before it's ever uploaded — no server round trip needed. */
+    public function removeUpdateAttachment(int $index): void
+    {
+        unset($this->updateAttachments[$index]);
+        $this->updateAttachments = array_values($this->updateAttachments);
     }
 
     public function createHrPan(): void
@@ -47,8 +56,9 @@ trait StartsHrPan
         $this->validate([
             'updateEmployeeId' => ['required', Rule::exists(Employee::class, 'id')->whereNull('deleted_at')],
             'updateAction' => ['required', Rule::enum(ActionType::class)],
-            'updateAttachment' => ['required', 'file', 'mimes:pdf', 'max:10240'],
-        ], [], ['updateAction' => 'type of action', 'updateAttachment' => 'supporting document']);
+            'updateAttachments' => ['array', app(PanAttachmentService::class)->countRule(0, required: true)],
+            'updateAttachments.*' => ['file', 'mimes:pdf', 'max:10240'],
+        ], [], ['updateAction' => 'type of action', 'updateAttachments' => 'supporting document']);
 
         $employee = Employee::findOrFail($this->updateEmployeeId);
 
@@ -63,12 +73,7 @@ trait StartsHrPan
             'submitted_at' => now(),
         ]);
 
-        // private disk — downloads only via the policy-gated route
-        $path = $this->updateAttachment->storeAs(
-            'pans/'.$pan->reference,
-            $this->updateAttachment->getClientOriginalName()
-        );
-        $pan->update(['attachment_path' => $path]);
+        app(PanAttachmentService::class)->store($pan, $this->updateAttachments);
 
         $this->js("showToast('{$pan->reference} created at HR Preparation — tag it to begin.')");
         $this->redirectRoute('preparation.edit', $pan->reference, navigate: true);

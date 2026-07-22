@@ -22,9 +22,9 @@ class EmployeeHistory extends Component
 
     public Employee $employee;
 
-    public function mount(string $employee): void
+    public function mount(string $employeeNo): void
     {
-        $this->employee = Employee::where('employee_no', $employee)->firstOrFail();
+        $this->employee = Employee::where('employee_no', $employeeNo)->firstOrFail();
         $this->updateEmployeeId = $this->employee->id;
     }
 

@@ -4,13 +4,16 @@ namespace App\Livewire\HrPreparation;
 
 use App\Enums\ConfidentialityTag;
 use App\Enums\PanStatus;
+use App\Models\PanAttachment;
 use App\Models\PanForm;
 use App\Models\PanRequest;
 use App\Services\CarryOverService;
+use App\Services\PanAttachmentService;
 use App\Services\PanWorkflow;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 
 /**
  * The preparation screen: tagging (while Awaiting Tag), then the official
@@ -21,6 +24,8 @@ use Livewire\Component;
 #[Title('Prepare PAN — PANDA')]
 class PrepareForm extends Component
 {
+    use WithFileUploads;
+
     public PanRequest $panRequest;
 
     /** Tag choice (only actionable while status is Awaiting Tag). */
@@ -50,12 +55,18 @@ class PrepareForm extends Component
     /** Previous-PAN "See more" inline summary. */
     public bool $showPrev = false;
 
-    // Void modal
-    public bool $showVoid = false;
+    // Shared reason modal — void, or send the PAN back to the Requestor
+    // (e.g. missing supporting documents the preparer can't fix themselves).
+    public bool $showModal = false;
+
+    public string $modalAction = 'void';
 
     public string $reason = '';
 
     public string $details = '';
+
+    /** @var \Illuminate\Http\UploadedFile[] preparer uploading on the requestor's behalf */
+    public array $newAttachments = [];
 
     public const ALLOWANCE_TYPES = [
         'Communication Allowance', 'Meal Allowance', 'Living Allowance',
@@ -203,20 +214,31 @@ class PrepareForm extends Component
         $this->redirectRoute('preparation.queue', navigate: true);
     }
 
-    public function void(): void
+    /** Arms and opens the reason modal — server state, so re-renders can't shut it. */
+    public function startReason(string $action): void
     {
-        $this->authorize('void', $this->panRequest);
+        $this->modalAction = $action; // void | send_back_to_requestor
+        $this->reason = '';
+        $this->details = '';
+        $this->resetErrorBag();
+        $this->showModal = true;
+    }
+
+    public function submitReason(): void
+    {
+        $ability = $this->modalAction === 'void' ? 'void' : 'sendBackToRequestor';
+        $this->authorize($ability, $this->panRequest);
         $this->validate([
             'reason' => 'required|string|max:255',
             'details' => 'required_if:reason,Custom reason…|nullable|string|max:1000',
         ], ['details.required_if' => 'Describe the custom reason in the details field.']);
 
         $from = $this->panRequest->status;
-        $to = app(PanWorkflow::class)->apply($from, 'void');
+        $to = app(PanWorkflow::class)->apply($from, $this->modalAction);
 
         $this->panRequest->update(['status' => $to]);
         $this->panRequest->returns()->create([
-            'action' => 'void',
+            'action' => $this->modalAction,
             'from_status' => $from,
             'to_status' => $to,
             'reason' => $this->reason,
@@ -224,8 +246,43 @@ class PrepareForm extends Component
             'returned_by' => auth()->id(),
         ]);
 
-        $this->js("showToast('{$this->panRequest->reference} voided — kept on record with the reason.')");
+        $this->js($this->modalAction === 'void'
+            ? "showToast('{$this->panRequest->reference} voided — kept on record with the reason.')"
+            : "showToast('{$this->panRequest->reference} sent back to the Requestor with your reason.')");
         $this->redirectRoute('preparation.queue', navigate: true);
+    }
+
+    /** Drop a just-picked file before it's ever uploaded — no server round trip needed. */
+    public function removeNewAttachment(int $index): void
+    {
+        unset($this->newAttachments[$index]);
+        $this->newAttachments = array_values($this->newAttachments);
+    }
+
+    /** Preparer uploading on the Requestor's behalf — "sent it over Viber" scenarios. */
+    public function uploadAttachments(): void
+    {
+        $this->authorize('prepare', $this->panRequest);
+        $this->validate([
+            'newAttachments' => ['array', app(PanAttachmentService::class)->countRule($this->panRequest->attachments->count(), required: false)],
+            'newAttachments.*' => ['file', 'mimes:pdf', 'max:10240'],
+        ]);
+
+        if ($this->newAttachments !== []) {
+            app(PanAttachmentService::class)->store($this->panRequest, $this->newAttachments);
+            $this->newAttachments = [];
+            $this->panRequest->refresh();
+            $this->js("showToast('Document(s) added to {$this->panRequest->reference}.')");
+        }
+    }
+
+    public function removeAttachment(int $id): void
+    {
+        $this->authorize('prepare', $this->panRequest);
+        $attachment = PanAttachment::where('pan_request_id', $this->panRequest->id)->findOrFail($id);
+
+        app(PanAttachmentService::class)->remove($attachment);
+        $this->panRequest->refresh();
     }
 
     private function rules(): array

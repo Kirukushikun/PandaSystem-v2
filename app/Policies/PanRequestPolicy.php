@@ -125,6 +125,13 @@ class PanRequestPolicy
             && $this->preparesFor($user, $pan);
     }
 
+    /** Preparer bounces the PAN back to the Requestor — e.g. missing supporting documents. */
+    public function sendBackToRequestor(User $user, PanRequest $pan): bool
+    {
+        return in_array($pan->status, [PanStatus::InPreparation, PanStatus::ReturnedToPreparer], true)
+            && $this->preparesFor($user, $pan);
+    }
+
     public function markServed(User $user, PanRequest $pan): bool
     {
         return $pan->status === PanStatus::Approved && $this->preparesFor($user, $pan);

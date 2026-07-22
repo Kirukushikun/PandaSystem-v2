@@ -171,16 +171,95 @@ test('voiding from the form demands a reason and keeps the record', function () 
     $pan = prepPan(PanStatus::InPreparation);
 
     Livewire::test(PrepareForm::class, ['pan' => $pan->reference])
-        ->call('void')
+        ->call('startReason', 'void')
+        ->call('submitReason')
         ->assertHasErrors(['reason' => 'required']);
 
     Livewire::test(PrepareForm::class, ['pan' => $pan->reference])
+        ->call('startReason', 'void')
         ->set('reason', 'Duplicate request')
-        ->call('void')
+        ->call('submitReason')
         ->assertHasNoErrors();
 
     expect($pan->fresh()->status)->toBe(PanStatus::Voided)
         ->and($pan->returns()->sole()->action)->toBe('void');
+});
+
+test('the preparer can send a PAN back to the Requestor — e.g. missing documents', function () {
+    $requestor = User::factory()->requestor()->create();
+    $requestor->requestorDepartments()->attach($this->employee->department_id);
+    $pan = prepPan(PanStatus::InPreparation, ['requested_by' => $requestor->id]);
+
+    Livewire::test(PrepareForm::class, ['pan' => $pan->reference])
+        ->call('startReason', 'send_back_to_requestor')
+        ->call('submitReason')
+        ->assertHasErrors(['reason' => 'required']);
+
+    Livewire::test(PrepareForm::class, ['pan' => $pan->reference])
+        ->call('startReason', 'send_back_to_requestor')
+        ->set('reason', 'Missing supporting document(s)')
+        ->call('submitReason')
+        ->assertHasNoErrors();
+
+    expect($pan->fresh()->status)->toBe(PanStatus::ReturnedToRequestor)
+        ->and($pan->returns()->sole()->action)->toBe('send_back_to_requestor')
+        ->and($requestor->notifications()->sole()->data['title'])->toBe('Returned to you');
+
+    // Resubmitting from here re-enters at Division Head, same as the DH's own return.
+    $this->actingAs($requestor);
+    Livewire::test(App\Livewire\Requestor\Form::class, ['pan' => $pan->reference])
+        ->set('justification', 'Documents attached as requested.')
+        ->set('newAttachments', [UploadedFile::fake()->create('proof.pdf', 100, 'application/pdf')])
+        ->call('submit')
+        ->assertHasNoErrors();
+    expect($pan->fresh()->status)->toBe(PanStatus::WithDivisionHead);
+});
+
+test('sending back to the Requestor is only available from InPreparation/ReturnedToPreparer, and only to who prepares it', function () {
+    $forConfirmation = prepPan(PanStatus::ForConfirmation);
+    Livewire::test(PrepareForm::class, ['pan' => $forConfirmation->reference])->assertForbidden();
+
+    $returnedToPreparer = prepPan(PanStatus::ReturnedToPreparer);
+    Livewire::test(PrepareForm::class, ['pan' => $returnedToPreparer->reference])
+        ->call('startReason', 'send_back_to_requestor')
+        ->set('reason', 'Missing supporting document(s)')
+        ->call('submitReason')
+        ->assertHasNoErrors();
+    expect($returnedToPreparer->fresh()->status)->toBe(PanStatus::ReturnedToRequestor);
+});
+
+test('the preparer can upload documents on the Requestor\'s behalf, and remove them', function () {
+    Storage::fake();
+    $pan = prepPan(PanStatus::InPreparation);
+
+    Livewire::test(PrepareForm::class, ['pan' => $pan->reference])
+        ->set('newAttachments', [UploadedFile::fake()->create('sent_via_viber.pdf', 150, 'application/pdf')])
+        ->call('uploadAttachments')
+        ->assertHasNoErrors();
+
+    $pan->refresh();
+    expect($pan->attachments)->toHaveCount(1);
+    $attachment = $pan->attachments->sole();
+    Storage::assertExists($attachment->path);
+
+    Livewire::test(PrepareForm::class, ['pan' => $pan->reference])
+        ->call('removeAttachment', $attachment->id);
+
+    Storage::assertMissing($attachment->path);
+    expect($pan->attachments()->count())->toBe(0);
+});
+
+test('the preparer cannot exceed 3 attachments total', function () {
+    Storage::fake();
+    $pan = prepPan(PanStatus::InPreparation);
+    \App\Models\PanAttachment::factory()->count(2)->create(['pan_request_id' => $pan->id]);
+
+    $pdf = fn ($name) => UploadedFile::fake()->create($name, 100, 'application/pdf');
+
+    Livewire::test(PrepareForm::class, ['pan' => $pan->reference])
+        ->set('newAttachments', [$pdf('a.pdf'), $pdf('b.pdf')])
+        ->call('uploadAttachments')
+        ->assertHasErrors('newAttachments');
 });
 
 /*
@@ -301,4 +380,18 @@ test('Update PAN requires the action type and the PDF', function () {
         ->assertHasErrors(['updateAction' => 'required', 'updateAttachments']);
 
     expect(PanRequest::count())->toBe(0);
+});
+
+test('PAN history / "Start Follow-up PAN" route resolves by employee_no, not id', function () {
+    // Regression: EmployeeHistory has a public `Employee $employee` property, and
+    // the route wildcard was also named {employee} — Livewire's implicit
+    // route-model-binding-by-property-name treated the URL segment as a numeric
+    // id before mount() ever ran, 404ing on any real employee_no like "EMP-1001".
+    $employee = Employee::factory()->create();
+    PanRequest::factory()->status(PanStatus::Filed)->create(['employee_id' => $employee->id]);
+
+    $this->actingAs($this->preparer)
+        ->get('/employees/'.$employee->employee_no.'/pans')
+        ->assertOk()
+        ->assertSee($employee->name);
 });

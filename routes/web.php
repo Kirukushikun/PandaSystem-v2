@@ -37,7 +37,10 @@ Route::middleware('auth')->group(function () {
         Route::get('/preparation/{pan}/edit', App\Livewire\HrPreparation\PrepareForm::class)->name('preparation.edit');
         Route::get('/preparation/{pan}', App\Livewire\HrPreparation\Show::class)->name('preparation.show');
         Route::get('/employees', App\Livewire\HrPreparation\Employees::class)->name('employees.index');
-        Route::get('/employees/{employee}/pans', App\Livewire\HrPreparation\EmployeeHistory::class)->name('employees.history');
+        // Named {employeeNo}, not {employee} — the component's public $employee
+        // property (typed Employee) would otherwise collide with Livewire's
+        // implicit route-model-binding-by-property-name and 404 on a non-numeric key.
+        Route::get('/employees/{employeeNo}/pans', App\Livewire\HrPreparation\EmployeeHistory::class)->name('employees.history');
     });
 
     Route::get('/hr-approval', App\Livewire\HrApprover\Queue::class)->middleware('can:hr_approver')->name('hr-approval.queue');

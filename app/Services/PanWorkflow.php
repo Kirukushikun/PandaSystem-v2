@@ -43,6 +43,11 @@ class PanWorkflow
         'submit_for_confirmation' => ['from' => [PanStatus::InPreparation], 'to' => PanStatus::ForConfirmation, 'by' => 'hr_preparer', 'reason' => false],
         'resubmit_to_hr' => ['from' => [PanStatus::ReturnedToPreparer], 'to' => PanStatus::ForHrApproval, 'by' => 'hr_preparer', 'reason' => false],
         'void' => ['from' => [PanStatus::AwaitingTag, PanStatus::InPreparation, PanStatus::ReturnedToPreparer], 'to' => PanStatus::Voided, 'by' => 'hr_preparer', 'reason' => true],
+        // Preparer discovers the gap is on the requestor's side (e.g. missing supporting
+        // documents) and can't just fix it themselves — bounces all the way back to
+        // Requestor. Landing status is the same ReturnedToRequestor the Division Head's
+        // own return uses, so resubmitting re-enters at WithDivisionHead (full re-review).
+        'send_back_to_requestor' => ['from' => [PanStatus::InPreparation, PanStatus::ReturnedToPreparer], 'to' => PanStatus::ReturnedToRequestor, 'by' => 'hr_preparer', 'reason' => true],
 
         // DH Confirmation stage
         'confirm' => ['from' => [PanStatus::ForConfirmation], 'to' => PanStatus::ForHrApproval, 'by' => 'division_head', 'reason' => false],

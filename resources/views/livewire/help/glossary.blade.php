@@ -13,7 +13,7 @@
       <x-stage-tracker style="margin:0 0 10px"
         :stages="['Draft','Division Head','Tag & HR Preparation','DH Confirmation','HR Approval','Final Approval','Served','Filed']"
         current="Filed" />
-      <p class="locknote" style="margin:0">Any stage can also branch backwards: the Division Head returns to the Requestor, the HR Approver returns one step to the Preparer, and the Final Approver rejects all the way back to HR Preparation. Once filed, a follow-up PAN can start a new cycle for the same employee.</p>
+      <p class="locknote" style="margin:0">Any stage can also branch backwards: the Division Head returns to the Requestor, the HR Approver returns one step to the Preparer, and the Final Approver rejects all the way back to HR Preparation. From HR Preparation, the Preparer can also send a PAN all the way back to the Requestor with a reason — e.g. missing supporting documents — rather than fixing it themselves; the Preparer can also upload documents on the Requestor's behalf instead, if that's simpler. Once filed, a follow-up PAN can start a new cycle for the same employee.</p>
     </div>
   </div>
 
@@ -27,9 +27,9 @@
           ['with-division-head', 'With Division Head', 'Formally submitted (PDF required) and awaiting the department head\'s decision. Read-only to the Requestor.', 'Division Head <small>(DH Head if Manila)</small>', 'Approved → HR Preparation · returned to Requestor with a reason'],
           ['returned-to-requestor', 'Returned — for correction', 'Sent back to the Requestor with a preset or custom reason (e.g. incomplete document).', 'Requestor', 'Replace attachment & resubmit · withdraw entirely'],
           ['awaiting-tag', 'Awaiting tag & preparation', 'Division-approved, but paperwork can\'t start until a confidentiality tag (Tarlac or Manila) is applied.', 'Any HR Preparer', 'Tagged Tarlac → normal preparer works it · tagged Manila → HR Head only'],
-          ['in-preparation', 'HR Preparation', 'The official paperwork is being filled in: employment details and the Action Reference From/To table.', 'HR Preparer <small>(HR Head if Manila)</small>', 'Submitted for DH confirmation · voided with a reason'],
+          ['in-preparation', 'HR Preparation', 'The official paperwork is being filled in: employment details and the Action Reference From/To table.', 'HR Preparer <small>(HR Head if Manila)</small>', 'Submitted for DH confirmation · voided with a reason · sent back to the Requestor (e.g. missing documents) — or the Preparer uploads on the Requestor\'s behalf instead'],
           ['for-confirmation', 'For DH Confirmation', 'HR has prepared the PAN; the Division Head reviews what was actually drafted.', 'Division Head <small>(DH Head if Manila)</small>', 'Confirmed → HR Approval · disputed → back to the Preparer'],
-          ['returned-to-preparer', 'Returned by HR Approver', 'Sent one step back to HR Preparation for rework, with a mandatory reason.', 'HR Preparer', 'Revised & resubmitted · voided with a reason'],
+          ['returned-to-preparer', 'Returned by HR Approver', 'Sent one step back to HR Preparation for rework, with a mandatory reason.', 'HR Preparer', 'Revised & resubmitted · voided with a reason · sent back to the Requestor (e.g. missing documents) — or the Preparer uploads on the Requestor\'s behalf instead'],
           ['for-hr-approval', 'For HR Approval', 'Second HR-level check after preparation and confirmation. No confidentiality distinction at this stage.', 'HR Approver', 'Approved → Final Approval · returned one step to the Preparer'],
           ['for-final-approval', 'For Final Approval', 'Awaiting the last sign-off — individually or in bulk (by selection or by action type).', 'Final Approver', 'Approved (Regularization auto-sets status to "Regular") · rejected → all the way back to HR Preparation'],
           ['approved', 'Approved — for serving', 'Fully approved; the action now has to be carried out in the real world.', 'HR Preparer', 'Marked Served · marked Unserved with a reason'],

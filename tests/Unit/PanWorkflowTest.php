@@ -155,9 +155,9 @@ test('the available actions per status match the Glossary', function (PanStatus 
     'With Division Head' => [PanStatus::WithDivisionHead, ['approve_division', 'return_to_requestor']],
     'Returned to Requestor' => [PanStatus::ReturnedToRequestor, ['resubmit', 'withdraw']],
     'Awaiting Tag' => [PanStatus::AwaitingTag, ['tag', 'void']],
-    'In Preparation' => [PanStatus::InPreparation, ['submit_for_confirmation', 'void']],
+    'In Preparation' => [PanStatus::InPreparation, ['submit_for_confirmation', 'void', 'send_back_to_requestor']],
     'For Confirmation' => [PanStatus::ForConfirmation, ['confirm', 'dispute']],
-    'Returned to Preparer' => [PanStatus::ReturnedToPreparer, ['resubmit_to_hr', 'void']],
+    'Returned to Preparer' => [PanStatus::ReturnedToPreparer, ['resubmit_to_hr', 'void', 'send_back_to_requestor']],
     'For HR Approval' => [PanStatus::ForHrApproval, ['approve_hr', 'return_to_preparer']],
     'For Final Approval' => [PanStatus::ForFinalApproval, ['approve_final', 'reject_final']],
     'Approved' => [PanStatus::Approved, ['mark_served', 'mark_unserved']],
@@ -165,7 +165,7 @@ test('the available actions per status match the Glossary', function (PanStatus 
 ]);
 
 test('every backward or destructive move demands a mandatory reason', function () {
-    $reasonRequired = ['return_to_requestor', 'dispute', 'return_to_preparer', 'reject_final', 'void', 'mark_unserved'];
+    $reasonRequired = ['return_to_requestor', 'dispute', 'return_to_preparer', 'reject_final', 'void', 'mark_unserved', 'send_back_to_requestor'];
 
     foreach (array_keys(PanWorkflow::TRANSITIONS) as $action) {
         expect($this->workflow->requiresReason($action))

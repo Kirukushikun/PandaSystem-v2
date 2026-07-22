@@ -47,6 +47,50 @@
 
     {{-- Locked until tagged (a normal preparer never reaches a Manila record — the policy 403s first) --}}
     <div class="lockable @if ($locked) locked @endif">
+    <div class="sect">Manage Supporting Documents</div>
+    <div class="formgrid" style="padding-top:10px;grid-template-columns:1fr">
+      <p class="hint" style="margin:0 0 4px">Missing a document the Requestor has but hasn't attached? Upload it here on
+        their behalf (e.g. received by email/Viber) — or use <b>Send back to Requestor…</b> below to have them attach it themselves.</p>
+
+      @if ($pan->attachments->count())
+      <div style="display:flex;flex-direction:column;gap:6px">
+        @foreach ($pan->attachments as $existing)
+        <div class="attachrow" wire:key="prep-existing-{{ $existing->id }}"><span class="pdf">PDF</span> {{ $existing->original_name }}
+          <small>· {{ number_format($existing->size / 1024) }} KB</small>
+          <span class="spacer"></span>
+          <a class="btn ghost" href="{{ route('pan.attachment', [$pan->reference, $existing->id]) }}" style="text-decoration:none">Open</a>
+          <button class="btn ghost" type="button" wire:click="removeAttachment({{ $existing->id }})" wire:confirm="Remove {{ $existing->original_name }}?">Remove</button>
+        </div>
+        @endforeach
+      </div>
+      @endif
+
+      @foreach ($newAttachments as $i => $file)
+      <div class="attachrow" wire:key="prep-new-{{ $i }}"><span class="pdf">PDF</span> {{ $file->getClientOriginalName() }}
+        <small>· {{ number_format($file->getSize() / 1024) }} KB</small> <small style="color:var(--accent)">· ready to upload</small>
+        <span class="spacer"></span>
+        <button class="btn ghost" type="button" wire:click="removeNewAttachment({{ $i }})">Remove</button>
+      </div>
+      @endforeach
+
+      @if ($pan->attachments->count() + count($newAttachments) < 3)
+      <label class="upload" style="cursor:pointer;display:block">
+        <input type="file" accept="application/pdf" wire:model="newAttachments" multiple hidden>
+        <b>Choose PDF(s)</b> or drag them here on the Requestor's behalf.
+        <small style="display:block;color:var(--ink-3)">{{ 3 - $pan->attachments->count() - count($newAttachments) }} of 3 slots remaining</small>
+      </label>
+      <x-upload-progress />
+      @else
+      <small style="color:var(--ink-3)">3 of 3 attached — remove one to add another.</small>
+      @endif
+      @error('newAttachments')<span class="hint" style="color:var(--bad)">{{ $message }}</span>@enderror
+      @error('newAttachments.*')<span class="hint" style="color:var(--bad)">{{ $message }}</span>@enderror
+
+      @if (count($newAttachments))
+      <div><button class="btn" type="button" wire:click="uploadAttachments">Upload {{ count($newAttachments) }} document(s) now</button></div>
+      @endif
+    </div>
+
     <div class="sect">Employment details</div>
     <div class="formgrid" style="padding-top:10px">
       <div class="field"><label>Date Hired <em>*</em></label><input type="date" wire:model="date_hired">
@@ -162,7 +206,10 @@
     </div>
     <div class="formfoot">
       @can('void', $pan)
-      <button class="btn danger" type="button" wire:click="$set('showVoid', true)">Delete / Void…</button>
+      <button class="btn danger" type="button" wire:click="startReason('void')">Delete / Void…</button>
+      @endcan
+      @can('sendBackToRequestor', $pan)
+      <button class="btn" type="button" wire:click="startReason('send_back_to_requestor')">Send back to Requestor…</button>
       @endcan
       <div class="spacer"></div>
       <a class="btn" href="{{ route('preparation.queue') }}" wire:navigate style="text-decoration:none">← Back to queue</a>
@@ -176,14 +223,24 @@
     </div>
   </div>
 
-  <x-modal id="void-modal" :open="$showVoid" close="$set('showVoid', false)" title="Void / Delete — {{ $pan->reference }}">
+  <x-modal id="prep-reason-modal" :open="$showModal" close="$set('showModal', false)"
+    title="{{ $modalAction === 'void' ? 'Void / Delete' : 'Send back to Requestor' }} — {{ $pan->reference }}">
     <div class="formgrid" style="padding:16px;grid-template-columns:1fr">
+      @if ($modalAction !== 'void')
+      <div class="note info" style="margin:0"><span class="ic">i</span>This sends the PAN all the way back to the Requestor — they'll need to resubmit, which goes through Division Head approval again.</div>
+      @endif
       <div class="field"><label>Reason <em>*</em></label>
         <select wire:model="reason">
           <option value="">Select a reason…</option>
+          @if ($modalAction === 'void')
           <option>Duplicate request</option>
           <option>Raised in error</option>
           <option>Overtaken by events</option>
+          @else
+          <option>Missing supporting document(s)</option>
+          <option>Supporting document unclear or incomplete</option>
+          <option>Justification needs more detail</option>
+          @endif
           <option>Custom reason…</option>
         </select>
         @error('reason')<span class="hint" style="color:var(--bad)">{{ $message }}</span>@enderror</div>
@@ -192,9 +249,9 @@
         @error('details')<span class="hint" style="color:var(--bad)">{{ $message }}</span>@enderror</div>
     </div>
     <x-slot:footer>
-      <button class="btn" type="button" wire:click="$set('showVoid', false)">Cancel</button>
+      <button class="btn" type="button" wire:click="$set('showModal', false)">Cancel</button>
       <div class="spacer"></div>
-      <button class="btn danger" type="button" wire:click="void">Void this PAN</button>
+      <button class="btn danger" type="button" wire:click="submitReason">{{ $modalAction === 'void' ? 'Void this PAN' : 'Send back to Requestor' }}</button>
     </x-slot:footer>
   </x-modal>
 </div>

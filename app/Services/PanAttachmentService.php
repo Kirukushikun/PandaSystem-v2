@@ -22,6 +22,12 @@ class PanAttachmentService
     public function store(PanRequest $pan, array $files): void
     {
         foreach ($files as $file) {
+            // Read these BEFORE store() — a Livewire temporary file's getSize()
+            // lazily reads from the livewire-tmp disk, and store() moves the
+            // file off that disk, so calling it after leaves nothing to read.
+            $originalName = $file->getClientOriginalName();
+            $size = $file->getSize();
+
             // Randomized stored name — original_name is what's ever shown to a
             // person, so collisions between filenames are a non-issue here.
             $path = $file->store('pans/'.$pan->reference);
@@ -29,8 +35,8 @@ class PanAttachmentService
             PanAttachment::create([
                 'pan_request_id' => $pan->id,
                 'path' => $path,
-                'original_name' => $file->getClientOriginalName(),
-                'size' => $file->getSize(),
+                'original_name' => $originalName,
+                'size' => $size,
             ]);
         }
     }

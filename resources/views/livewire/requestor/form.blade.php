@@ -11,7 +11,7 @@
   <div class="card">
     <div class="formgrid">
       <div class="field"><label>Employee <em>*</em></label>
-        <select wire:model.live="employee_id">
+        <select wire:model.live="employee_id" @error('employee_id') style="border-color:var(--red)" @enderror>
           <option value="">— Select employee —</option>
           @foreach ($this->employees as $employee)
           <option value="{{ $employee->id }}">{{ $employee->name }} — {{ $employee->employee_no }}</option>
@@ -21,7 +21,7 @@
       <div class="field"><label>Employee ID</label><input readonly value="{{ $selectedEmployee?->employee_no }}"><span class="hint">Auto-filled from employee</span></div>
       <div class="field"><label>Department</label><input readonly value="{{ $selectedEmployee?->department->name }}"><span class="hint">Auto-filled from employee</span></div>
       <div class="field"><label>Type of Action <em>*</em></label>
-        <select wire:model="action_type">
+        <select wire:model="action_type" @error('action_type') style="border-color:var(--red)" @enderror>
           <option value="">— Select type —</option>
           @foreach ($actionTypes as $type)
           <option value="{{ $type->value }}">{{ $type->label() }}</option>
@@ -29,7 +29,7 @@
         </select>
         @error('action_type')<span class="hint" style="color:var(--red)">{{ $message }}</span>@enderror</div>
       <div class="field full"><label>Justification</label>
-        <textarea rows="3" wire:model="justification" placeholder="Why this action is being requested…"></textarea>
+        <textarea rows="3" wire:model="justification" placeholder="Why this action is being requested…" @error('justification') style="border-color:var(--red)" @enderror></textarea>
         @error('justification')<span class="hint" style="color:var(--red)">{{ $message }}</span>@enderror</div>
       <div class="field full"><label>Supporting Documents (PDF, up to 3) <em>*</em></label>
 
@@ -55,7 +55,7 @@
         @endforeach
 
         @if ($totalCount < 3)
-        <label class="upload" style="cursor:pointer;display:block">
+        <label class="upload" style="cursor:pointer;display:block{{ $errors->has('newAttachments') ? ';border-color:var(--red)' : '' }}">
           <input type="file" accept="application/pdf" wire:model="newAttachments" multiple hidden>
           <b>Choose PDF{{ $totalCount > 0 ? '(s)' : '' }}</b> or drag {{ $totalCount > 0 ? 'them' : 'it' }} here — performance evaluation, recommendation memo, etc.
           <small style="display:block;color:var(--ink-3)">{{ 3 - $totalCount }} of 3 slots remaining</small>

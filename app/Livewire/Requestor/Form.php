@@ -4,6 +4,7 @@ namespace App\Livewire\Requestor;
 
 use App\Enums\ActionType;
 use App\Enums\PanStatus;
+use App\Livewire\Concerns\ValidatesWithToast;
 use App\Models\Employee;
 use App\Models\PanAttachment;
 use App\Models\PanRequest;
@@ -24,6 +25,7 @@ use Livewire\WithFileUploads;
 #[Title('PAN Request — PANDA')]
 class Form extends Component
 {
+    use ValidatesWithToast;
     use WithFileUploads;
 
     public ?PanRequest $panRequest = null;
@@ -79,7 +81,9 @@ class Form extends Component
 
     public function saveDraft(): void
     {
-        $this->validate($this->rules(draft: true));
+        if ($this->validateOrToast($this->rules(draft: true)) === false) {
+            return;
+        }
 
         $pan = $this->persist();
 
@@ -89,7 +93,9 @@ class Form extends Component
 
     public function submit(): void
     {
-        $this->validate($this->rules(draft: false));
+        if ($this->validateOrToast($this->rules(draft: false)) === false) {
+            return;
+        }
 
         $pan = $this->persist();
 

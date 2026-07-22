@@ -4,6 +4,7 @@ namespace App\Livewire\HrPreparation;
 
 use App\Enums\ConfidentialityTag;
 use App\Enums\PanStatus;
+use App\Livewire\Concerns\ValidatesWithToast;
 use App\Models\PanAttachment;
 use App\Models\PanForm;
 use App\Models\PanRequest;
@@ -24,6 +25,7 @@ use Livewire\WithFileUploads;
 #[Title('Prepare PAN — PANDA')]
 class PrepareForm extends Component
 {
+    use ValidatesWithToast;
     use WithFileUploads;
 
     public PanRequest $panRequest;
@@ -188,7 +190,9 @@ class PrepareForm extends Component
     public function save(): void
     {
         $this->authorize('prepare', $this->panRequest);
-        $this->validate($this->rules());
+        if ($this->validateOrToast($this->rules()) === false) {
+            return;
+        }
 
         $this->persist();
         $this->js("showToast('{$this->panRequest->reference} saved — you can continue anytime.')");
@@ -197,7 +201,9 @@ class PrepareForm extends Component
     public function submit(): void
     {
         $this->authorize('prepare', $this->panRequest);
-        $this->validate($this->rules());
+        if ($this->validateOrToast($this->rules()) === false) {
+            return;
+        }
 
         $this->persist();
 

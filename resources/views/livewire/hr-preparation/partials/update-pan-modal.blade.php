@@ -10,7 +10,7 @@
         <option value="{{ $type->value }}">{{ $type->label() }}</option>
         @endforeach
       </select>
-      @error('updateAction')<span class="hint" style="color:var(--bad)">{{ $message }}</span>@enderror</div>
+      @error('updateAction')<span class="hint" style="color:var(--red)">{{ $message }}</span>@enderror</div>
     <div class="field"><label>Supporting Documents (PDF, up to 3) <em>*</em></label>
 
       @foreach ($updateAttachments as $i => $file)
@@ -32,8 +32,8 @@
       @else
       <small style="color:var(--ink-3)">3 of 3 attached — remove one to add another.</small>
       @endif
-      @error('updateAttachments')<span class="hint" style="color:var(--bad)">{{ $message }}</span>@enderror
-      @error('updateAttachments.*')<span class="hint" style="color:var(--bad)">{{ $message }}</span>@enderror</div>
+      @error('updateAttachments')<span class="hint" style="color:var(--red)">{{ $message }}</span>@enderror
+      @error('updateAttachments.*')<span class="hint" style="color:var(--red)">{{ $message }}</span>@enderror</div>
   </div>
   <x-slot:footer>
     <button class="btn" type="button" wire:click="$set('showUpdateModal', false)">Cancel</button>

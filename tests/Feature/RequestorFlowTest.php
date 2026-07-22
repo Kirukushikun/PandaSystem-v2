@@ -25,6 +25,17 @@ beforeEach(function () {
     $this->actingAs($this->requestor);
 });
 
+test('submitting with missing fields highlights them and toasts, instead of silently doing nothing', function () {
+    $test = Livewire::test(Form::class)
+        ->call('submit')
+        ->assertHasErrors(['employee_id', 'action_type', 'justification', 'newAttachments'])
+        ->assertSeeHtml('border-color:var(--red)'); // the highlighted field(s)
+
+    expect(collect($test->effects['xjs'] ?? [])->pluck('expression')->implode(' '))
+        ->toContain('showToast')
+        ->toContain('highlighted field');
+});
+
 test('a draft saves without an attachment and gets a real reference number', function () {
     Livewire::test(Form::class)
         ->set('employee_id', $this->employee->id)

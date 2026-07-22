@@ -15,7 +15,7 @@
           <option value="tarlac">Tarlac (routine)</option>
           <option value="manila">Manila (confidential)</option>
         </select>
-        @error('tag')<span class="hint" style="color:var(--bad)">{{ $message }}</span>@enderror
+        @error('tag')<span class="hint" style="color:var(--red)">{{ $message }}</span>@enderror
         <span class="hint">Any preparer may apply the initial tag; what happens next depends on who tagged what.</span></div>
       <div class="field"><label>&nbsp;</label>
         <div><button class="btn primary" type="button" wire:click="applyTag"
@@ -74,7 +74,7 @@
       @endforeach
 
       @if ($pan->attachments->count() + count($newAttachments) < 3)
-      <label class="upload" style="cursor:pointer;display:block">
+      <label class="upload" style="cursor:pointer;display:block{{ $errors->has('newAttachments') ? ';border-color:var(--red)' : '' }}">
         <input type="file" accept="application/pdf" wire:model="newAttachments" multiple hidden>
         <b>Choose PDF(s)</b> or drag them here on the Requestor's behalf.
         <small style="display:block;color:var(--ink-3)">{{ 3 - $pan->attachments->count() - count($newAttachments) }} of 3 slots remaining</small>
@@ -83,8 +83,8 @@
       @else
       <small style="color:var(--ink-3)">3 of 3 attached — remove one to add another.</small>
       @endif
-      @error('newAttachments')<span class="hint" style="color:var(--bad)">{{ $message }}</span>@enderror
-      @error('newAttachments.*')<span class="hint" style="color:var(--bad)">{{ $message }}</span>@enderror
+      @error('newAttachments')<span class="hint" style="color:var(--red)">{{ $message }}</span>@enderror
+      @error('newAttachments.*')<span class="hint" style="color:var(--red)">{{ $message }}</span>@enderror
 
       @if (count($newAttachments))
       <div><button class="btn" type="button" wire:click="uploadAttachments">Upload {{ count($newAttachments) }} document(s) now</button></div>
@@ -93,19 +93,19 @@
 
     <div class="sect">Employment details</div>
     <div class="formgrid" style="padding-top:10px">
-      <div class="field"><label>Date Hired <em>*</em></label><input type="date" wire:model="date_hired">
-        @error('date_hired')<span class="hint" style="color:var(--bad)">{{ $message }}</span>@enderror</div>
+      <div class="field"><label>Date Hired <em>*</em></label><input type="date" wire:model="date_hired" @error('date_hired') style="border-color:var(--red)" @enderror>
+        @error('date_hired')<span class="hint" style="color:var(--red)">{{ $message }}</span>@enderror</div>
       <div class="field"><label>Employment Status</label><input readonly value="{{ $this->employmentStatus }}">
         <span class="hint">Carried from the last filed PAN — Regularization finalizes it at final approval.</span></div>
       <div class="field"><label>Division / Department</label><input readonly value="{{ $pan->employee->department->name }}"></div>
-      <div class="field"><label>Effectivity From <em>*</em></label><input type="date" wire:model="doe_from">
-        @error('doe_from')<span class="hint" style="color:var(--bad)">{{ $message }}</span>@enderror</div>
+      <div class="field"><label>Effectivity From <em>*</em></label><input type="date" wire:model="doe_from" @error('doe_from') style="border-color:var(--red)" @enderror>
+        @error('doe_from')<span class="hint" style="color:var(--red)">{{ $message }}</span>@enderror</div>
       <div class="field"><label>Effectivity To</label><input type="date" wire:model="doe_to" placeholder="Open-ended">
-        @error('doe_to')<span class="hint" style="color:var(--bad)">{{ $message }}</span>@enderror
+        @error('doe_to')<span class="hint" style="color:var(--red)">{{ $message }}</span>@enderror
         <span class="hint">Leave empty for open-ended; allowances with an end date get expiry reminders.</span></div>
       @if ($pan->action_type->requiresWageNumber())
-      <div class="field"><label>Wage Order No. <em>*</em></label><input wire:model="wage_no" placeholder="e.g. NCR-26">
-        @error('wage_no')<span class="hint" style="color:var(--bad)">{{ $message }}</span>@enderror</div>
+      <div class="field"><label>Wage Order No. <em>*</em></label><input wire:model="wage_no" placeholder="e.g. NCR-26" @error('wage_no') style="border-color:var(--red)" @enderror>
+        @error('wage_no')<span class="hint" style="color:var(--red)">{{ $message }}</span>@enderror</div>
       @endif
     </div>
 
@@ -171,7 +171,7 @@
             <option>{{ $option }}</option>
             @endforeach
           </select>
-          @error('toValues.leavecredits')<span class="hint" style="color:var(--bad)">{{ $message }}</span>@enderror</td>
+          @error('toValues.leavecredits')<span class="hint" style="color:var(--red)">{{ $message }}</span>@enderror</td>
           <td></td>
         </tr>
         @endif
@@ -202,7 +202,7 @@
     <div class="sect">Remarks</div>
     <div class="formgrid" style="padding-top:10px">
       <div class="field full"><textarea rows="2" wire:model="remarks" placeholder="e.g. Per approved 2026 org structure."></textarea>
-        @error('remarks')<span class="hint" style="color:var(--bad)">{{ $message }}</span>@enderror</div>
+        @error('remarks')<span class="hint" style="color:var(--red)">{{ $message }}</span>@enderror</div>
     </div>
     <div class="formfoot">
       @can('void', $pan)
@@ -243,10 +243,10 @@
           @endif
           <option>Custom reason…</option>
         </select>
-        @error('reason')<span class="hint" style="color:var(--bad)">{{ $message }}</span>@enderror</div>
+        @error('reason')<span class="hint" style="color:var(--red)">{{ $message }}</span>@enderror</div>
       <div class="field"><label>Details @if ($reason === 'Custom reason…')<em>*</em>@else (optional)@endif</label>
         <textarea rows="3" wire:model="details"></textarea>
-        @error('details')<span class="hint" style="color:var(--bad)">{{ $message }}</span>@enderror</div>
+        @error('details')<span class="hint" style="color:var(--red)">{{ $message }}</span>@enderror</div>
     </div>
     <x-slot:footer>
       <button class="btn" type="button" wire:click="$set('showModal', false)">Cancel</button>

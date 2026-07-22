@@ -130,7 +130,7 @@ test('effectivity and date hired are required; Wage Orders also demand the wage 
 
     Livewire::test(PrepareForm::class, ['pan' => $pan->reference])
         ->call('submit')
-        ->assertHasErrors(['date_hired' => 'required', 'doe_from' => 'required', 'wage_no' => 'required']);
+        ->assertHasErrors(['date_hired', 'doe_from', 'wage_no']);
 });
 
 test('Leave Credits row appears only for Regularization', function () {
@@ -165,6 +165,21 @@ test('a returned PAN resubmits straight to the HR Approver — no second confirm
         ->assertHasNoErrors();
 
     expect($pan->fresh()->status)->toBe(PanStatus::ForHrApproval);
+});
+
+test('submitting the prepare form with missing fields highlights them and toasts', function () {
+    $pan = prepPan(PanStatus::InPreparation);
+
+    $test = Livewire::test(PrepareForm::class, ['pan' => $pan->reference])
+        ->set('date_hired', '')
+        ->set('doe_from', '')
+        ->call('submit')
+        ->assertHasErrors(['date_hired', 'doe_from'])
+        ->assertSeeHtml('border-color:var(--red)');
+
+    expect(collect($test->effects['xjs'] ?? [])->pluck('expression')->implode(' '))
+        ->toContain('showToast')
+        ->toContain('highlighted field');
 });
 
 test('voiding from the form demands a reason and keeps the record', function () {

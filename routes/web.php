@@ -29,7 +29,6 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware('can:division_head')->group(function () {
         Route::get('/division', App\Livewire\DivisionHead\Queue::class)->name('division.queue');
-        Route::get('/division/monitor', App\Livewire\DivisionHead\Monitor::class)->name('division.monitor');
         Route::get('/division/{pan}', App\Livewire\DivisionHead\Show::class)->name('division.show');
     });
 

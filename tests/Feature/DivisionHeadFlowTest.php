@@ -111,6 +111,19 @@ test('the queue shows the department\'s PANs but never drafts, Manila rows, or o
         ->assertDontSee('PAN-2026-90104'); // someone else's department
 });
 
+test('"All stages" keeps a PAN visible read-only long after this head\'s decision is done, including once it\'s Filed', function () {
+    $filed = deptPan(PanStatus::Filed, ['reference' => 'PAN-2026-90111']);
+    $inPrep = deptPan(PanStatus::InPreparation, ['reference' => 'PAN-2026-90112']);
+
+    Livewire::test(Queue::class)
+        ->set('filter', 'all')
+        ->assertSee('PAN-2026-90111')
+        ->assertSee('PAN-2026-90112')
+        ->set('filter', 'completed')
+        ->assertSee('PAN-2026-90111')
+        ->assertDontSee('PAN-2026-90112');
+});
+
 test('a DH Head sees ONLY Manila PANs, across all departments', function () {
     $dhHead = User::factory()->dhHead()->create();
 

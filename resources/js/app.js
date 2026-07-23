@@ -22,6 +22,17 @@ function paintThemeButton() {
     btn.title = dark ? 'Switch to light theme' : 'Switch to dark theme';
 }
 
+// wire:navigate swaps <html>'s attributes to match the freshly-fetched page —
+// and since data-theme only ever exists client-side (the server never renders
+// it), every in-app navigation was silently stripping it back to whatever
+// prefers-color-scheme says. Reapply the saved choice after every navigation.
+function restoreTheme() {
+    try {
+        const saved = localStorage.getItem('panda-theme');
+        if (saved) root.dataset.theme = saved;
+    } catch {}
+}
+
 document.addEventListener('click', (e) => {
     if (!e.target.closest('#theme-toggle')) return;
     const next = effectiveTheme() === 'dark' ? 'light' : 'dark';
@@ -31,7 +42,7 @@ document.addEventListener('click', (e) => {
 });
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', paintThemeButton);
 paintThemeButton();
-document.addEventListener('livewire:navigated', paintThemeButton);
+document.addEventListener('livewire:navigated', () => { restoreTheme(); paintThemeButton(); });
 
 /* ---------- notification bell (unread state is Livewire's; only open/close lives here) ---------- */
 document.addEventListener('click', (e) => {

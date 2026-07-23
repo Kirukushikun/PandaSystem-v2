@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{{ $title ?? 'PANDA — PAN Workflow System' }}</title>
+<link rel="icon" type="image/x-icon" href="{{ asset('images/pan-icon.ico') }}">
 {{-- FOUC guard: stamp the saved theme on <html> before first paint --}}
 <script>
   try{var t=localStorage.getItem('panda-theme');if(t)document.documentElement.dataset.theme=t}catch(e){}

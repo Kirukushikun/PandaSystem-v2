@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>PANDA — Sign in</title>
+<link rel="icon" type="image/x-icon" href="{{ asset('images/pan-icon.ico') }}">
 {{-- Standalone page ported from panda-login-concept.html — styles inline, no app.css/Vite.
      Extends the concept with the app's data-theme override so the saved theme choice holds here too. --}}
 <script>
@@ -130,7 +131,7 @@ footer{margin-top:22px;text-align:center;font-size:11px;color:var(--ink-3)}
     });
   </script>
   @endif
-  <footer>PANDA v2 · BFC Group internal</footer>
+  <footer>PAN SYSTEM · BFC Group</footer>
 </div>
 @if ($turnstileSiteKey)
 <script>

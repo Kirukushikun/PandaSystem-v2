@@ -26,7 +26,7 @@
           <input class="refin" placeholder="New farm / site name" wire:model="newFarm" wire:keydown.enter="addFarm">
           <button class="btn" type="button" wire:click="addFarm">Add</button>
         </div>
-        @error('newFarm')<span class="hint" style="color:var(--bad)">{{ $message }}</span>@enderror
+        @error('newFarm')<span class="hint" style="color:var(--red)">{{ $message }}</span>@enderror
       </div>
     </div>
     <div class="pane">
@@ -46,7 +46,7 @@
           <input class="refin" placeholder="New department name" wire:model="newDept" wire:keydown.enter="addDept">
           <button class="btn" type="button" wire:click="addDept">Add</button>
         </div>
-        @error('newDept')<span class="hint" style="color:var(--bad)">{{ $message }}</span>@enderror
+        @error('newDept')<span class="hint" style="color:var(--red)">{{ $message }}</span>@enderror
       </div>
     </div>
   </div>

@@ -68,10 +68,10 @@
           <option>Missing allowance line</option>
           <option>Custom reason…</option>
         </select>
-        @error('reason')<span class="hint" style="color:var(--bad)">{{ $message }}</span>@enderror</div>
+        @error('reason')<span class="hint" style="color:var(--red)">{{ $message }}</span>@enderror</div>
       <div class="field"><label>Details @if ($reason === 'Custom reason…')<em>*</em>@else (optional)@endif</label>
         <textarea rows="3" wire:model="details"></textarea>
-        @error('details')<span class="hint" style="color:var(--bad)">{{ $message }}</span>@enderror</div>
+        @error('details')<span class="hint" style="color:var(--red)">{{ $message }}</span>@enderror</div>
     </div>
     <x-slot:footer>
       <button class="btn" type="button" wire:click="$set('showModal', false)">Cancel</button>

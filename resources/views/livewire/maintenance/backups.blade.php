@@ -42,7 +42,7 @@
           {{ $restoreFile ? '— ready to restore' : 'or drag it here — .sql produced by this system' }}
           <input type="file" accept=".sql" wire:model="restoreFile" style="display:none">
         </label>
-        @error('restoreFile')<span class="hint" style="color:var(--bad)">{{ $message }}</span>@enderror
+        @error('restoreFile')<span class="hint" style="color:var(--red)">{{ $message }}</span>@enderror
         <div class="note warn" style="margin:0"><span class="ic">!</span>Restoring overwrites current data with the backup's contents. A safety backup is taken automatically first.</div>
         <div style="display:flex;justify-content:flex-end">
           <button class="btn danger" type="button" wire:click="openRestore">Restore from Backup…</button>

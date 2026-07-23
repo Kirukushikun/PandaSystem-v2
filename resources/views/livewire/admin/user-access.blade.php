@@ -66,9 +66,9 @@
               <option value="{{ $farm->id }}">{{ $farm->name }}</option>
               @endforeach
             </select>
-            @error('farmId')<span class="hint" style="color:var(--bad)">{{ $message }}</span>@enderror</div>
+            @error('farmId')<span class="hint" style="color:var(--red)">{{ $message }}</span>@enderror</div>
           <div class="field"><label>Job Position</label><input wire:model="position">
-            @error('position')<span class="hint" style="color:var(--bad)">{{ $message }}</span>@enderror</div>
+            @error('position')<span class="hint" style="color:var(--red)">{{ $message }}</span>@enderror</div>
           <div class="field full"><label>E-signature (used on printed PANs)</label>
             @if ($account->esign_path)
             <div class="sig"><img src="{{ route('user.esign', $account) }}" alt="{{ $account->name }}" style="max-height:48px;width:auto;margin:0"></div>
@@ -77,7 +77,7 @@
             @endif
             <label class="hint" style="cursor:pointer"><b>{{ $esign ? $esign->getClientOriginalName().' — ready, press Save' : 'Replace image…' }}</b> PNG with transparent background recommended
               <input type="file" accept="image/png" wire:model="esign" style="display:none"></label>
-            @error('esign')<span class="hint" style="color:var(--bad)">{{ $message }}</span>@enderror</div>
+            @error('esign')<span class="hint" style="color:var(--red)">{{ $message }}</span>@enderror</div>
         </div>
         <div style="display:flex;justify-content:flex-end;padding-top:12px"><button class="btn primary" type="button" wire:click="save">Save changes</button></div>
       </div>

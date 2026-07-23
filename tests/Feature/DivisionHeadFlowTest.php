@@ -146,6 +146,26 @@ test('a department head cannot approve a Manila PAN of their own department', fu
         ->assertForbidden();
 });
 
+test('a PAN already tagged Manila skips re-tagging when it comes back through Division Head a second time', function () {
+    // Mirrors the real reported flow: DH -> HR Preparer tags Manila -> HR Head returns to
+    // Requestor -> Requestor resubmits -> WithDivisionHead again, now for the DH Head.
+    // Forcing a second tag here risks a different (wrong) call than the first one.
+    $dhHead = User::factory()->dhHead()->create();
+    $manila = PanRequest::factory()->status(PanStatus::WithDivisionHead)->manila()->create([
+        'employee_id' => $this->employee->id,
+        'department_id' => $this->department->id,
+        'hr_preparer_id' => User::factory()->hrPreparer()->create()->id,
+    ]);
+
+    $this->actingAs($dhHead);
+    Livewire::test(Show::class, ['pan' => $manila->reference])
+        ->call('approve')
+        ->assertRedirect(route('division.queue'));
+
+    expect($manila->fresh()->status)->toBe(PanStatus::InPreparation)
+        ->and($manila->fresh()->confidentiality_tag)->toBe(\App\Enums\ConfidentialityTag::Manila);
+});
+
 test('the Show page renders the request; the prepared extension appears once a form exists', function () {
     $bare = deptPan(PanStatus::WithDivisionHead);
     Livewire::test(Show::class, ['pan' => $bare->reference])

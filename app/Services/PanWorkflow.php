@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\ConfidentialityTag;
 use App\Enums\PanOrigin;
 use App\Enums\PanStatus;
 use App\Exceptions\IllegalPanTransition;
@@ -78,13 +79,24 @@ class PanWorkflow
 
     /**
      * Apply an action to a status. Returns the new status; throws on illegal moves.
+     *
+     * $confidentialityTag matters only for 'approve_division': a PAN that already
+     * carries a tag (i.e. this isn't its first trip through Division Head — it was
+     * sent back to the Requestor and resubmitted after HR Preparation had already
+     * tagged it) skips AwaitingTag and re-enters InPreparation directly. Re-tagging
+     * something already tagged is pure re-entry of a decision already made, and
+     * risks the retagger picking a different confidentiality than the first pass.
      */
-    public function apply(PanStatus $from, string $action): PanStatus
+    public function apply(PanStatus $from, string $action, ?ConfidentialityTag $confidentialityTag = null): PanStatus
     {
         $transition = self::TRANSITIONS[$action] ?? throw IllegalPanTransition::unknownAction($action);
 
         if (! in_array($from, $transition['from'], true)) {
             throw IllegalPanTransition::notAllowedFrom($action, $from);
+        }
+
+        if ($action === 'approve_division' && $confidentialityTag !== null && $confidentialityTag !== ConfidentialityTag::Untagged) {
+            return PanStatus::InPreparation;
         }
 
         return $transition['to'];

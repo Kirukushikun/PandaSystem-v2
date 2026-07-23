@@ -37,6 +37,19 @@ test('the full requestor-origin journey runs Draft → Filed', function () {
     expect($status->isTerminal())->toBeTrue();
 });
 
+test('approve_division skips re-tagging when the PAN was already tagged before this trip through Division Head', function () {
+    // e.g. tagged Manila once, HR Head returned it to the Requestor for a fix, requestor
+    // resubmitted, DH Head approved again — the earlier tag decision shouldn't be re-asked.
+    expect($this->workflow->apply(PanStatus::WithDivisionHead, 'approve_division', \App\Enums\ConfidentialityTag::Manila))
+        ->toBe(PanStatus::InPreparation)
+        ->and($this->workflow->apply(PanStatus::WithDivisionHead, 'approve_division', \App\Enums\ConfidentialityTag::Tarlac))
+        ->toBe(PanStatus::InPreparation)
+        ->and($this->workflow->apply(PanStatus::WithDivisionHead, 'approve_division', \App\Enums\ConfidentialityTag::Untagged))
+        ->toBe(PanStatus::AwaitingTag)
+        ->and($this->workflow->apply(PanStatus::WithDivisionHead, 'approve_division'))
+        ->toBe(PanStatus::AwaitingTag);
+});
+
 test('an HR-origin PAN (Update PAN) skips Requestor and Division Head, entering at AwaitingTag', function () {
     $status = $this->workflow->initialStatus(PanOrigin::Hr);
 

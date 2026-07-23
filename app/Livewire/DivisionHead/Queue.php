@@ -51,7 +51,7 @@ class Queue extends Component
         $this->authorize('approveDivision', $pan);
 
         $pan->update([
-            'status' => app(PanWorkflow::class)->apply($pan->status, 'approve_division'),
+            'status' => app(PanWorkflow::class)->apply($pan->status, 'approve_division', $pan->confidentiality_tag),
             'division_head_id' => auth()->id(),
         ]);
         $this->js("showToast('{$pan->reference} approved — forwarded to HR Preparation.')");

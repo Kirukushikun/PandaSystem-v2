@@ -36,7 +36,7 @@ class Show extends Component
         $this->authorize('approveDivision', $this->panRequest);
 
         $this->panRequest->update([
-            'status' => app(PanWorkflow::class)->apply($this->panRequest->status, 'approve_division'),
+            'status' => app(PanWorkflow::class)->apply($this->panRequest->status, 'approve_division', $this->panRequest->confidentiality_tag),
             'division_head_id' => auth()->id(),
         ]);
         $this->js("showToast('{$this->panRequest->reference} approved — forwarded to HR Preparation.')");

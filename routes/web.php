@@ -85,7 +85,6 @@ Route::middleware('auth')->group(function () {
 
         Route::get('/admin/users', App\Livewire\Admin\Users::class)->name('admin.users');
         Route::get('/admin/users/{user}', App\Livewire\Admin\UserAccess::class)->name('admin.users.access');
-        Route::get('/admin/employees', App\Livewire\Admin\Employees::class)->name('admin.employees');
 
         // Mockup's Maintenance subtabs are separate routes (per CLAUDE.md UI contract)
         Route::redirect('/maintenance', '/maintenance/logs');
@@ -100,6 +99,10 @@ Route::middleware('auth')->group(function () {
         })->name('maintenance.backups.download');
         Route::get('/maintenance/danger', App\Livewire\Maintenance\DangerZone::class)->name('maintenance.danger');
     });
+
+    // Roster CRUD: admins and HR Preparers both — see manage_roster gate.
+    Route::get('/admin/employees', App\Livewire\Admin\Employees::class)
+        ->middleware('can:manage_roster')->name('admin.employees');
 
     // Attachment + print: policy-checked per record — these are the direct-link
     // entry points v1 left open. Looked up by reference, 404 when unknown.

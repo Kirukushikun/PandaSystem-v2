@@ -102,7 +102,7 @@
         @error('doe_to')<span class="hint" style="color:var(--red)">{{ $message }}</span>@enderror
         <span class="hint">Leave empty for open-ended; allowances with an end date get expiry reminders.</span></div>
       @if ($pan->action_type->requiresWageNumber())
-      <div class="field"><label>Wage Order No. <em>*</em></label><input wire:model="wage_no" placeholder="e.g. NCR-26" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" name="wage-no-{{ $pan->id }}" @error('wage_no') style="border-color:var(--red)" @enderror>
+      <div class="field"><label>Wage Order No. <em>*</em></label><input wire:model="wage_no" placeholder="e.g. NCR-26" autocomplete="new-password" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore data-form-type="other" name="wage-no-{{ $pan->id }}" @error('wage_no') style="border-color:var(--red)" @enderror>
         @error('wage_no')<span class="hint" style="color:var(--red)">{{ $message }}</span>@enderror</div>
       @endif
     </div>
@@ -153,7 +153,7 @@
           <td class="lbl">{{ $label }}</td>
           <td>{{ ($fromValues[$field] ?? '') !== '' ? $fromValues[$field] : '—' }}</td>
           <td class="arrow">→</td>
-          <td><input class="toin @if (($toValues[$field] ?? '') !== '') filled @endif" wire:model="toValues.{{ $field }}" placeholder="No change" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" name="to-{{ $field }}-{{ $pan->id }}"></td>
+          <td><input class="toin @if (($toValues[$field] ?? '') !== '') filled @endif" wire:model="toValues.{{ $field }}" placeholder="No change" autocomplete="new-password" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore data-form-type="other" name="to-{{ $field }}-{{ $pan->id }}"></td>
           <td></td>
         </tr>
         @endforeach
@@ -177,13 +177,13 @@
           <td class="lbl">Basic Pay</td>
           <td class="num">{{ ($fromValues['basic'] ?? '') !== '' ? '₱ '.$fromValues['basic'] : '—' }}</td>
           <td class="arrow">→</td>
-          <td class="num"><input class="toin numin @if (($toValues['basic'] ?? '') !== '') filled @endif" wire:model="toValues.basic" placeholder="₱ 0.00" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" name="to-basic-{{ $pan->id }}"></td>
+          <td class="num"><input class="toin numin @if (($toValues['basic'] ?? '') !== '') filled @endif" wire:model="toValues.basic" placeholder="₱ 0.00" autocomplete="new-password" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore data-form-type="other" name="to-basic-{{ $pan->id }}"></td>
           <td></td>
         </tr>
         @foreach ($allowances as $i => $allowance)
         <tr wire:key="allowance-{{ $i }}"><td class="lbl">{{ $allowance['label'] }}</td>
           <td class="num">{{ $allowance['from'] }}</td><td class="arrow">→</td>
-          <td class="num"><input class="toin numin @if (trim($allowance['to']) !== '') filled @endif" wire:model="allowances.{{ $i }}.to" placeholder="₱ 0.00" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" name="allowance-to-{{ $i }}-{{ $pan->id }}"></td>
+          <td class="num"><input class="toin numin @if (trim($allowance['to']) !== '') filled @endif" wire:model="allowances.{{ $i }}.to" placeholder="₱ 0.00" autocomplete="new-password" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore data-form-type="other" name="allowance-to-{{ $i }}-{{ $pan->id }}"></td>
           <td><button class="rowdel" type="button" title="Remove allowance row" wire:click="removeAllowance({{ $i }})">×</button></td></tr>
         @endforeach
       </tbody>

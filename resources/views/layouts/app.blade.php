@@ -49,8 +49,15 @@
   <nav class="navsec" aria-label="Administration">
     <h2>Administration</h2>
     <a class="navbtn @if(request()->routeIs('admin.users*')) active @endif" href="{{ route('admin.users') }}" wire:navigate><span class="dot"></span>User Access</a>
-    <a class="navbtn @if(request()->routeIs('admin.employees*')) active @endif" href="{{ route('admin.employees') }}" wire:navigate><span class="dot"></span>Employees</a>
     <a class="navbtn @if(request()->routeIs('maintenance.*')) active @endif" href="{{ route('maintenance.logs') }}" wire:navigate><span class="dot"></span>Maintenance</a>
+  </nav>
+  @endcan
+  {{-- Roster CRUD: admins and HR Preparers both (manage_roster gate) — its own
+       section so it still shows for a Preparer who isn't otherwise an Admin. --}}
+  @can('manage_roster')
+  <nav class="navsec" aria-label="Roster">
+    <h2>Employee Roster</h2>
+    <a class="navbtn @if(request()->routeIs('admin.employees*')) active @endif" href="{{ route('admin.employees') }}" wire:navigate><span class="dot"></span>Manage Employees</a>
   </nav>
   @endcan
   <nav class="navsec" aria-label="Help">

@@ -16,9 +16,10 @@ use Livewire\Component;
 use Livewire\WithPagination;
 
 /**
- * Master roster (Admin owns it; the HR Preparation lens only reads it).
- * One shared modal adds and edits; removal is soft — history stays — and is
- * policy-blocked while an ongoing PAN exists.
+ * Master roster. Admins and HR Preparers may add/edit here (see EmployeePolicy);
+ * the read-only HR Preparation lens at /employees is a separate, PAN-lookup-focused
+ * view onto the same table. One shared modal adds and edits; removal is soft —
+ * history stays — and stays admin-only, policy-blocked while an ongoing PAN exists.
  */
 #[Layout('layouts.app')]
 #[Title('Employee Directory — PANDA')]

@@ -34,5 +34,9 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('hr_head', fn (User $u) => $u->is_hr_head);
         Gate::define('dh_head', fn (User $u) => $u->is_dh_head);
         Gate::define('admin', fn (User $u) => $u->is_admin);
+        // Employee roster CRUD (Administration → Employees): admins own it, but HR
+        // Preparers are the ones who actually know when someone's hired, so they get
+        // in too. Removal stays admin-only — see EmployeePolicy::delete.
+        Gate::define('manage_roster', fn (User $u) => $u->is_admin || $u->is_hr_preparer);
     }
 }

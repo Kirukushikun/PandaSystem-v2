@@ -50,6 +50,15 @@
     </table></div>
   </div>
 
+  @php
+    // Confidentiality (Manila/Tarlac) and the role roster are DH-Head/HR/Admin territory —
+    // a plain Requestor or department Division Head never sees a tag or acts on another
+    // role, so the section is just noise for them. DH Head keeps it (Manila is their job).
+    $me = auth()->user();
+    $showConfidentialityAndRoles = $me->is_dh_head || $me->is_hr_preparer || $me->is_hr_head
+        || $me->is_hr_approver || $me->is_final_approver || $me->is_admin;
+  @endphp
+  @if ($showConfidentialityAndRoles)
   <div class="twocol">
     <div class="pane">
       <h3>Confidentiality tags</h3>
@@ -77,4 +86,5 @@
       </div>
     </div>
   </div>
+  @endif
 </div>

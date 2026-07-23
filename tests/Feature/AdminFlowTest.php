@@ -138,9 +138,33 @@ test('removal is policy-blocked while an ongoing PAN exists — drafts do not bl
         ->and(PanRequest::where('employee_id', $free->id)->count())->toBe(1); // history kept
 });
 
-test('a non-admin cannot touch the roster even by direct action', function () {
+test('a non-admin, non-preparer cannot touch the roster even by direct action', function () {
     $employee = Employee::factory()->create();
+    $this->actingAs(User::factory()->requestor()->create());
+
+    Livewire::test(Employees::class)
+        ->call('startCreate')
+        ->assertForbidden();
+});
+
+test('an HR Preparer can reach the roster and add/edit employees, but not remove them', function () {
+    $department = Department::factory()->create();
+    $farm = Farm::factory()->create();
     $this->actingAs(User::factory()->hrPreparer()->create());
+
+    $this->get(route('admin.employees'))->assertOk();
+
+    Livewire::test(Employees::class)
+        ->call('startCreate')
+        ->set('name', 'N. Hire')
+        ->set('employee_no', 'emp-77001')
+        ->set('department_id', $department->id)
+        ->set('position', 'Farmhand')
+        ->set('farm_id', $farm->id)
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $employee = Employee::where('employee_no', 'EMP-77001')->sole();
 
     Livewire::test(Employees::class)
         ->call('remove', $employee->id)

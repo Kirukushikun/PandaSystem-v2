@@ -9,9 +9,7 @@
 
   <x-stage-tracker :stages="$stages" :current="$current" />
 
-  @foreach ($panRequest->returns->reverse() as $return)
-  <div class="note warn"><span class="ic">!</span><span><b>{{ $return->from_status->label() }} → returned:</b>&nbsp;{{ $return->reason }}@if ($return->details) — {{ $return->details }}@endif <small style="color:var(--ink-3)">({{ $return->created_at->format('M j, Y') }})</small></span></div>
-  @endforeach
+  <x-pan.return-history :returns="$panRequest->returns" />
 
   <div class="card">
     <x-pan.request-details

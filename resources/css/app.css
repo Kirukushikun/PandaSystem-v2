@@ -171,6 +171,35 @@ td .who small{color:var(--ink-3);font-size:11.5px}
 .note.warn{background:var(--amber-soft);border-color:transparent;color:var(--amber)}
 .note.manila{background:var(--purple-soft);border-color:transparent;color:var(--purple)}
 
+/* return history — collapsible connector-line timeline (x-pan.return-history) */
+.rethist{border:1px solid var(--line);border-radius:10px;background:var(--panel);margin-bottom:14px;overflow:hidden}
+.rethist-head{display:flex;gap:8px;align-items:center;padding:9px 14px;font-size:12.5px;font-weight:700;
+  background:var(--amber-soft);color:var(--amber);border-bottom:1px solid var(--line-soft)}
+.rethist-head .ic{flex:none;font-weight:800}
+.rethist-body{padding:13px 16px}
+.tl{position:relative;padding-left:20px}
+.tl::before{content:"";position:absolute;left:5px;top:4px;bottom:4px;width:1.5px;background:var(--line)}
+.tl-row{position:relative;padding-bottom:12px}
+.tl-row:last-child{padding-bottom:0}
+.tl-dot{position:absolute;left:-20px;top:3px;width:11px;height:11px;border-radius:50%;
+  background:var(--panel);border:2.5px solid var(--ink-3)}
+.tl-row[data-tone="dh"] .tl-dot,.tl-row[data-tone="conf"] .tl-dot{border-color:var(--amber)}
+.tl-row[data-tone="prep"] .tl-dot,.tl-row[data-tone="hra"] .tl-dot{border-color:var(--blue)}
+.tl-row[data-tone="final"] .tl-dot{border-color:var(--purple)}
+.tl-row[data-tone="appr"] .tl-dot{border-color:var(--green-ok)}
+.tl-row[data-tone="ret"] .tl-dot{border-color:var(--red)}
+.tl-row summary{list-style:none;cursor:pointer;display:flex;gap:8px;align-items:baseline;font-size:12.5px}
+.tl-row summary::-webkit-details-marker{display:none}
+.tl-stage{font-weight:700;color:var(--ink)}
+.tl-arrow{color:var(--ink-3)}
+.tl-by{color:var(--ink-2);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tl-time{font-family:var(--mono);font-size:10.5px;color:var(--ink-3);flex:none}
+.tl-chev{flex:none;color:var(--ink-3);font-size:10px;transition:transform .15s ease}
+.tl-row[open] .tl-chev{transform:rotate(90deg)}
+.tl-detail{margin:7px 0 0;padding:9px 10px;background:var(--panel-2);border-radius:7px;font-size:12.5px;color:var(--ink-2)}
+.tl-detail b{color:var(--ink)}
+@media (prefers-reduced-motion: reduce){.tl-chev{transition:none}}
+
 /* action-reference table */
 .fromto td{font-size:13px}
 .fromto .lbl{font-weight:600;white-space:nowrap}

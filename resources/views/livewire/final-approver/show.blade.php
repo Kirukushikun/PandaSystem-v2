@@ -13,9 +13,7 @@
 
   <x-stage-tracker :stages="['Submitted','Division approved','HR prepared','DH confirmed','HR approved','Final Approval']" current="Final Approval" />
 
-  @foreach ($pan->returns->reverse() as $return)
-  <div class="note warn"><span class="ic">!</span><span><b>{{ $return->from_status->label() }} → returned by {{ $return->returnedBy->name }}:</b>&nbsp;{{ $return->reason }}@if ($return->details) — {{ $return->details }}@endif <small style="color:var(--ink-3)">({{ $return->created_at->format('M j, Y') }})</small></span></div>
-  @endforeach
+  <x-pan.return-history :returns="$pan->returns" />
 
   <div class="card">
     {{-- Same "Request details" block shown to earlier stages — identical contents at every stage --}}

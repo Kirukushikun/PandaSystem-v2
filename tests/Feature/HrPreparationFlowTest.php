@@ -125,6 +125,30 @@ test('saving writes the pan_form; blank "To" fields carry the "From" value throu
         ->and($rows->firstWhere('field', 'place')['to'])->toBe($rows->firstWhere('field', 'place')['from']);
 });
 
+test('reopening for revision reloads a "To" value even when it was deliberately left equal to "From"', function () {
+    // Real reported bug: Position (and Place) are the only fixed fields with a real,
+    // non-blank "From" — a preparer who confirms it unchanged by retyping the same
+    // text back into "To" would find hydrateForm() had silently blanked it back out
+    // on reopen, reading as "my data didn't save" even though it saved correctly.
+    $pan = prepPan(PanStatus::InPreparation);
+    PanForm::factory()->create([
+        'pan_request_id' => $pan->id,
+        'action_reference' => [
+            ['field' => 'section', 'from' => '—', 'to' => 'Farrowing'],
+            ['field' => 'place', 'from' => 'BFC', 'to' => 'BFC'], // deliberately unchanged
+            ['field' => 'head', 'from' => '—', 'to' => 'John Doe'],
+            ['field' => 'position', 'from' => 'Farm Helper', 'to' => 'Farm Helper'], // deliberately unchanged
+            ['field' => 'joblevel', 'from' => '—', 'to' => 'JL2'],
+            ['field' => 'basic', 'from' => '—', 'to' => '15,000.00'],
+        ],
+    ]);
+
+    Livewire::test(PrepareForm::class, ['pan' => $pan->reference])
+        ->assertSet('toValues.position', 'Farm Helper')
+        ->assertSet('toValues.place', 'BFC')
+        ->assertSet('toValues.section', 'Farrowing');
+});
+
 test('effectivity and date hired are required; Wage Orders also demand the wage number', function () {
     $pan = prepPan(PanStatus::InPreparation, ['action_type' => 'wage-order']);
 

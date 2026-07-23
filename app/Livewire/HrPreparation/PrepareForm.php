@@ -123,7 +123,7 @@ class PrepareForm extends Component
             foreach ($form->action_reference as $row) {
                 if (in_array($row['field'], [...self::FIXED_FIELDS, 'leavecredits'], true)) {
                     $this->fromValues[$row['field']] = $row['from'];
-                    $this->toValues[$row['field']] = $row['to'] === $row['from'] ? '' : $row['to'];
+                    $this->toValues[$row['field']] = $row['to'];
                 } else {
                     $this->allowances[] = ['label' => $row['field'], 'from' => $row['from'], 'to' => $row['to']];
                 }

@@ -72,7 +72,7 @@
     <x-slot:footer>
       <button class="btn" type="button" wire:click="$set('showModal', false)">Cancel</button>
       <div class="spacer"></div>
-      <button class="btn danger" type="button" wire:click="submitReject">Reject to HR Preparation</button>
+      <button class="btn danger" type="button" wire:click="submitReject">Return to HR Preparation</button>
     </x-slot:footer>
   </x-modal>
 </div>

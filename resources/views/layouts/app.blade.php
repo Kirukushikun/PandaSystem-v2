@@ -32,7 +32,8 @@
     <a class="navbtn @if(request()->routeIs('requests.*')) active @endif" href="{{ route('requests.index') }}" wire:navigate><span class="dot"></span>Requestor</a>
     @endcan
     @can('division_head')
-    <a class="navbtn @if(request()->routeIs('division.*')) active @endif" href="{{ route('division.queue') }}" wire:navigate><span class="dot"></span>Division Head</a>
+    <a class="navbtn @if(request()->routeIs('division.queue') || request()->routeIs('division.show')) active @endif" href="{{ route('division.queue') }}" wire:navigate><span class="dot"></span>Division Head</a>
+    <a class="navbtn @if(request()->routeIs('division.monitor')) active @endif" href="{{ route('division.monitor') }}" wire:navigate><span class="dot"></span>Monitor Department</a>
     @endcan
     {{-- employees.* is the HR-Prep roster lens (/employees), part of this module per the mockup --}}
     @can('hr_preparer')

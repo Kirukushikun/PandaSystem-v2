@@ -2,7 +2,7 @@
   <p class="crumb">Division Head · {{ $isDhHead ? 'DH Head — all departments' : ($departments ?: 'no departments assigned') }}</p>
   <div class="htop">
     <div><h2>Department Queue</h2>
-      <p>Every PAN for your department, across all stages. You can only act while a request is awaiting your decision; afterwards it stays visible read-only.</p></div>
+      <p>Requests awaiting your decision, plus anything recently completed. For the full lifecycle of every request under your department — including ones you've already approved — see <a href="{{ route('division.monitor') }}" wire:navigate>Monitor Department</a>.</p></div>
   </div>
 
   <div class="stats">

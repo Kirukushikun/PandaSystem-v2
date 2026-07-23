@@ -2,13 +2,13 @@
 
 namespace App\Livewire\DivisionHead;
 
-use App\Enums\ConfidentialityTag;
 use App\Enums\PanStatus;
 use App\Models\PanRequest;
 use App\Services\PanWorkflow;
 use Illuminate\Database\Eloquent\Builder;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
+use App\Livewire\Concerns\ScopesDivisionPans;
 use App\Livewire\Concerns\WithPerPage;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -17,6 +17,7 @@ use Livewire\WithPagination;
 #[Title('Department Queue — PANDA')]
 class Queue extends Component
 {
+    use ScopesDivisionPans;
     use WithPagination;
     use WithPerPage;
 
@@ -106,39 +107,12 @@ class Queue extends Component
         $this->reset('showModal', 'target', 'modalAction', 'reason', 'details');
     }
 
-    /**
-     * The two lenses, combined for users holding both flags: a department head sees
-     * their own departments' non-Manila PANs; a DH Head sees ONLY Manila-tagged
-     * PANs across all departments. Drafts are in nobody's queue.
-     */
-    /** Headed-department ids, fetched once per request no matter how often scope() runs. */
-    private ?\Illuminate\Support\Collection $headedDeptIds = null;
-
-    protected function scope(): Builder
-    {
-        $user = auth()->user();
-        $this->headedDeptIds ??= $user->headedDepartments()->pluck('departments.id');
-
-        return PanRequest::query()
-            ->where('status', '!=', PanStatus::Draft->value)
-            ->where(function (Builder $q) use ($user) {
-                if ($user->is_division_head) {
-                    $q->orWhere(fn (Builder $q) => $q
-                        ->whereIn('department_id', $this->headedDeptIds)
-                        ->where('confidentiality_tag', '!=', ConfidentialityTag::Manila->value));
-                }
-                if ($user->is_dh_head) {
-                    $q->orWhere('confidentiality_tag', ConfidentialityTag::Manila->value);
-                }
-            });
-    }
-
     public function render()
     {
         $terminal = [PanStatus::Filed, PanStatus::Withdrawn, PanStatus::Voided, PanStatus::Unserved];
         $awaiting = [PanStatus::WithDivisionHead, PanStatus::ForConfirmation];
 
-        $pans = $this->scope()
+        $pans = $this->divisionScope()
             ->with(['employee', 'requestedBy'])
             ->when($this->search !== '', function (Builder $q) {
                 $q->where(fn (Builder $q) => $q
@@ -153,7 +127,7 @@ class Queue extends Component
 
         // awaiting/later are pure status buckets — one grouped query covers both;
         // completed also filters on updated_at, so it keeps its own count.
-        $byStatus = $this->scope()->select('status')->selectRaw('count(*) as c')
+        $byStatus = $this->divisionScope()->select('status')->selectRaw('count(*) as c')
             ->groupBy('status')->pluck('c', 'status');
         $bucket = fn (array $statuses) => collect($statuses)->sum(fn ($s) => $byStatus[$s->value] ?? 0);
 
@@ -163,7 +137,7 @@ class Queue extends Component
             'stats' => [
                 'awaiting' => $bucket($awaiting),
                 'later' => $byStatus->sum() - $bucket([...$awaiting, ...$terminal]),
-                'completed' => $this->scope()->whereIn('status', $terminal)
+                'completed' => $this->divisionScope()->whereIn('status', $terminal)
                     ->whereBetween('updated_at', [now()->startOfMonth(), now()->endOfMonth()])->count(),
             ],
             'departments' => auth()->user()->headedDepartments->pluck('name')->implode(', '),

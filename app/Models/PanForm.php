@@ -64,7 +64,10 @@ class PanForm extends Model
             },
             'from' => $money($row['field']) ? $peso($row['from']) : $row['from'],
             'to' => $money($row['field']) ? $peso($row['to']) : $row['to'],
-            'chg' => $row['from'] !== $row['to'],
+            // Highlights any value HR actually entered — not just ones that changed —
+            // so a legitimately-unchanged field (e.g. Position left as-is) still reads
+            // as "confirmed," instead of looking indistinguishable from a blank one.
+            'chg' => filled($row['to']),
             'num' => $money($row['field']),
         ], $this->action_reference ?? []);
     }

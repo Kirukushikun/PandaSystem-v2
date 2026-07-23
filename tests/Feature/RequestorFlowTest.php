@@ -36,6 +36,17 @@ test('submitting with missing fields highlights them and toasts, instead of sile
         ->toContain('highlighted field');
 });
 
+test('fixing a highlighted field clears its own error immediately, without another submit', function () {
+    Livewire::test(Form::class)
+        ->call('submit')
+        ->assertHasErrors(['action_type', 'justification'])
+        ->set('action_type', 'promotion')
+        ->assertHasNoErrors('action_type')
+        ->assertHasErrors('justification') // untouched fields stay highlighted
+        ->set('justification', 'Recommended after the last performance review cycle.')
+        ->assertHasNoErrors('justification');
+});
+
 test('a draft saves without an attachment and gets a real reference number', function () {
     Livewire::test(Form::class)
         ->set('employee_id', $this->employee->id)

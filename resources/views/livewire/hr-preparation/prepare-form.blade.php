@@ -91,18 +91,18 @@
 
     <div class="sect">Employment details</div>
     <div class="formgrid" style="padding-top:10px">
-      <div class="field"><label>Date Hired <em>*</em></label><input type="date" wire:model="date_hired" @error('date_hired') style="border-color:var(--red)" @enderror>
+      <div class="field"><label>Date Hired <em>*</em></label><input type="date" wire:model.live="date_hired" @error('date_hired') style="border-color:var(--red)" @enderror>
         @error('date_hired')<span class="hint" style="color:var(--red)">{{ $message }}</span>@enderror</div>
       <div class="field"><label>Employment Status</label><input readonly value="{{ $this->employmentStatus }}">
         <span class="hint">Carried from the last filed PAN — Regularization finalizes it at final approval.</span></div>
       <div class="field"><label>Division / Department</label><input readonly value="{{ $pan->employee->department->name }}"></div>
-      <div class="field"><label>Effectivity From <em>*</em></label><input type="date" wire:model="doe_from" @error('doe_from') style="border-color:var(--red)" @enderror>
+      <div class="field"><label>Effectivity From <em>*</em></label><input type="date" wire:model.live="doe_from" @error('doe_from') style="border-color:var(--red)" @enderror>
         @error('doe_from')<span class="hint" style="color:var(--red)">{{ $message }}</span>@enderror</div>
       <div class="field"><label>Effectivity To</label><input type="date" wire:model="doe_to" placeholder="Open-ended">
         @error('doe_to')<span class="hint" style="color:var(--red)">{{ $message }}</span>@enderror
         <span class="hint">Leave empty for open-ended; allowances with an end date get expiry reminders.</span></div>
       @if ($pan->action_type->requiresWageNumber())
-      <div class="field"><label>Wage Order No. <em>*</em></label><input wire:model="wage_no" placeholder="e.g. NCR-26" autocomplete="new-password" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore data-form-type="other" name="wage-no-{{ $pan->id }}" @error('wage_no') style="border-color:var(--red)" @enderror>
+      <div class="field"><label>Wage Order No. <em>*</em></label><input wire:model.blur="wage_no" placeholder="e.g. NCR-26" autocomplete="new-password" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore data-form-type="other" name="wage-no-{{ $pan->id }}" @error('wage_no') style="border-color:var(--red)" @enderror>
         @error('wage_no')<span class="hint" style="color:var(--red)">{{ $message }}</span>@enderror</div>
       @endif
     </div>

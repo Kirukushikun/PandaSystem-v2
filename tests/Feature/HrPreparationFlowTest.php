@@ -182,6 +182,19 @@ test('submitting the prepare form with missing fields highlights them and toasts
         ->toContain('highlighted field');
 });
 
+test('fixing a highlighted prepare-form field clears its own error immediately', function () {
+    $pan = prepPan(PanStatus::InPreparation);
+
+    Livewire::test(PrepareForm::class, ['pan' => $pan->reference])
+        ->set('date_hired', '')
+        ->set('doe_from', '')
+        ->call('submit')
+        ->assertHasErrors(['date_hired', 'doe_from'])
+        ->set('date_hired', '2026-01-15')
+        ->assertHasNoErrors('date_hired')
+        ->assertHasErrors('doe_from');
+});
+
 test('voiding from the form demands a reason and keeps the record', function () {
     $pan = prepPan(PanStatus::InPreparation);
 

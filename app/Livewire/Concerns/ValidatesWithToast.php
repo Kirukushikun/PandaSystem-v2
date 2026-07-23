@@ -29,4 +29,27 @@ trait ValidatesWithToast
             return false;
         }
     }
+
+    /**
+     * Clears a field's own red border/hint the moment it's actually fixed, instead of
+     * making the user click Save/Submit again just to see the error go away. Fires on
+     * every wire:model.live/.blur update; array properties (file uploads) report their
+     * change as "property.index", so the base name before the first dot is what the
+     * error bag — and the emptiness check — actually keys on.
+     */
+    public function updated(string $property): void
+    {
+        $base = str($property)->before('.')->toString();
+
+        if (! $this->getErrorBag()->has($base)) {
+            return;
+        }
+
+        $value = data_get($this, $base);
+        $hasValue = is_array($value) ? $value !== [] : filled($value);
+
+        if ($hasValue) {
+            $this->resetErrorBag($base);
+        }
+    }
 }

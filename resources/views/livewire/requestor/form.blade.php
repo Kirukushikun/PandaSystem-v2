@@ -21,7 +21,7 @@
       <div class="field"><label>Employee ID</label><input readonly value="{{ $selectedEmployee?->employee_no }}"><span class="hint">Auto-filled from employee</span></div>
       <div class="field"><label>Department</label><input readonly value="{{ $selectedEmployee?->department->name }}"><span class="hint">Auto-filled from employee</span></div>
       <div class="field"><label>Type of Action <em>*</em></label>
-        <select wire:model="action_type" @error('action_type') style="border-color:var(--red)" @enderror>
+        <select wire:model.live="action_type" @error('action_type') style="border-color:var(--red)" @enderror>
           <option value="">— Select type —</option>
           @foreach ($actionTypes as $type)
           <option value="{{ $type->value }}">{{ $type->label() }}</option>
@@ -29,7 +29,7 @@
         </select>
         @error('action_type')<span class="hint" style="color:var(--red)">{{ $message }}</span>@enderror</div>
       <div class="field full"><label>Justification</label>
-        <textarea rows="3" wire:model="justification" placeholder="Why this action is being requested…" @error('justification') style="border-color:var(--red)" @enderror></textarea>
+        <textarea rows="3" wire:model.blur="justification" placeholder="Why this action is being requested…" @error('justification') style="border-color:var(--red)" @enderror></textarea>
         @error('justification')<span class="hint" style="color:var(--red)">{{ $message }}</span>@enderror</div>
       <div class="field full"><label>Supporting Documents (PDF, up to 3) <em>*</em></label>
 

@@ -66,7 +66,7 @@
         </select>
         @error('reason')<span class="hint" style="color:var(--red)">{{ $message }}</span>@enderror</div>
       <div class="field"><label>Details @if ($reason === 'Custom reason…')<em>*</em>@else (optional)@endif</label>
-        <textarea rows="3" wire:model="details"></textarea>
+        <textarea rows="3" wire:model="details" maxlength="1000"></textarea>
         @error('details')<span class="hint" style="color:var(--red)">{{ $message }}</span>@enderror</div>
     </div>
     <x-slot:footer>

@@ -67,7 +67,7 @@
               @endforeach
             </select>
             @error('farmId')<span class="hint" style="color:var(--red)">{{ $message }}</span>@enderror</div>
-          <div class="field"><label>Job Position</label><input wire:model="position">
+          <div class="field"><label>Job Position</label><input wire:model="position" maxlength="120">
             @error('position')<span class="hint" style="color:var(--red)">{{ $message }}</span>@enderror</div>
           <div class="field full"><label>E-signature (used on printed PANs)</label>
             @if ($account->esign_path)

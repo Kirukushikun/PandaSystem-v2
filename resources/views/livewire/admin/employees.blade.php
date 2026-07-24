@@ -63,9 +63,9 @@
   {{-- One modal for Add and Edit (state decides the title) --}}
   <x-modal id="emp-modal" :open="$showModal" close="$set('showModal', false)" title="{{ $editingId ? 'Edit Employee' : 'Add Employee' }}">
     <div class="formgrid" style="padding:16px;grid-template-columns:1fr 1fr">
-      <div class="field full"><label>Full Name <em>*</em></label><input wire:model="name" placeholder="Surname, First Name M.I.">
+      <div class="field full"><label>Full Name <em>*</em></label><input wire:model="name" maxlength="120" placeholder="Surname, First Name M.I.">
         @error('name')<span class="hint" style="color:var(--red)">{{ $message }}</span>@enderror</div>
-      <div class="field"><label>Employee ID <em>*</em></label><input wire:model="employee_no" placeholder="EMP-00000">
+      <div class="field"><label>Employee ID <em>*</em></label><input wire:model="employee_no" maxlength="20" placeholder="EMP-00000">
         @error('employee_no')<span class="hint" style="color:var(--red)">{{ $message }}</span>@enderror</div>
       <div class="field"><label>Department <em>*</em></label>
         <select wire:model="department_id">
@@ -75,7 +75,7 @@
           @endforeach
         </select>
         @error('department_id')<span class="hint" style="color:var(--red)">{{ $message }}</span>@enderror</div>
-      <div class="field"><label>Position <em>*</em></label><input wire:model="position" placeholder="e.g. Farm Technician I">
+      <div class="field"><label>Position <em>*</em></label><input wire:model="position" maxlength="120" placeholder="e.g. Farm Technician I">
         @error('position')<span class="hint" style="color:var(--red)">{{ $message }}</span>@enderror</div>
       <div class="field"><label>Farm / Site <em>*</em></label>
         <select wire:model="farm_id">

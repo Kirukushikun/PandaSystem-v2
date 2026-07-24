@@ -117,7 +117,9 @@ class Form extends Component
         return [
             'employee_id' => ['required', Rule::in($this->employees->pluck('id'))],
             'action_type' => ['required', Rule::enum(ActionType::class)],
-            'justification' => $draft ? ['nullable', 'string'] : ['required', 'string', 'min:10'],
+            'justification' => $draft
+                ? ['nullable', 'string', 'max:2000']
+                : ['required', 'string', 'min:10', 'max:2000'],
             // drafts may omit documents entirely; submission requires at least one, up to 3 total
             'newAttachments' => ['array', app(PanAttachmentService::class)->countRule($existingCount, required: ! $draft)],
             'newAttachments.*' => ['file', 'mimes:pdf', 'max:10240'],

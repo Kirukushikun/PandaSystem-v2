@@ -29,7 +29,7 @@
         </select>
         @error('action_type')<span class="hint" style="color:var(--red)">{{ $message }}</span>@enderror</div>
       <div class="field full"><label>Justification</label>
-        <textarea rows="3" wire:model.blur="justification" placeholder="Why this action is being requested…" @error('justification') style="border-color:var(--red)" @enderror></textarea>
+        <textarea rows="3" wire:model.blur="justification" maxlength="2000" placeholder="Why this action is being requested…" @error('justification') style="border-color:var(--red)" @enderror></textarea>
         @error('justification')<span class="hint" style="color:var(--red)">{{ $message }}</span>@enderror</div>
       <div class="field full"><label>Supporting Documents (PDF, up to 3) <em>*</em></label>
 

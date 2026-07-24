@@ -47,6 +47,20 @@ test('fixing a highlighted field clears its own error immediately, without anoth
         ->assertHasNoErrors('justification');
 });
 
+test('justification has a generous but real ceiling — 2000 characters, not endless', function () {
+    Livewire::test(Form::class)
+        ->set('justification', str_repeat('a', 2001))
+        ->call('saveDraft')
+        ->assertHasErrors('justification');
+
+    Livewire::test(Form::class)
+        ->set('employee_id', $this->employee->id)
+        ->set('action_type', 'promotion')
+        ->set('justification', str_repeat('a', 2000))
+        ->call('saveDraft')
+        ->assertHasNoErrors();
+});
+
 test('a draft saves without an attachment and gets a real reference number', function () {
     Livewire::test(Form::class)
         ->set('employee_id', $this->employee->id)

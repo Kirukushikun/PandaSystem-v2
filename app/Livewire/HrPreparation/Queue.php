@@ -131,7 +131,7 @@ class Queue extends Component
         $serve = [PanStatus::Approved, PanStatus::Served];
 
         $pans = $this->scope()
-            ->with(['employee.department', 'form'])
+            ->with(['employee.department', 'form', 'latestReturn'])
             ->when($this->search !== '', function (Builder $q) {
                 $q->where(fn (Builder $q) => $q
                     ->where('reference', 'like', "%{$this->search}%")
@@ -149,12 +149,22 @@ class Queue extends Component
             ->groupBy('status')->pluck('c', 'status');
         $bucket = fn (array $statuses) => collect($statuses)->sum(fn ($s) => $byStatus[$s->value] ?? 0);
 
+        // InPreparation also catches DH-disputed and Final-Approver-rejected PANs, which
+        // are really "returned" too — pull those out of the plain-prepare count so the
+        // stat matches the pill the row actually shows.
+        $bounced = $this->scope()
+            ->where('status', PanStatus::InPreparation)
+            ->whereHas('latestReturn', fn (Builder $q) => $q
+                ->where('to_status', PanStatus::InPreparation)
+                ->whereIn('action', ['dispute', 'reject_final']))
+            ->count();
+
         return view('livewire.hr-preparation.queue', [
             'pans' => $pans,
             'modalPan' => $this->target ? PanRequest::find($this->target) : null,
             'stats' => [
-                'prepare' => $bucket([PanStatus::AwaitingTag, PanStatus::InPreparation]),
-                'returned' => $bucket([PanStatus::ReturnedToPreparer]),
+                'prepare' => $bucket([PanStatus::AwaitingTag, PanStatus::InPreparation]) - $bounced,
+                'returned' => $bucket([PanStatus::ReturnedToPreparer]) + $bounced,
                 'serve' => $bucket($serve),
             ],
             'isHrHead' => auth()->user()->is_hr_head,

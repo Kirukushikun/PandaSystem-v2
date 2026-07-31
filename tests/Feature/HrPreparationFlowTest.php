@@ -447,3 +447,31 @@ test('PAN history / "Start Follow-up PAN" route resolves by employee_no, not id'
         ->assertOk()
         ->assertSee($employee->name);
 });
+
+/*
+|--------------------------------------------------------------------------
+| Bounce-back clarity — InPreparation is a shared landing spot for a DH
+| dispute and a Final Approver rejection; the queue must say which.
+|--------------------------------------------------------------------------
+*/
+
+test('the queue tells apart a fresh InPreparation PAN from a disputed one from a rejected one', function () {
+    $fresh = prepPan(PanStatus::InPreparation, ['reference' => 'PAN-2026-70001']);
+
+    $disputed = prepPan(PanStatus::InPreparation, ['reference' => 'PAN-2026-70002']);
+    $disputed->returns()->create([
+        'action' => 'dispute', 'from_status' => PanStatus::ForConfirmation, 'to_status' => PanStatus::InPreparation,
+        'reason' => 'Wrong basic pay', 'returned_by' => $this->preparer->id,
+    ]);
+
+    $rejected = prepPan(PanStatus::InPreparation, ['reference' => 'PAN-2026-70003']);
+    $rejected->returns()->create([
+        'action' => 'reject_final', 'from_status' => PanStatus::ForFinalApproval, 'to_status' => PanStatus::InPreparation,
+        'reason' => 'Missing signature', 'returned_by' => $this->preparer->id,
+    ]);
+
+    Livewire::test(Queue::class)
+        ->assertSeeHtml('HR Preparation') // the fresh one keeps the plain pill
+        ->assertSee('Disputed — by Division Head')
+        ->assertSee('Rejected — by Final Approver');
+});

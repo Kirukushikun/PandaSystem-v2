@@ -84,6 +84,12 @@ class PanRequest extends Model
         return $this->hasMany(PanReturn::class);
     }
 
+    /** The most recent return/dispute/rejection — lets a queue explain *why* a PAN is back, not just that it is. */
+    public function latestReturn(): HasOne
+    {
+        return $this->hasOne(PanReturn::class)->latestOfMany();
+    }
+
     /** The chain: previous PAN's "To" values become this one's "From" values. */
     public function previousPan(): BelongsTo
     {

@@ -35,8 +35,23 @@
         <td>{{ $pan->action_type->label() }}</td>
         <td>{{ $pan->employee->department->name }}</td>
         <td>
+          @php
+            // InPreparation is the landing spot for TWO different bounce-backs (DH dispute,
+            // Final Approver rejection) as well as plain fresh preparation — without this,
+            // all three look identical and the preparer has to open the PAN to find out why
+            // it's back on their desk.
+            $bounced = $pan->status === App\Enums\PanStatus::InPreparation
+                && $pan->latestReturn
+                && $pan->latestReturn->to_status === App\Enums\PanStatus::InPreparation
+                ? $pan->latestReturn->action
+                : null;
+          @endphp
           @if ($pan->status === App\Enums\PanStatus::AwaitingTag)
             <x-status-pill status="in-preparation">Tag &amp; prepare</x-status-pill>
+          @elseif ($bounced === 'dispute')
+            <x-status-pill tone="ret">Disputed — by Division Head</x-status-pill>
+          @elseif ($bounced === 'reject_final')
+            <x-status-pill tone="ret">Rejected — by Final Approver</x-status-pill>
           @elseif ($pan->status === App\Enums\PanStatus::InPreparation && $pan->confidentiality_tag === App\Enums\ConfidentialityTag::Manila)
             <x-status-pill status="in-preparation">Preparing — confidential</x-status-pill>
           @else

@@ -4,7 +4,20 @@
     <div><h2>View Request — <span class="ref" style="font-size:18px">{{ $pan->reference }}</span></h2>
     <p>{{ $form ? 'The request with its prepared PAN details.' : 'The request as submitted — no PAN has been prepared yet.' }}</p></div>
     <div class="spacer"></div>
-    <x-status-pill :status="$pan->status->value" />
+    @php
+      $bounced = $pan->status === App\Enums\PanStatus::InPreparation
+          && $pan->latestReturn
+          && $pan->latestReturn->to_status === App\Enums\PanStatus::InPreparation
+          ? $pan->latestReturn->action
+          : null;
+    @endphp
+    @if ($bounced === 'dispute')
+      <x-status-pill tone="ret">Disputed — by Division Head</x-status-pill>
+    @elseif ($bounced === 'reject_final')
+      <x-status-pill tone="ret">Rejected — by Final Approver</x-status-pill>
+    @else
+      <x-status-pill :status="$pan->status->value" />
+    @endif
   </div>
 
   <x-stage-tracker :stages="$stages" :current="$current" />

@@ -7,9 +7,12 @@ use App\Models\Farm;
 use Illuminate\Database\Seeder;
 
 /**
- * Seeds the master data only (accounts, reference values, roster) — PANs start
- * from an empty slate. To restore the mockup's sample PANs for 1:1 screen
- * comparison, run: php artisan db:seed --class=PanSeeder
+ * Fresh-start slate: reference values + the one real admin account (id 61,
+ * pinned to the external company-system id). No demo accounts, no sample
+ * roster, no PANs. To layer in the local dev/demo fixtures on top:
+ *   php artisan db:seed --class=DemoUserSeeder
+ *   php artisan db:seed --class=DemoEmployeeSeeder
+ *   php artisan db:seed --class=PanSeeder   (needs the two above first)
  */
 class DatabaseSeeder extends Seeder
 {
@@ -17,8 +20,7 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             ReferenceDataSeeder::class,
-            UserSeeder::class,
-            EmployeeSeeder::class,
+            AdminSeeder::class,
         ]);
 
         // Prune reference values dropped from the finalized lists — only after

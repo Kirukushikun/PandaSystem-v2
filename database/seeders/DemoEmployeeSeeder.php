@@ -8,10 +8,11 @@ use App\Models\Farm;
 use Illuminate\Database\Seeder;
 
 /**
- * The sample roster, remapped onto the finalized farms/departments
+ * Sample roster for local dev/testing — NOT run by default (see
+ * DatabaseSeeder). Remapped onto the finalized farms/departments
  * (BDL/BFC/BRD/PFC/RH · Poultry/Feedmill/Swine/…).
  */
-class EmployeeSeeder extends Seeder
+class DemoEmployeeSeeder extends Seeder
 {
     public function run(): void
     {

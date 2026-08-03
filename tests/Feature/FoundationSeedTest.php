@@ -5,12 +5,16 @@ use App\Models\Employee;
 use App\Models\Farm;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
+use Database\Seeders\DemoEmployeeSeeder;
+use Database\Seeders\DemoUserSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->seed(DatabaseSeeder::class);
+    $this->seed(DemoUserSeeder::class);
+    $this->seed(DemoEmployeeSeeder::class);
 });
 
 test('the seeders build the finalized master data', function () {
@@ -40,7 +44,7 @@ test('reseeding resets stale permissions instead of stacking them', function () 
     // kreyes was Requestor + Division Head before the one-role split — reseed must clear it
     User::where('username', 'kreyes')->first()->update(['is_division_head' => true]);
 
-    $this->seed(DatabaseSeeder::class);
+    $this->seed(DemoUserSeeder::class);
 
     $kreyes = User::where('username', 'kreyes')->first();
     expect($kreyes->is_requestor)->toBeTrue()

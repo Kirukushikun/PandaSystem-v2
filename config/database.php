@@ -69,6 +69,11 @@ return [
             // at all).
             'dump' => [
                 'dump_binary_path' => env('DB_DUMP_BINARY_PATH'),
+                // Docker's mysql-client trusts a self-signed cert on the db container by
+                // default — same "TLS/SSL error: self-signed certificate in certificate
+                // chain" mysqldump hits without this. Read directly by
+                // Spatie\Backup\Tasks\Backup\DbDumperFactory (MySql::setSkipSsl()).
+                'skip_ssl' => env('DB_DUMP_SKIP_SSL', false),
             ],
         ],
 

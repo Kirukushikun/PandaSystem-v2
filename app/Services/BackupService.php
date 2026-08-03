@@ -82,19 +82,41 @@ class BackupService
         }
     }
 
-    /** mysqldump/mysql from PATH, or Laragon's bundled MySQL as fallback. */
+    /**
+     * Resolves mysqldump/mysql deterministically instead of trusting PATH at
+     * request time — the web server process (Apache/PHP-FPM, a Docker
+     * container) often doesn't see the same PATH a terminal does, and a
+     * production image may not ship the mysql-client tools at all.
+     *
+     * Order: explicit DB_DUMP_BINARY_PATH env → PATH lookup → Laragon's
+     * bundled MySQL (Windows dev fallback only).
+     */
     private function binary(string $name): string
     {
-        $where = Process::run(['where.exe', $name]);
-        if ($where->successful() && trim($where->output()) !== '') {
-            return trim(explode("\n", trim($where->output()))[0]);
+        $configuredDir = config('database.connections.mysql.dump.dump_binary_path');
+        if ($configuredDir) {
+            $exe = rtrim($configuredDir, '/\\').DIRECTORY_SEPARATOR.$name.(PHP_OS_FAMILY === 'Windows' ? '.exe' : '');
+            if (is_file($exe)) {
+                return $exe;
+            }
         }
 
-        $candidates = glob('C:/laragon/bin/mysql/*/bin/'.$name.'.exe') ?: [];
-        if ($candidates !== []) {
-            return end($candidates);
+        $lookup = PHP_OS_FAMILY === 'Windows' ? ['where.exe', $name] : ['which', $name];
+        $found = Process::run($lookup);
+        if ($found->successful() && trim($found->output()) !== '') {
+            return trim(explode("\n", trim($found->output()))[0]);
         }
 
-        throw new RuntimeException("{$name} not found on PATH or in the Laragon bundle.");
+        if (PHP_OS_FAMILY === 'Windows') {
+            $candidates = glob('C:/laragon/bin/mysql/*/bin/'.$name.'.exe') ?: [];
+            if ($candidates !== []) {
+                return end($candidates);
+            }
+        }
+
+        throw new RuntimeException(
+            "{$name} not found. Set DB_DUMP_BINARY_PATH in .env to the directory containing it ".
+            '(e.g. /usr/bin on Ubuntu, once mysql-client is installed), or add it to PATH.'
+        );
     }
 }

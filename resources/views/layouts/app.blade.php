@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="csrf-token" content="{{ csrf_token() }}">
 <title>{{ $title ?? 'PANDA — PAN Workflow System' }}</title>
 <link rel="icon" type="image/x-icon" href="{{ asset('images/pan-icon.ico') }}">
 {{-- FOUC guard: stamp the saved theme on <html> before first paint --}}
@@ -11,7 +12,7 @@
 </script>
 @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body>
+<body data-user-id="{{ auth()->id() }}">
 
 {{-- Theme toggle: fixed to the top-right corner, floats above all screens --}}
 <button class="iconbtn" id="theme-toggle" title="Toggle light / dark theme"

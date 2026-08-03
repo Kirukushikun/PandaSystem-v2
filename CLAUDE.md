@@ -18,7 +18,9 @@ Final Approver → Served → Filed. Full behavior spec in `system-overview.md`;
   "feat: real-build Step N - …", 179 Pest tests green). Every module runs on live data:
   Requestor, Division Head, HR Preparation (tagging/carry-over/Action Reference editor),
   DH Confirmation, HR + Final approval (bulk, Regularization auto-Regular), serve/file,
-  print (3-copy layout, local assets), notifications (status handoffs + `panda:expiry-reminders`),
+  print (3-copy layout, local assets), notifications (status handoffs + `panda:expiry-reminders`,
+  live in-app bell via Laravel Reverb — see Dev-environment gotchas; OS-level push (FCM) was
+  deliberately skipped, in-app only),
   Admin (accounts/access/roster), Maintenance (logs, reference values, mysqldump backups via
   `panda:backup`, danger-zone purges).
 - **Master data finalized**: farms BDL/BFC/BRD/PFC/RH; 11 departments (Accounting, Audit,
@@ -89,3 +91,11 @@ Final Approver → Served → Filed. Full behavior spec in `system-overview.md`;
 - Always `php artisan route:clear` after adding routes — the cache goes stale silently.
 - Don't batch-edit Blade files with PowerShell 5.1 `Get-Content`/`Set-Content` — BOM-less UTF-8
   gets read as ANSI and em dashes/₱/· turn to mojibake. Use proper editor tooling.
+- **Real-time bell (Reverb) needs its own running process** — `php artisan reverb:start`,
+  separate from `php artisan serve`/`npm run dev`. Without it the bell just silently misses live
+  updates (no error) until the next full page load. `BROADCAST_CONNECTION=reverb` in `.env`.
+- `Broadcast::channel()` (in `routes/channels.php`) binds to whichever broadcaster instance is
+  active at boot — never swap `config('broadcasting.default')` at runtime expecting existing
+  channel registrations to carry over; they won't, and every channel auth silently 403s. Test
+  channel-authorization rules by invoking the registered callback directly, not through
+  `/broadcasting/auth`, if the driver needs to differ from `phpunit.xml`'s pinned one.

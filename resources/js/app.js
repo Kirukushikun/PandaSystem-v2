@@ -4,6 +4,36 @@
    mockup (tag simulation, danger-zone previews, subtabs…) are NOT ported here —
    they become Livewire component logic in their own scaffold steps. */
 
+import Echo from 'laravel-echo';
+import Pusher from 'pusher-js';
+
+/* ---------- real-time notification bell (Reverb) ----------
+   In-app bell only — no OS-level push (that's the FCM half of the guide, skipped
+   on purpose). Guarded by data-user-id on <body>, which only the app layout sets
+   (login/print are standalone and never subscribe). On a live notification we
+   don't manage any client-side notification list — NotificationBell is a normal
+   Livewire component, so we just ask it to re-render and it re-fetches from the
+   database itself; the broadcast payload only ever needs to say "something happened". */
+const userId = document.body?.dataset?.userId;
+if (userId) {
+    window.Pusher = Pusher;
+    window.Echo = new Echo({
+        broadcaster: 'reverb',
+        key: import.meta.env.VITE_REVERB_APP_KEY,
+        wsHost: import.meta.env.VITE_REVERB_HOST,
+        wsPort: import.meta.env.VITE_REVERB_PORT ?? 80,
+        wssPort: import.meta.env.VITE_REVERB_PORT ?? 443,
+        forceTLS: (import.meta.env.VITE_REVERB_SCHEME ?? 'https') === 'https',
+        enabledTransports: ['ws', 'wss'],
+    });
+
+    window.Echo.private(`App.Models.User.${userId}`)
+        .notification((notification) => {
+            window.showToast?.(`${notification.title} — ${notification.body}`);
+            window.Livewire?.dispatch('notification-received');
+        });
+}
+
 /* ---------- theme toggle ---------- */
 const root = document.documentElement;
 const SUN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>';

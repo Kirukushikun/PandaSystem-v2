@@ -14,6 +14,10 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->redirectGuestsTo(fn () => route('login'));
+        // Behind Cloudflare Tunnel — without this Laravel builds session
+        // cookies/signed URLs from the internal HTTP request, not the
+        // browser's HTTPS one, breaking Livewire with 401s / expired pages.
+        $middleware->trustProxies(at: '*');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

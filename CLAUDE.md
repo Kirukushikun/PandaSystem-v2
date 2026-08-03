@@ -25,10 +25,15 @@ Final Approver → Served → Filed. Full behavior spec in `system-overview.md`;
   `panda:backup`, danger-zone purges).
 - **Master data finalized**: farms BDL/BFC/BRD/PFC/RH; 11 departments (Accounting, Audit,
   Feedmill, General Services, Human Resources, IT and Security Services, Poultry, Purchasing,
-  Sales & Marketing, Swine, Treasury). **One role per seeded account**: kreyes=Requestor,
-  jbautista=Division Head (heads Poultry+Feedmill), tnavarro=HR Preparer, mdelacruz=HR Head,
-  caguirre=DH Head, rocampo=HR Approver, vsalazar=Final Approver, admin_it=Admin. `db:seed`
-  seeds master data only (empty PAN slate); demo PANs via `db:seed --class=PanSeeder`.
+  Sales & Marketing, Swine, Treasury). **`db:seed` is a fresh-start slate only**:
+  `ReferenceDataSeeder` (farms/departments) + `AdminSeeder` — the one real admin account,
+  id pinned to the external system's id (currently 61 = Iverson Guno, i.guno@bfcgroup.org;
+  do NOT assume a fixed username/email here again without checking the live directory first —
+  a placeholder "admin_it" was wrongly hardcoded this way once already). Demo fixtures (one
+  account per role: kreyes=Requestor, jbautista=Division Head, tnavarro=HR Preparer,
+  mdelacruz=HR Head, caguirre=DH Head, rocampo=HR Approver, vsalazar=Final Approver) live in
+  `DemoUserSeeder`/`DemoEmployeeSeeder`, run manually for local dev — never in production.
+  Demo PANs via `db:seed --class=PanSeeder` (needs the two Demo seeders first).
 - **AUTH_FAKE dev mode** (local .env): login page shows a one-click dev-accounts panel; any
   password signs in a seeded email. Hard-disabled in production. Post-login landing is
   role-aware (`User::landingRoute()`).
@@ -37,10 +42,15 @@ Final Approver → Served → Filed. Full behavior spec in `system-overview.md`;
 - Scaffold-era docs and mockups all live in `project-overview/` (kebab-case filenames):
   `ui-scaffold-checklist.md`, `development-plan.md`, `development-playbook.md`, `asana-plan.md`,
   `system-overview.md`, `panda-ui-concept.{html,css,js}`, `panda-login-concept.html`.
+- **Live in production** on `main`, behind Docker Compose + Cloudflare Tunnel (see
+  Dev-environment gotchas for the Reverb/`trustProxies` deployment notes). Real `AUTH_API_*`/
+  `USER_API_*`/`TURNSTILE_*` are set; `TURNSTILE_VERIFY=true`, `AUTH_FAKE=false`,
+  `APP_ENV=production` in prod `.env`.
 - **Remaining / deferred:** spreadsheet import-export on the Employee Directory
-  (maatwebsite/excel not installed — buttons toast "planned"); fill AUTH_API_*/TURNSTILE_*
-  in .env + recreate users with external-API-matching ids before go-live; scheduler
-  (`php artisan schedule:work` or Task Scheduler) needed for nightly backups + expiry reminders.
+  (maatwebsite/excel not installed — buttons toast "planned"); Google Drive offsite backup
+  complement (parked, not started — custom `BackupService`/`panda:backup` is local-disk only);
+  scheduler (`php artisan schedule:work` or a cron entry) needed for nightly backups + expiry
+  reminders + the reverb process supervised (currently its own Docker service).
 
 ## Key architecture decisions
 - **One `PanStatus` enum + `PanWorkflow` state-machine service** owns every transition; build and

@@ -20,10 +20,10 @@ class AdminSeeder extends Seeder
 
     public function run(): void
     {
-        $user = User::firstOrNew(['username' => 'admin_it']);
+        $user = User::firstOrNew(['username' => 'i.guno']);
         $user->fill([
-            'name' => 'IT Admin',
-            'email' => 'admin_it@bfcgroup.org',
+            'name' => 'Iverson Guno',
+            'email' => 'i.guno@bfcgroup.org',
             'position' => 'Systems Administrator',
             'farm_id' => Farm::where('name', 'BFC')->value('id'),
             ...array_fill_keys(self::ALL_PERMS, false),

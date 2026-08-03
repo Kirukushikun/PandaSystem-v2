@@ -1,58 +1,240 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# PANDA v2
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+> Workflow system for PANs (Personnel Action Notices) — HR requests that move through a fixed approval chain: Requestor → Division Head → HR Preparation → DH Confirmation → HR Approver → Final Approver → Served → Filed.
 
-## About Laravel
+![Laravel](https://img.shields.io/badge/Laravel-13.x-red?logo=laravel)
+![PHP](https://img.shields.io/badge/PHP-8.3+-blue?logo=php)
+![Livewire](https://img.shields.io/badge/Livewire-4.3-4E56A6?logo=livewire)
+![Tests](https://img.shields.io/badge/Tests-215%20passing-brightgreen)
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+---
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Table of Contents
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- [About](#about)
+- [Tech Stack](#tech-stack)
+- [Prerequisites](#prerequisites)
+- [Installation](#installation)
+- [Environment Variables](#environment-variables)
+- [Running Locally](#running-locally)
+- [Database Seeding](#database-seeding)
+- [Testing](#testing)
+- [Artisan Commands](#artisan-commands)
+- [Folder Structure](#folder-structure)
+- [Deployment](#deployment)
 
-## Learning Laravel
+---
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## About
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+PANDA replaces a manual, paper-driven PAN approval process with a single system of record. A PAN moves through a fixed state machine (`App\Services\PanWorkflow`) from the person requesting a personnel action all the way to filing, with every backward move (return, dispute, rejection) logged and explained to whoever it lands back on.
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+**Key features:**
 
-## Agentic Development
+- Full approval chain — Requestor, Division Head, HR Preparation (tagging, carry-over, Action Reference editor), DH Confirmation, HR + Final approval (with bulk actions and auto-Regularization), Serve/File
+- Manila/Tarlac confidentiality tagging, enforced by policy on every entry point (list, show, attachments, print) — never by hiding buttons
+- Real-time notification bell (Laravel Reverb + Echo) alongside in-app DB notifications for every stage handoff, return, and expiry reminder
+- Print-ready 3-copy PAN layout
+- Admin console: accounts/access management against the external company directory, department/farm reference data, roster
+- Maintenance: activity logs, mysqldump backups (`panda:backup`, retains newest 14), danger-zone purges
+- Authentication delegates entirely to the organization's external Auth API — PANDA never stores passwords, only the local profile + eight fixed permission booleans (no roles/permissions package)
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+---
+
+## Tech Stack
+
+| Layer         | Technology                          |
+|---------------|--------------------------------------|
+| Framework     | Laravel 13                          |
+| Language      | PHP 8.3+                            |
+| Frontend      | Livewire 4.3 (classic class-based components) |
+| Real-time     | Laravel Reverb + Laravel Echo (pusher-js protocol) |
+| Database      | MySQL 8.0                           |
+| Cache/Session/Queue | `database` driver (no Redis)  |
+| Bundler       | Vite                                |
+| Testing       | Pest (215 tests)                    |
+| Prod hosting  | Docker Compose (Apache) behind Cloudflare Tunnel |
+
+---
+
+## Prerequisites
+
+- **PHP** >= 8.3 with extensions: `pdo_mysql`, `mbstring`, `zip`, `gd`, `pcntl` (Reverb needs `pcntl` for signal handling)
+- **Composer** >= 2.x
+- **Node.js** >= 20.x and **npm**
+- **MySQL** >= 8.0 (or SQLite for a quick local spin-up — see below)
+- `mysqldump`/`mysql` CLI tools on `PATH` (or set `DB_DUMP_BINARY_PATH`) — used by `panda:backup`
+
+---
+
+## Installation
 
 ```bash
-composer require laravel/boost --dev
+# 1. Clone the repository
+git clone https://github.com/Kirukushikun/PandaSystem-v2.git
+cd PandaSystem-v2
 
-php artisan boost:install
+# 2. Install PHP dependencies
+composer install
+
+# 3. Copy environment file
+cp .env.example .env
+php artisan key:generate
+
+# 4. Configure your database in .env, then run migrations
+php artisan migrate
+
+# 5. Seed master data (see Database Seeding below)
+php artisan db:seed
+
+# 6. Install Node dependencies and build assets
+npm install
+npm run build   # or `npm run dev` for hot reload
+
+# 7. Create storage symlink
+php artisan storage:link
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+---
 
-## Contributing
+## Environment Variables
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Copy `.env.example` to `.env` and fill in the values below (`.env.example` has the full list with inline comments).
 
-## Code of Conduct
+```env
+# External Auth API — credentials are never validated locally, always
+# delegated to the org's Auth API
+AUTH_API_BASE_URI=
+AUTH_API_KEY=
+AUTH_USER_API_KEY=
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+# External User Listing API — powers the Admin > User Accounts directory
+USER_API_ENDPOINT=
+USER_API_KEY=
 
-## Security Vulnerabilities
+# Cloudflare Turnstile bot protection on the login form (must be true in prod)
+TURNSTILE_VERIFY=false
+TURNSTILE_SITE_KEY=
+TURNSTILE_SECRET_KEY=
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+# Dev-only: bypass the external Auth API with a one-click dev-accounts panel.
+# Any password signs in a seeded email. Hard-gated off in production.
+AUTH_FAKE=false
 
-## License
+# Laravel Reverb (real-time notification bell) — generated by `php artisan reverb:install`
+REVERB_APP_ID=
+REVERB_APP_KEY=
+REVERB_APP_SECRET=
+REVERB_HOST="localhost"
+REVERB_PORT=8080
+REVERB_SCHEME=http
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+# Directory containing mysqldump/mysql — set explicitly if it can't be
+# trusted to already be on the web server process's PATH
+# DB_DUMP_BINARY_PATH=
+```
+
+> **Note:** `APP_KEY` must match whatever key the external Auth/User APIs use to encrypt user IDs — a mismatch fails silently (every directory row is skipped, no error). See `authentication-implementation-guide.md`.
+>
+> Never commit your `.env` file — it's already in `.gitignore`.
+
+---
+
+## Running Locally
+
+Start each of the following in a separate terminal:
+
+```bash
+php artisan serve          # dev server
+php artisan queue:work     # queue worker (database driver)
+php artisan schedule:work  # scheduler (nightly backups, expiry reminders)
+php artisan reverb:start   # real-time notification bell
+npm run dev                # Vite hot reload
+```
+
+**Using Laragon (Windows):** point the vhost at `public/` and skip `php artisan serve`.
+
+---
+
+## Database Seeding
+
+`php artisan db:seed` is a **fresh-start slate only** — master reference data (farms, departments) plus the one real admin account (id pinned to the external system). No demo users, no sample roster, no PANs.
+
+To layer in local dev/demo fixtures on top:
+
+```bash
+php artisan db:seed --class=DemoUserSeeder      # one account per role
+php artisan db:seed --class=DemoEmployeeSeeder  # sample roster
+php artisan db:seed --class=PanSeeder           # sample PANs (needs both above)
+```
+
+---
+
+## Testing
+
+The project uses [Pest](https://pestphp.com/).
+
+```bash
+php artisan test                          # run all 215 tests
+php artisan test --filter=HrPreparation   # run a specific suite
+```
+
+---
+
+## Artisan Commands
+
+| Command                        | Description                                                        |
+|---------------------------------|----------------------------------------------------------------------|
+| `php artisan panda:backup`      | Dump the MySQL database into `storage/app/backups` (retains newest 14) |
+| `php artisan panda:expiry-reminders` | Notify HR preparers about PANs whose effectivity ends within the window |
+
+---
+
+## Folder Structure
+
+```
+app/
+├── Console/          # panda:backup, panda:expiry-reminders
+├── Enums/            # PanStatus, ConfidentialityTag, ActionType, ...
+├── Http/
+│   └── Controllers/  # LoginController — external Auth API flow
+├── Livewire/         # one folder per role (Requestor, HrPreparation, ...)
+├── Models/
+├── Notifications/    # PanActivity (database + broadcast)
+├── Observers/
+├── Policies/         # PanRequestPolicy, EmployeePolicy — the confidentiality gate
+├── Providers/
+└── Services/         # PanWorkflow (state machine), BackupService, UserDirectoryService
+
+database/
+├── factories/
+├── migrations/
+└── seeders/          # DatabaseSeeder (fresh-start), DemoUserSeeder,
+                       # DemoEmployeeSeeder, PanSeeder, ReferenceDataSeeder
+
+tests/
+├── Feature/
+└── Unit/
+```
+
+---
+
+## Deployment
+
+Production runs as Docker Compose services (`app` on Apache, `reverb` for the WebSocket server, `db`, `redis`) behind a Cloudflare Tunnel — no nginx/Apache exposed directly on the host.
+
+```
+Internet (HTTPS) → Cloudflare Tunnel → app container (Apache + Laravel)
+                                     → reverb container (Reverb WebSocket, own subdomain)
+```
+
+Key points:
+- `bootstrap/app.php` sets `trustProxies(at: '*')` — required behind the tunnel, or Livewire breaks with 401s/expired-session errors.
+- The `reverb` service needs the `pcntl` PHP extension in its image.
+- Reverb's WebSocket subdomain must be first-level (`panda-ws.example.com`, not `ws.panda.example.com`) for Cloudflare's free SSL to cover it.
+- `REVERB_HOST`/`PORT`/`SCHEME` must point at the public subdomain over `443`/`https` in production `.env`, set *before* `npm run build` (baked into the JS bundle at build time).
+
+**Cron** (add to server crontab):
+```
+* * * * * cd /var/www/panda-system && php artisan schedule:run >> /dev/null 2>&1
+```

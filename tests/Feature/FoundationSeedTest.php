@@ -32,9 +32,9 @@ test('one role per account: each stage has exactly one holder', function () {
         ->and(User::where('is_hr_head', true)->sole()->username)->toBe('mdelacruz')
         ->and(User::where('is_hr_approver', true)->sole()->username)->toBe('rocampo')
         ->and(User::where('is_final_approver', true)->sole()->username)->toBe('vsalazar')
-        ->and(User::where('is_admin', true)->sole()->username)->toBe('admin_it')
+        ->and(User::where('is_admin', true)->sole()->username)->toBe('i.guno')
         // pinned to match the external auth-system id ahead of go-live
-        ->and(User::where('username', 'admin_it')->sole()->id)->toBe(61)
+        ->and(User::where('username', 'i.guno')->sole()->id)->toBe(61)
         // HR Head Preparer is one role: mdelacruz carries the preparer flag alongside tnavarro
         ->and(User::where('is_hr_preparer', true)->pluck('username')->all())
         ->toEqualCanonicalizing(['tnavarro', 'mdelacruz']);

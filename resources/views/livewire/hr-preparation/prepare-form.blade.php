@@ -211,11 +211,11 @@
       @endcan
       <div class="spacer"></div>
       <a class="btn" href="{{ route('preparation.queue') }}" wire:navigate style="text-decoration:none">← Back to queue</a>
-      <button class="btn" type="button" wire:click="save">Save</button>
+      <button class="btn" type="button" wire:click="save" wire:loading.attr="disabled" wire:target="newAttachments,save">Save</button>
       @if ($pan->status === App\Enums\PanStatus::ReturnedToPreparer)
-      <button class="btn primary" type="button" wire:click="submit" wire:confirm="Resubmit {{ $pan->reference }} to the HR Approver?">Resubmit to HR Approver</button>
+      <button class="btn primary" type="button" wire:click="submit" wire:confirm="Resubmit {{ $pan->reference }} to the HR Approver?" wire:loading.attr="disabled" wire:target="newAttachments,submit">Resubmit to HR Approver</button>
       @else
-      <button class="btn primary" type="button" wire:click="submit" wire:confirm="Submit {{ $pan->reference }} for Division Head Confirmation?">Submit for Division Head Confirmation</button>
+      <button class="btn primary" type="button" wire:click="submit" wire:confirm="Submit {{ $pan->reference }} for Division Head Confirmation?" wire:loading.attr="disabled" wire:target="newAttachments,submit">Submit for Division Head Confirmation</button>
       @endif
     </div>
     </div>

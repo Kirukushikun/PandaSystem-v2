@@ -69,11 +69,11 @@
     </div>
     <div class="formfoot">
       @if ($panRequest?->status !== App\Enums\PanStatus::ReturnedToRequestor)
-      <button class="btn" type="button" wire:click="saveDraft" wire:loading.attr="disabled">Save as Draft</button>
+      <button class="btn" type="button" wire:click="saveDraft" wire:loading.attr="disabled" wire:target="newAttachments,saveDraft">Save as Draft</button>
       @endif
       <div class="spacer"></div>
       <a class="btn" href="{{ route('requests.index') }}" wire:navigate style="text-decoration:none">Cancel</a>
-      <button class="btn primary" type="button" wire:click="submit" wire:loading.attr="disabled">
+      <button class="btn primary" type="button" wire:click="submit" wire:loading.attr="disabled" wire:target="newAttachments,submit">
         {{ $panRequest?->status === App\Enums\PanStatus::ReturnedToRequestor ? 'Resubmit to Division Head' : 'Submit to Division Head' }}
       </button>
     </div>

@@ -60,6 +60,27 @@ return [
             'report' => false,
         ],
 
+        // Local half of spatie/laravel-backup's destination pair — kept separate from the
+        // 'local' disk (attachments/e-signs) so backups never share a namespace with them.
+        'backups' => [
+            'driver' => 'local',
+            'root' => storage_path('app/private/backups'),
+            'throw' => false,
+            'report' => false,
+        ],
+
+        // Cloud half — see App\Providers\GoogleDriveServiceProvider for the driver
+        // registration. Inert until GOOGLE_DRIVE_* env vars are actually set (see
+        // config/backup.php, which only adds 'google' to the destination list once
+        // GOOGLE_DRIVE_REFRESH_TOKEN is present).
+        'google' => [
+            'driver' => 'google',
+            'clientId' => env('GOOGLE_DRIVE_CLIENT_ID', ''),
+            'clientSecret' => env('GOOGLE_DRIVE_CLIENT_SECRET', ''),
+            'refreshToken' => env('GOOGLE_DRIVE_REFRESH_TOKEN', ''),
+            'folder' => env('GOOGLE_DRIVE_FOLDER', ''),
+        ],
+
     ],
 
     /*

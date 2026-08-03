@@ -63,9 +63,10 @@ return [
                 Mysql::ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
             ]) : [],
 
-            // Read by App\Services\BackupService — the directory holding mysqldump/mysql,
-            // set explicitly since the web server process's PATH can't be trusted (and a
-            // production container image may not have mysql-client installed at all).
+            // Read by spatie/db-dumper (via spatie/laravel-backup) — the directory holding
+            // mysqldump/mysql, set explicitly since the web server process's PATH can't be
+            // trusted (and a production container image may not have mysql-client installed
+            // at all).
             'dump' => [
                 'dump_binary_path' => env('DB_DUMP_BINARY_PATH'),
             ],

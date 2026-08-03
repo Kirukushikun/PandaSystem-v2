@@ -36,7 +36,7 @@ PANDA replaces a manual, paper-driven PAN approval process with a single system 
 - Real-time notification bell (Laravel Reverb + Echo) alongside in-app DB notifications for every stage handoff, return, and expiry reminder
 - Print-ready 3-copy PAN layout
 - Admin console: accounts/access management against the external company directory, department/farm reference data, roster
-- Maintenance: activity logs, mysqldump backups (`panda:backup`, retains newest 14), danger-zone purges
+- Maintenance: activity logs, spatie/laravel-backup to local disk + Google Drive (retains newest 14 days), danger-zone purges
 - Authentication delegates entirely to the organization's external Auth API — PANDA never stores passwords, only the local profile + eight fixed permission booleans (no roles/permissions package)
 
 ---
@@ -63,7 +63,7 @@ PANDA replaces a manual, paper-driven PAN approval process with a single system 
 - **Composer** >= 2.x
 - **Node.js** >= 20.x and **npm**
 - **MySQL** >= 8.0 (or SQLite for a quick local spin-up — see below)
-- `mysqldump`/`mysql` CLI tools on `PATH` (or set `DB_DUMP_BINARY_PATH`) — used by `panda:backup`
+- `mysqldump`/`mysql` CLI tools on `PATH` (or set `DB_DUMP_BINARY_PATH`) — used by spatie/laravel-backup and the restore flow
 
 ---
 
@@ -132,6 +132,13 @@ REVERB_SCHEME=http
 # Directory containing mysqldump/mysql — set explicitly if it can't be
 # trusted to already be on the web server process's PATH
 # DB_DUMP_BINARY_PATH=
+
+# Offsite backup copy (spatie/laravel-backup) — leave GOOGLE_DRIVE_REFRESH_TOKEN blank
+# to run local-disk-only; see Artisan Commands below.
+GOOGLE_DRIVE_CLIENT_ID=
+GOOGLE_DRIVE_CLIENT_SECRET=
+GOOGLE_DRIVE_REFRESH_TOKEN=
+GOOGLE_DRIVE_FOLDER=
 ```
 
 > **Note:** `APP_KEY` must match whatever key the external Auth/User APIs use to encrypt user IDs — a mismatch fails silently (every directory row is skipped, no error). See `authentication-implementation-guide.md`.
@@ -147,7 +154,7 @@ Start each of the following in a separate terminal:
 ```bash
 php artisan serve          # dev server
 php artisan queue:work     # queue worker (database driver)
-php artisan schedule:work  # scheduler (nightly backups, expiry reminders)
+php artisan schedule:work  # scheduler (daily backups at 18:00, expiry reminders)
 php artisan reverb:start   # real-time notification bell
 npm run dev                # Vite hot reload
 ```
@@ -185,7 +192,9 @@ php artisan test --filter=HrPreparation   # run a specific suite
 
 | Command                        | Description                                                        |
 |---------------------------------|----------------------------------------------------------------------|
-| `php artisan panda:backup`      | Dump the MySQL database into `storage/app/backups` (retains newest 14) |
+| `php artisan backup:run --only-db` | Dump the database to the `backups` disk, and Google Drive if configured (retains newest 14 days — `config/backup.php`) |
+| `php artisan backup:clean`      | Prune backups past retention on both destinations |
+| `php artisan backup:monitor`    | Check backup health against `config/backup.php`'s `monitor_backups` thresholds |
 | `php artisan panda:expiry-reminders` | Notify HR preparers about PANs whose effectivity ends within the window |
 
 ---
@@ -194,7 +203,7 @@ php artisan test --filter=HrPreparation   # run a specific suite
 
 ```
 app/
-├── Console/          # panda:backup, panda:expiry-reminders
+├── Console/          # panda:expiry-reminders
 ├── Enums/            # PanStatus, ConfidentialityTag, ActionType, ...
 ├── Http/
 │   └── Controllers/  # LoginController — external Auth API flow

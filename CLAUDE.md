@@ -8,8 +8,8 @@ Final Approver → Served → Filed. Full behavior spec in `system-overview.md`;
 ## Tech stack
 - **Actual:** Laravel 13 + Livewire 4.3 (plan said 12/3 — composer won; classic class-based
   components in `app/Livewire` work fine), MySQL (Laragon on Windows), Vite, Pest, `database` queue.
-- **Packages planned:** `spatie/laravel-backup`, `maatwebsite/excel`. Deliberately NOT using
-  spatie/laravel-permission (roles are 8 fixed booleans on `users` + Gates/Policies).
+- **Packages planned:** `maatwebsite/excel`. Deliberately NOT using spatie/laravel-permission
+  (roles are 8 fixed booleans on `users` + Gates/Policies).
 - Auth comes from the **external company system** (via `ExternalAuthService`); PANDA never stores
   passwords, only the local profile + permissions.
 
@@ -21,8 +21,8 @@ Final Approver → Served → Filed. Full behavior spec in `system-overview.md`;
   print (3-copy layout, local assets), notifications (status handoffs + `panda:expiry-reminders`,
   live in-app bell via Laravel Reverb — see Dev-environment gotchas; OS-level push (FCM) was
   deliberately skipped, in-app only),
-  Admin (accounts/access/roster), Maintenance (logs, reference values, mysqldump backups via
-  `panda:backup`, danger-zone purges).
+  Admin (accounts/access/roster), Maintenance (logs, reference values, backups via
+  spatie/laravel-backup, danger-zone purges).
 - **Master data finalized**: farms BDL/BFC/BRD/PFC/RH; 11 departments (Accounting, Audit,
   Feedmill, General Services, Human Resources, IT and Security Services, Poultry, Purchasing,
   Sales & Marketing, Swine, Treasury). **`db:seed` is a fresh-start slate only**:
@@ -46,11 +46,28 @@ Final Approver → Served → Filed. Full behavior spec in `system-overview.md`;
   Dev-environment gotchas for the Reverb/`trustProxies` deployment notes). Real `AUTH_API_*`/
   `USER_API_*`/`TURNSTILE_*` are set; `TURNSTILE_VERIFY=true`, `AUTH_FAKE=false`,
   `APP_ENV=production` in prod `.env`.
+- **Backups run on spatie/laravel-backup** (not the earlier custom `BackupService`/`panda:backup`
+  mysqldump script — retired), daily at 18:00 (end of working hours) to two destinations: the
+  `backups` disk (`storage/app/private/backups`, kept separate from the `local` attachments/
+  e-sign disk) and Google Drive via `masbug/flysystem-google-drive-ext`
+  (`App\Providers\GoogleDriveServiceProvider` registers the `google` filesystem driver). Drive is
+  entirely optional — `config/backup.php`'s destination/monitor disk lists only include `google`
+  when `GOOGLE_DRIVE_REFRESH_TOKEN` is actually set (see `.env.example`), so an unconfigured
+  environment (including the test suite) runs local-only with no network calls. Both copies come
+  from the same `backup:run` invocation, so they always pair up by filename/size — the Maintenance
+  → Backup & Restore screen (`App\Livewire\Maintenance\Backups`) reflects that: "retained" counts
+  pairs, not files, and each row shows "Local only" vs "Local · Drive". Restore
+  (`App\Services\BackupService::restore()`) accepts either a raw `.sql` upload or one of Spatie's
+  own `.zip` archives (unzips `db-dumps/*.sql` out of it first) — a safety backup is always taken
+  before overwriting. **Vendor patch**: `BackupDestination::isReachable()` is hand-patched to skip
+  the reachability probe for the `google` disk (masbug's adapter can't reliably list an empty
+  folder path) — this file gets overwritten on every `composer update spatie/laravel-backup`, so
+  reapply it (see the comment left in the vendor file, and `project-overview`'s "Spatie Backup to
+  Google Drive Setup" doc for the original source).
 - **Remaining / deferred:** spreadsheet import-export on the Employee Directory
-  (maatwebsite/excel not installed — buttons toast "planned"); Google Drive offsite backup
-  complement (parked, not started — custom `BackupService`/`panda:backup` is local-disk only);
-  scheduler (`php artisan schedule:work` or a cron entry) needed for nightly backups + expiry
-  reminders + the reverb process supervised (currently its own Docker service).
+  (maatwebsite/excel not installed — buttons toast "planned"); scheduler
+  (`php artisan schedule:work` or a cron entry) needed for backups + expiry reminders + the
+  reverb process supervised (currently its own Docker service).
 
 ## Key architecture decisions
 - **One `PanStatus` enum + `PanWorkflow` state-machine service** owns every transition; build and

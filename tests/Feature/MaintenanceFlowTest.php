@@ -9,9 +9,12 @@ use App\Models\AccessLog;
 use App\Models\Department;
 use App\Models\Employee;
 use App\Models\Farm;
+use App\Models\PanAttachment;
 use App\Models\PanRequest;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
@@ -78,23 +81,46 @@ test('reference values add with unique names and refuse to delete anything in us
 |--------------------------------------------------------------------------
 */
 
-test('a manual backup shells out to mysqldump and lists the dump', function () {
-    Storage::fake();
-    Process::fake(function ($process) {
-        // the service verifies the file exists — fake the dump being written
-        foreach ($process->command as $arg) {
-            if (str_starts_with((string) $arg, '--result-file=')) {
-                file_put_contents(substr($arg, 14), '-- fake dump');
-            }
-        }
-
-        return Process::result();
-    });
+test('running a manual backup delegates to spatie/laravel-backup\'s own command', function () {
+    Artisan::shouldReceive('call')
+        ->once()
+        ->with('backup:run', ['--only-db' => true])
+        ->andReturn(0);
 
     Livewire::test(Backups::class)->call('runBackup');
+});
 
-    Process::assertRan(fn ($process) => str_contains($process->command[0] ?? '', 'mysqldump'));
-    expect(app(App\Services\BackupService::class)->list())->toHaveCount(1);
+test('the backups screen lists whatever spatie/laravel-backup has written to the local disk', function () {
+    config(['filesystems.disks.google.refreshToken' => '']); // Drive not configured in tests
+
+    Storage::fake('backups');
+    Storage::disk('backups')->put('2026-08-01-18-00-00.zip', str_repeat('x', 2048));
+    Storage::disk('backups')->put('2026-08-02-18-00-00.zip', str_repeat('x', 4096));
+
+    Livewire::test(Backups::class)
+        ->assertSee('2026-08-02-18-00-00.zip')
+        ->assertSee('2026-08-01-18-00-00.zip')
+        ->assertSee('Local only')
+        ->assertViewHas('stats', fn ($stats) => $stats['retained'] === 2);
+});
+
+test('restoring from an uploaded dump takes a safety backup first, mysql import failures surface as a toast', function () {
+    config(['filesystems.disks.google.refreshToken' => '']);
+
+    Storage::fake('backups');
+    Storage::fake();
+    Artisan::shouldReceive('call')->with('backup:run', ['--only-db' => true])->andReturn(0);
+    Process::fake(fn () => Process::result(errorOutput: 'ERROR 1045', exitCode: 1));
+
+    $file = UploadedFile::fake()->createWithContent('dump.sql', '-- dummy dump');
+
+    Livewire::test(Backups::class)
+        ->set('restoreFile', $file)
+        ->call('openRestore')
+        ->set('confirmInput', 'RESTORE')
+        ->call('runRestore');
+
+    Process::assertRan(fn ($process) => str_contains($process->command[0] ?? '', 'mysql'));
 });
 
 /*
@@ -126,7 +152,7 @@ test('purging attachments keeps the PAN records but clears the files', function 
     Storage::fake();
     $pan = PanRequest::factory()->status(PanStatus::Filed)->create();
     Storage::put('pans/'.$pan->reference.'/doc.pdf', 'x');
-    \App\Models\PanAttachment::factory()->create([
+    PanAttachment::factory()->create([
         'pan_request_id' => $pan->id, 'path' => 'pans/'.$pan->reference.'/doc.pdf',
     ]);
 

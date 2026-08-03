@@ -5,12 +5,16 @@
 
   <div class="htop">
     <div><h2>Backup &amp; Restore</h2>
-      <p>Scheduled backups run automatically every night at 01:00; from here you can also trigger one manually or restore from an uploaded backup.</p></div>
+      <p>Scheduled backups run automatically every day at 18:00 (end of working hours), to local disk{{ $driveConfigured ? ' and Google Drive' : '' }}; from here you can also trigger one manually or restore from an uploaded backup.</p></div>
   </div>
+
+  @unless ($driveConfigured)
+  <div class="note warn"><span class="ic">!</span><span>Google Drive is not configured — backups are local disk only right now. Set <code>GOOGLE_DRIVE_*</code> in <code>.env</code> to add the offsite copy.</span></div>
+  @endunless
 
   <div class="stats">
     <x-stat :value="$stats['health']" label="Backup health check" :tone="$stats['healthTone']" />
-    <x-stat value="01:00" label="Nightly schedule" />
+    <x-stat value="18:00" label="Daily schedule" />
     <x-stat :value="$stats['retained']" label="Backups retained" />
     <x-stat :value="$stats['size']" label="Latest backup size" tone="acc" />
   </div>
@@ -22,9 +26,12 @@
         @forelse ($backups as $backup)
         <div class="logrow" wire:key="b-{{ $backup['file'] }}"><time>{{ date('M j · H:i', $backup['at']) }}</time>
           <span style="flex:1">{{ basename($backup['file']) }} · {{ round($backup['size'] / 1048576, 1) }} MB</span>
+          <span style="font-size:11px;color:{{ $backup['onDrive'] ? 'var(--accent)' : 'var(--ink-3)' }};margin-right:8px">
+            {{ $driveConfigured ? ($backup['onDrive'] ? 'Local · Drive' : 'Local only') : 'Local only' }}
+          </span>
           <a class="btn ghost" style="padding:2px 8px;font-size:12px;text-decoration:none" href="{{ route('maintenance.backups.download', basename($backup['file'])) }}">Download</a></div>
         @empty
-        <div class="logrow"><span style="color:var(--ink-3)">No backups yet — run one now, or wait for the nightly schedule.</span></div>
+        <div class="logrow"><span style="color:var(--ink-3)">No backups yet — run one now, or wait for the daily schedule.</span></div>
         @endforelse
       </div>
       <div style="display:flex;gap:8px;padding:14px 16px;border-top:1px solid var(--line-soft)">
@@ -39,8 +46,8 @@
       <div class="pad" style="display:flex;flex-direction:column;gap:12px;padding-top:14px">
         <label class="upload" style="cursor:pointer">
           <b>{{ $restoreFile ? $restoreFile->getClientOriginalName() : 'Choose a backup file' }}</b>
-          {{ $restoreFile ? '— ready to restore' : 'or drag it here — .sql produced by this system' }}
-          <input type="file" accept=".sql" wire:model="restoreFile" style="display:none">
+          {{ $restoreFile ? '— ready to restore' : 'or drag it here — a raw .sql dump, or a .zip from the list above' }}
+          <input type="file" accept=".sql,.zip" wire:model="restoreFile" style="display:none">
         </label>
         @error('restoreFile')<span class="hint" style="color:var(--red)">{{ $message }}</span>@enderror
         <div class="note warn" style="margin:0"><span class="ic">!</span>Restoring overwrites current data with the backup's contents. A safety backup is taken automatically first.</div>

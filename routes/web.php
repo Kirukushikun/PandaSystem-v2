@@ -2,8 +2,25 @@
 
 use App\Http\Controllers\AuthenticationController;
 use App\Http\Controllers\LoginController;
+use App\Livewire\Admin\UserAccess;
+use App\Livewire\Admin\Users;
+use App\Livewire\DivisionHead\Queue;
+use App\Livewire\Help\Glossary;
+use App\Livewire\HrPreparation\EmployeeHistory;
+use App\Livewire\HrPreparation\Employees;
+use App\Livewire\HrPreparation\PrepareForm;
+use App\Livewire\Maintenance\Backups;
+use App\Livewire\Maintenance\DangerZone;
+use App\Livewire\Maintenance\Logs;
+use App\Livewire\Maintenance\ReferenceValues;
+use App\Livewire\Requestor\Form;
+use App\Livewire\Requestor\Index;
+use App\Livewire\Requestor\Show;
 use App\Models\PanRequest;
+use App\Models\User;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 
@@ -21,26 +38,26 @@ Route::middleware('auth')->group(function () {
     Route::get('/', fn () => redirect(auth()->user()->landingRoute()))->name('home');
 
     Route::middleware('can:requestor')->group(function () {
-        Route::get('/requests', App\Livewire\Requestor\Index::class)->name('requests.index');
-        Route::get('/requests/create', App\Livewire\Requestor\Form::class)->name('requests.create');
-        Route::get('/requests/{pan}/edit', App\Livewire\Requestor\Form::class)->name('requests.edit');
-        Route::get('/requests/{pan}', App\Livewire\Requestor\Show::class)->name('requests.show');
+        Route::get('/requests', Index::class)->name('requests.index');
+        Route::get('/requests/create', Form::class)->name('requests.create');
+        Route::get('/requests/{pan}/edit', Form::class)->name('requests.edit');
+        Route::get('/requests/{pan}', Show::class)->name('requests.show');
     });
 
     Route::middleware('can:division_head')->group(function () {
-        Route::get('/division', App\Livewire\DivisionHead\Queue::class)->name('division.queue');
+        Route::get('/division', Queue::class)->name('division.queue');
         Route::get('/division/{pan}', App\Livewire\DivisionHead\Show::class)->name('division.show');
     });
 
     Route::middleware('can:hr_preparer')->group(function () {
         Route::get('/preparation', App\Livewire\HrPreparation\Queue::class)->name('preparation.queue');
-        Route::get('/preparation/{pan}/edit', App\Livewire\HrPreparation\PrepareForm::class)->name('preparation.edit');
+        Route::get('/preparation/{pan}/edit', PrepareForm::class)->name('preparation.edit');
         Route::get('/preparation/{pan}', App\Livewire\HrPreparation\Show::class)->name('preparation.show');
-        Route::get('/employees', App\Livewire\HrPreparation\Employees::class)->name('employees.index');
+        Route::get('/employees', Employees::class)->name('employees.index');
         // Named {employeeNo}, not {employee} — the component's public $employee
         // property (typed Employee) would otherwise collide with Livewire's
         // implicit route-model-binding-by-property-name and 404 on a non-numeric key.
-        Route::get('/employees/{employeeNo}/pans', App\Livewire\HrPreparation\EmployeeHistory::class)->name('employees.history');
+        Route::get('/employees/{employeeNo}/pans', EmployeeHistory::class)->name('employees.history');
     });
 
     Route::get('/hr-approval', App\Livewire\HrApprover\Queue::class)->middleware('can:hr_approver')->name('hr-approval.queue');
@@ -59,7 +76,7 @@ Route::middleware('auth')->group(function () {
             }
 
             try {
-                $response = Illuminate\Support\Facades\Http::withHeaders(['x-api-key' => config('services.user_api.key')])
+                $response = Http::withHeaders(['x-api-key' => config('services.user_api.key')])
                     ->withOptions(['verify' => storage_path('cacert.pem')])
                     ->timeout(10)->connectTimeout(5)
                     ->post(config('services.user_api.endpoint'));
@@ -74,7 +91,7 @@ Route::middleware('auth')->group(function () {
                 'status' => $response->status(),
                 'first_record_decrypt_check' => $first === null ? 'no records' : (function () use ($first) {
                     try {
-                        return ['id_decrypts_to' => Illuminate\Support\Facades\Crypt::decryptString($first['id'] ?? '')];
+                        return ['id_decrypts_to' => Crypt::decryptString($first['id'] ?? '')];
                     } catch (Throwable) {
                         return 'FAILED — APP_KEY mismatch with the auth system, or id is not encrypted';
                     }
@@ -83,21 +100,22 @@ Route::middleware('auth')->group(function () {
             ], 200, [], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
         });
 
-        Route::get('/admin/users', App\Livewire\Admin\Users::class)->name('admin.users');
-        Route::get('/admin/users/{user}', App\Livewire\Admin\UserAccess::class)->name('admin.users.access');
+        Route::get('/admin/users', Users::class)->name('admin.users');
+        Route::get('/admin/users/{user}', UserAccess::class)->name('admin.users.access');
 
         // Mockup's Maintenance subtabs are separate routes (per CLAUDE.md UI contract)
         Route::redirect('/maintenance', '/maintenance/logs');
-        Route::get('/maintenance/logs', App\Livewire\Maintenance\Logs::class)->name('maintenance.logs');
-        Route::get('/maintenance/reference', App\Livewire\Maintenance\ReferenceValues::class)->name('maintenance.reference');
-        Route::get('/maintenance/backups', App\Livewire\Maintenance\Backups::class)->name('maintenance.backups');
+        Route::get('/maintenance/logs', Logs::class)->name('maintenance.logs');
+        Route::get('/maintenance/reference', ReferenceValues::class)->name('maintenance.reference');
+        Route::get('/maintenance/backups', Backups::class)->name('maintenance.backups');
         Route::get('/maintenance/backups/{file}/download', function (string $file) {
-            $path = App\Services\BackupService::DIR.'/'.basename($file); // no traversal
-            abort_unless(Storage::exists($path), 404);
+            $disk = Storage::disk('backups');
+            $path = basename($file); // no traversal
+            abort_unless($disk->exists($path), 404);
 
-            return Storage::download($path);
+            return $disk->download($path);
         })->name('maintenance.backups.download');
-        Route::get('/maintenance/danger', App\Livewire\Maintenance\DangerZone::class)->name('maintenance.danger');
+        Route::get('/maintenance/danger', DangerZone::class)->name('maintenance.danger');
     });
 
     // Roster CRUD: admins and HR Preparers both — see manage_roster gate.
@@ -128,11 +146,11 @@ Route::middleware('auth')->group(function () {
 
     // Participant e-signatures for the print view (private disk; viewer already
     // passed the print policy — the image route just requires a signed-in user).
-    Route::get('/users/{user}/esign', function (App\Models\User $user) {
+    Route::get('/users/{user}/esign', function (User $user) {
         abort_unless($user->esign_path && Storage::exists($user->esign_path), 404);
 
         return Storage::response($user->esign_path);
     })->name('user.esign');
 
-    Route::get('/help/glossary', App\Livewire\Help\Glossary::class)->name('help.glossary');
+    Route::get('/help/glossary', Glossary::class)->name('help.glossary');
 });

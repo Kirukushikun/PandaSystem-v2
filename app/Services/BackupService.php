@@ -2,84 +2,85 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Storage;
 use RuntimeException;
 
 /**
- * Local MySQL backups via mysqldump into storage/app/backups. Deliberately
- * lean (no spatie/laravel-backup): one internal MySQL database on one box.
- * Restore always takes a safety backup first.
+ * Restoring a database dump into MySQL — the one piece spatie/laravel-backup doesn't
+ * provide itself. Creating, listing, and pruning backups (local + Google Drive) is
+ * entirely Spatie's job now — config/backup.php, scheduled in routes/console.php.
+ * This only imports an uploaded .sql file back in, after taking a fresh safety
+ * backup first.
  */
 class BackupService
 {
-    public const DIR = 'backups';
+    public const RESTORE_UPLOAD_DIR = 'restore-uploads';
 
-    public const KEEP = 14; // nightly retention
-
-    public function run(string $suffix = ''): string
-    {
-        $db = config('database.connections.mysql');
-        $file = self::DIR.'/panda_'.now()->format('Y-m-d_His').($suffix ? "_{$suffix}" : '').'.sql';
-
-        Storage::makeDirectory(self::DIR);
-
-        $result = Process::run(command: [
-            $this->binary('mysqldump'),
-            '--host='.$db['host'], '--port='.$db['port'], '--user='.$db['username'],
-            '--password='.$db['password'], '--result-file='.Storage::path($file),
-            '--routines', '--single-transaction', $db['database'],
-        ]);
-
-        if ($result->failed() || ! Storage::exists($file)) {
-            Storage::delete($file);
-            throw new RuntimeException('mysqldump failed: '.trim($result->errorOutput()));
-        }
-
-        $this->prune();
-
-        return $file;
-    }
-
-    /** Overwrites the database from a dump — after taking a safety backup. */
+    /**
+     * Overwrites the database from an uploaded dump — after a safety backup. Accepts
+     * either a raw .sql file or one of spatie/laravel-backup's own .zip archives (the
+     * kind the "Recent backups" list produces), so a previously downloaded backup can
+     * be fed straight back in without manual unzipping first.
+     */
     public function restore(string $path): void
     {
         if (! Storage::exists($path)) {
             throw new RuntimeException('Backup file not found.');
         }
 
-        $this->run('pre-restore-safety');
+        $extractedTemp = null;
+        $sqlPath = str_ends_with($path, '.zip')
+            ? ($extractedTemp = $this->extractDumpFromZip($path))
+            : Storage::path($path);
+
+        Artisan::call('backup:run', ['--only-db' => true]);
 
         $db = config('database.connections.mysql');
-        $result = Process::input(fopen(Storage::path($path), 'r'))->run(command: [
+        $result = Process::input(fopen($sqlPath, 'r'))->run(command: [
             $this->binary('mysql'),
             '--host='.$db['host'], '--port='.$db['port'], '--user='.$db['username'],
             '--password='.$db['password'], $db['database'],
         ]);
+
+        Storage::delete($path);
+        if ($extractedTemp) {
+            @unlink($extractedTemp);
+        }
 
         if ($result->failed()) {
             throw new RuntimeException('restore failed: '.trim($result->errorOutput()));
         }
     }
 
-    /** @return array<int, array{file: string, size: int, at: int}> newest first */
-    public function list(): array
+    /** @return string path to a temporary extracted .sql file — caller must unlink it */
+    private function extractDumpFromZip(string $path): string
     {
-        return collect(Storage::files(self::DIR))
-            ->filter(fn (string $file) => str_ends_with($file, '.sql'))
-            ->map(fn (string $file) => [
-                'file' => $file,
-                'size' => Storage::size($file),
-                'at' => Storage::lastModified($file),
-            ])
-            ->sortByDesc('at')->values()->all();
-    }
-
-    private function prune(): void
-    {
-        foreach (array_slice($this->list(), self::KEEP) as $old) {
-            Storage::delete($old['file']);
+        $zip = new \ZipArchive;
+        if ($zip->open(Storage::path($path)) !== true) {
+            throw new RuntimeException('Could not open the uploaded backup archive.');
         }
+
+        $dumpEntry = null;
+        for ($i = 0; $i < $zip->numFiles; $i++) {
+            $name = $zip->getNameIndex($i);
+            if (str_starts_with($name, 'db-dumps/') && str_ends_with($name, '.sql')) {
+                $dumpEntry = $name;
+                break;
+            }
+        }
+
+        if ($dumpEntry === null) {
+            $zip->close();
+            throw new RuntimeException('No database dump found inside the uploaded archive.');
+        }
+
+        $tempPath = tempnam(sys_get_temp_dir(), 'panda_restore_').'.sql';
+        copy('zip://'.Storage::path($path).'#'.$dumpEntry, $tempPath);
+        $zip->close();
+
+        return $tempPath;
     }
 
     /**

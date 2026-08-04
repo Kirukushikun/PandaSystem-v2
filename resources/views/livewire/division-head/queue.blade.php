@@ -35,7 +35,7 @@
         <td class="ref">{{ $pan->reference }}</td>
         <td><div class="who"><b>{{ $pan->employee->name }}</b><small>{{ $pan->employee->employee_no }}</small></div></td>
         <td>{{ $pan->action_type->label() }}</td>
-        <td>{{ $pan->requestedBy->name }}</td>
+        <td>{{ $pan->requestedByName() }}</td>
         <td>
           @can('approveDivision', $pan)
             <x-status-pill status="with-division-head">Awaiting your decision</x-status-pill>

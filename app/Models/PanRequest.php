@@ -27,6 +27,7 @@ class PanRequest extends Model
         'origin', 'requested_by', 'division_head_id', 'hr_preparer_id',
         'hr_approver_id', 'final_approver_id', 'previous_pan_id',
         'submitted_at', 'filed_at',
+        'legacy_id', 'legacy_department', 'legacy_actors',
     ];
 
     protected function casts(): array
@@ -38,6 +39,7 @@ class PanRequest extends Model
             'origin' => PanOrigin::class,
             'submitted_at' => 'datetime',
             'filed_at' => 'datetime',
+            'legacy_actors' => 'array',
         ];
     }
 
@@ -104,6 +106,17 @@ class PanRequest extends Model
     public function requestedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'requested_by');
+    }
+
+    /**
+     * Imported legacy PANs have no real requestedBy account (v1 actor ids don't map to v2
+     * users — see legacy_actors) but still need a name to display. Falls back to the
+     * preserved historical name; '—' only for the genuinely-unknown case (HR-initiated PANs,
+     * which never had a requestor at all).
+     */
+    public function requestedByName(): string
+    {
+        return $this->requestedBy?->name ?? $this->legacy_actors['requested_by'] ?? '—';
     }
 
     public function divisionHead(): BelongsTo

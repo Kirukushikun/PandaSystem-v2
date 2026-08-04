@@ -33,7 +33,7 @@
       :employee-id="$pan->employee->employee_no"
       :department="$pan->employee->department->name"
       :action="$pan->action_type->label()"
-      :requested-by="$pan->requestedBy->name"
+      :requested-by="$pan->requestedByName()"
       :submitted="$pan->submitted_at?->format('M j, Y · H:i') ?? '—'"
       :justification="$pan->justification ?? '—'"
       :justification-rows="$form !== null ? 2 : 3"

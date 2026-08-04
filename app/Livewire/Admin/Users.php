@@ -79,9 +79,20 @@ class Users extends Component
         $user = User::withTrashed()->find($id);
 
         if ($user !== null) {
+            // Identity always resyncs from the API on restore — it's the source of truth, and a
+            // stale/wrong local row (e.g. a name change since revoke, or an id previously used by
+            // an unrelated seeded/test row) must never keep showing under the old identity.
+            // Permission flags are deliberately left alone — restoring the same person's access
+            // is meant to bring their prior permissions back untouched.
             if ($user->trashed()) {
                 $user->restore();
             }
+            $user->fill([
+                'name' => $api['name'],
+                'email' => $api['email'],
+                'external_id' => (string) $id,
+            ]);
+            $user->save();
         } else {
             $user = new User;
             $user->fill([

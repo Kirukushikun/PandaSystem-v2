@@ -4,6 +4,7 @@ namespace App\Livewire\Maintenance;
 
 use App\Services\BackupService;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Cache;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -32,10 +33,13 @@ class Backups extends Component
 
     public $restoreFile = null; // uploaded .sql dump
 
+    private const SUMMARY_CACHE_KEY = 'maintenance.backups.summary';
+
     public function runBackup(): void
     {
         try {
             Artisan::call('backup:run', ['--only-db' => true]);
+            Cache::forget(self::SUMMARY_CACHE_KEY);
             $note = $this->driveConfigured() ? ' — synced to local and Google Drive.' : ' (local only — Drive not configured).';
             $this->js('showToast('.json_encode('Backup complete'.$note).')');
         } catch (\Throwable $e) {
@@ -72,6 +76,7 @@ class Backups extends Component
 
         try {
             app(BackupService::class)->restore($path);
+            Cache::forget(self::SUMMARY_CACHE_KEY);
             $this->js("showToast('Restore complete — a pre-restore safety backup was taken first.')");
         } catch (\RuntimeException $e) {
             report($e);
@@ -87,30 +92,46 @@ class Backups extends Component
         return filled(config('filesystems.disks.google.refreshToken'));
     }
 
+    /**
+     * Listing 'google' hits the Drive API over the network. Livewire re-runs render() on
+     * every round-trip — including every keystroke of wire:model.live="confirmInput" and
+     * every click to open the modal — so without caching, typing "RESTORE" fires a live
+     * Drive API call per character. Cached briefly and invalidated on the two actions that
+     * actually change the backup list (runBackup, runRestore's pre-restore safety backup).
+     */
+    private function summary(): array
+    {
+        return Cache::remember(self::SUMMARY_CACHE_KEY, 30, function () {
+            $local = BackupDestination::create('backups', '')->fresh()->backups();
+            $driveFiles = $this->driveConfigured()
+                ? BackupDestination::create('google', '')->fresh()->backups()->map(fn ($b) => basename($b->path()))->all()
+                : [];
+
+            $backups = $local->map(fn ($b) => [
+                'file' => basename($b->path()),
+                'size' => (int) $b->sizeInBytes(),
+                'at' => $b->date()->timestamp,
+                'onDrive' => in_array(basename($b->path()), $driveFiles, true),
+            ])->values()->all();
+
+            $latest = $backups[0] ?? null;
+
+            $health = 'No backups';
+            $healthTone = 'bad';
+            if ($latest !== null) {
+                $statuses = BackupDestinationStatusFactory::createForMonitorConfig(app(BackupConfig::class)->monitoredBackups);
+                $healthy = $statuses->every(fn ($status) => $status->isHealthy());
+                $health = $healthy ? 'Healthy' : 'Unhealthy';
+                $healthTone = $healthy ? 'ok' : 'bad';
+            }
+
+            return ['backups' => $backups, 'latest' => $latest, 'health' => $health, 'healthTone' => $healthTone];
+        });
+    }
+
     public function render()
     {
-        $local = BackupDestination::create('backups', '')->fresh()->backups();
-        $driveFiles = $this->driveConfigured()
-            ? BackupDestination::create('google', '')->fresh()->backups()->map(fn ($b) => basename($b->path()))->all()
-            : [];
-
-        $backups = $local->map(fn ($b) => [
-            'file' => basename($b->path()),
-            'size' => (int) $b->sizeInBytes(),
-            'at' => $b->date()->timestamp,
-            'onDrive' => in_array(basename($b->path()), $driveFiles, true),
-        ])->values()->all();
-
-        $latest = $backups[0] ?? null;
-
-        $health = 'No backups';
-        $healthTone = 'bad';
-        if ($latest !== null) {
-            $statuses = BackupDestinationStatusFactory::createForMonitorConfig(app(BackupConfig::class)->monitoredBackups);
-            $healthy = $statuses->every(fn ($status) => $status->isHealthy());
-            $health = $healthy ? 'Healthy' : 'Unhealthy';
-            $healthTone = $healthy ? 'ok' : 'bad';
-        }
+        ['backups' => $backups, 'latest' => $latest, 'health' => $health, 'healthTone' => $healthTone] = $this->summary();
 
         return view('livewire.maintenance.backups', [
             'backups' => array_slice($backups, 0, 6),

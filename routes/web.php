@@ -4,6 +4,8 @@ use App\Http\Controllers\AuthenticationController;
 use App\Http\Controllers\LoginController;
 use App\Livewire\Admin\UserAccess;
 use App\Livewire\Admin\Users;
+use App\Livewire\Dev\LegacyPeekIndex;
+use App\Livewire\Dev\LegacyPeekShow;
 use App\Livewire\DivisionHead\Queue;
 use App\Livewire\Help\Glossary;
 use App\Livewire\HrPreparation\EmployeeHistory;
@@ -36,6 +38,12 @@ Route::middleware('auth')->group(function () {
 
     // Role-aware landing — a one-role account must never land on a module it can't open
     Route::get('/', fn () => redirect(auth()->user()->landingRoute()))->name('home');
+
+    // Dev-only, hard-pinned to user id 61 inside each component's mount() — not a
+    // role/permission, so deliberately not gated by a can: group here. Not linked
+    // from any nav. See project-overview/legacy-peek-tool-plan.md.
+    Route::get('/dev/legacy-peek', LegacyPeekIndex::class)->name('dev.legacy-peek');
+    Route::get('/dev/legacy-peek/{employeeNo}', LegacyPeekShow::class)->name('dev.legacy-peek.show');
 
     Route::middleware('can:requestor')->group(function () {
         Route::get('/requests', Index::class)->name('requests.index');

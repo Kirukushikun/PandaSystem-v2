@@ -56,4 +56,11 @@ return [
         'verify' => env('TURNSTILE_VERIFY', false),
     ],
 
+    // Dev-only v1/v2 live comparison tool (project-overview/legacy-peek-tool-plan.md).
+    // Blank base_uri disables it — see App\Services\LegacyPeekService.
+    'legacy_v1' => [
+        'base_uri' => env('LEGACY_V1_BASE_URI', ''),
+        'key' => env('LEGACY_V1_API_KEY', ''),
+    ],
+
 ];

@@ -176,6 +176,7 @@ class PrepareForm extends Component
         $this->showPrev = ! $this->showPrev;
     }
 
+
     public function addAllowance(): void
     {
         $this->allowances[] = ['label' => $this->allowanceType, 'from' => '—', 'to' => ''];

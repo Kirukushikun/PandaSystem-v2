@@ -34,8 +34,18 @@ class CarryOverService
      */
     public function fromValuesFor(PanRequest $pan): array
     {
-        $employee = $pan->employee;
+        return $this->fromValuesForEmployee($pan->employee, $pan);
+    }
 
+    /**
+     * Same computation as fromValuesFor(), but for an employee with no PAN of their
+     * own yet to anchor it to — e.g. simulating "what would carry-over produce right
+     * now" without an actual in-progress PAN (see the v1 Peek dev tool).
+     *
+     * @return array<string, string>
+     */
+    public function fromValuesForEmployee(Employee $employee, ?PanRequest $ignore = null): array
+    {
         $from = [
             'section' => '',
             'place' => $employee->farm->name,
@@ -45,7 +55,7 @@ class CarryOverService
             'basic' => '',
         ];
 
-        $previous = $this->previousPanFor($employee, $pan);
+        $previous = $this->previousPanFor($employee, $ignore);
         foreach ($previous?->form->action_reference ?? [] as $row) {
             if (array_key_exists($row['field'], $from)) {
                 $from[$row['field']] = $row['to'];
@@ -58,7 +68,13 @@ class CarryOverService
     /** Carried employment status — locked to the last filed PAN's value. */
     public function employmentStatusFor(PanRequest $pan): EmploymentStatus
     {
-        return $this->previousPanFor($pan->employee, $pan)?->form->employment_status
+        return $this->employmentStatusForEmployee($pan->employee, $pan);
+    }
+
+    /** Same as employmentStatusFor(), for an employee with no PAN of their own yet. */
+    public function employmentStatusForEmployee(Employee $employee, ?PanRequest $ignore = null): EmploymentStatus
+    {
+        return $this->previousPanFor($employee, $ignore)?->form->employment_status
             ?? EmploymentStatus::Probationary;
     }
 }

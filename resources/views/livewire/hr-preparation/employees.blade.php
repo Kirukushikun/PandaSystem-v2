@@ -34,6 +34,9 @@
         <x-row-actions>
           <a class="btn ghost" href="{{ route('employees.history', $employee->employee_no) }}" wire:navigate style="text-decoration:none">View PANs</a>
           <button class="btn primary" type="button" wire:click="startUpdate({{ $employee->id }})">Update PAN</button>
+          @if (auth()->id() === 61)
+          <a class="btn ghost" href="{{ route('dev.legacy-peek.show', $employee->employee_no) }}" wire:navigate style="text-decoration:none">v1 peek</a>
+          @endif
         </x-row-actions>
       </tr>
       @endforeach

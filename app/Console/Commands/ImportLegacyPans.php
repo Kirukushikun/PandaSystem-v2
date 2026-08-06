@@ -32,7 +32,8 @@ class ImportLegacyPans extends Command
 {
     protected $signature = 'panda:import-legacy
         {--path= : Directory containing v1\'s exported JSON (defaults to the sibling PandaSystem repo\'s legacy-export folder)}
-        {--dry-run : Report what would happen without writing anything}';
+        {--dry-run : Report what would happen without writing anything}
+        {--timestamps-only : Backfill ONLY approved_at/served_at where still null on already-imported rows — never touches status/action_reference/anything else. Safe against production even after HR has been acting directly in v2 for a while, unlike a full re-import.}';
 
     protected $description = 'Import v1 PAN history from panda:export-for-v2\'s JSON export';
 
@@ -86,6 +87,10 @@ class ImportLegacyPans extends Command
 
         $requests = json_decode(File::get($dir.'/requests.json'), true);
         $dryRun = (bool) $this->option('dry-run');
+
+        if ($this->option('timestamps-only')) {
+            return $this->backfillTimestampsOnly($requests, $dryRun);
+        }
 
         // The pinned admin account (CLAUDE.md: id 61) stands in for required-but-unresolvable
         // v1 actor FKs (PanForm.prepared_by) — the real name is preserved in legacy_actors.
@@ -253,6 +258,96 @@ class ImportLegacyPans extends Command
                 $this->line("  - {$u}");
             }
         }
+
+        return self::SUCCESS;
+    }
+
+    /**
+     * Narrow, additive-only companion to the full import: only ever writes
+     * approved_at/served_at, and only when the column is currently null on an
+     * already-imported row. Never touches status, action_reference, or anything
+     * else — so unlike the full import, this is safe to run against production
+     * after HR has been mirroring real actions into v2 directly for a while.
+     * Skips (never creates) rows with no matching legacy_id already in v2.
+     */
+    private function backfillTimestampsOnly(array $requests, bool $dryRun): int
+    {
+        $existing = PanRequest::whereNotNull('legacy_id')
+            ->get(['id', 'legacy_id', 'status', 'approved_at', 'served_at'])
+            ->keyBy('legacy_id');
+
+        $stats = [
+            'approved_filled' => 0, 'served_filled' => 0,
+            'already_set' => 0, 'not_applicable' => 0, 'no_match' => 0,
+        ];
+
+        $run = function () use ($requests, $existing, &$stats) {
+            foreach ($requests as $r) {
+                $pan = $existing->get($r['legacy_id']);
+                if (! $pan) {
+                    $stats['no_match']++;
+
+                    continue;
+                }
+
+                $status = $r['is_deleted'] ? PanStatus::Voided : (self::STATUS_MAP[$r['request_status']] ?? null);
+                $reachedApproved = in_array($status, [PanStatus::Approved, PanStatus::Served, PanStatus::Unserved, PanStatus::Filed], true);
+                $reachedServed = in_array($status, [PanStatus::Served, PanStatus::Filed], true);
+                $update = [];
+
+                if ($pan->approved_at === null && $reachedApproved) {
+                    $update['approved_at'] = $r['updated_at'];
+                }
+
+                if ($pan->served_at === null && $reachedServed) {
+                    $update['served_at'] = $r['updated_at'];
+                }
+
+                if ($update === []) {
+                    // Two different reasons nothing needs writing: this status never gets
+                    // these timestamps at all (e.g. still InPreparation), vs. it qualifies
+                    // but a value's already there (already backfilled, or set live since).
+                    $stats[$reachedApproved ? 'already_set' : 'not_applicable']++;
+
+                    continue;
+                }
+
+                // timestamps=false: this is a historical backfill, not a real edit —
+                // don't let it bump updated_at and make the row look freshly touched.
+                $pan->timestamps = false;
+                $pan->forceFill($update)->save();
+
+                if (isset($update['approved_at'])) {
+                    $stats['approved_filled']++;
+                }
+                if (isset($update['served_at'])) {
+                    $stats['served_filled']++;
+                }
+            }
+        };
+
+        PanRequest::withoutEvents(function () use ($run, $dryRun) {
+            try {
+                DB::transaction(function () use ($run, $dryRun) {
+                    $run();
+                    if ($dryRun) {
+                        throw new \RuntimeException('__dry_run_rollback__');
+                    }
+                });
+            } catch (\RuntimeException $e) {
+                if ($e->getMessage() !== '__dry_run_rollback__') {
+                    throw $e;
+                }
+            }
+        });
+
+        $this->newLine();
+        $this->info(($dryRun ? '[DRY RUN] ' : '').'Timestamp backfill complete (status/action_reference/everything else untouched):');
+        $this->line("  approved_at filled: {$stats['approved_filled']}");
+        $this->line("  served_at filled: {$stats['served_filled']}");
+        $this->line("  already had a value (skipped): {$stats['already_set']}");
+        $this->line("  status never reaches Approved — n/a (skipped): {$stats['not_applicable']}");
+        $this->line("  no matching v2 row for this legacy_id (skipped): {$stats['no_match']}");
 
         return self::SUCCESS;
     }

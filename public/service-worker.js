@@ -9,7 +9,7 @@
  *     shows something branded instead of the browser's default offline error.
  * Bump CACHE_NAME on any change here so old caches get swept on activate.
  */
-const CACHE_NAME = 'panda-pwa-v1';
+const CACHE_NAME = 'panda-pwa-v2';
 const OFFLINE_URL = '/login';
 const PRECACHE_URLS = [OFFLINE_URL, '/manifest.json', '/images/icon-192.png', '/images/icon-512.png'];
 

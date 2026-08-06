@@ -6,11 +6,16 @@
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <title>{{ $title ?? 'PANDA — PAN Workflow System' }}</title>
 <link rel="icon" type="image/x-icon" href="{{ asset('images/pan-icon.ico') }}">
+<link rel="manifest" href="{{ asset('manifest.json') }}">
+<link rel="apple-touch-icon" href="{{ asset('images/icon-192.png') }}">
+<meta name="theme-color" content="#1F5E42" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#5CA67F" media="(prefers-color-scheme: dark)">
 {{-- FOUC guard: stamp the saved theme on <html> before first paint --}}
 <script>
   try{var t=localStorage.getItem('panda-theme');if(t)document.documentElement.dataset.theme=t}catch(e){}
 </script>
 @vite(['resources/css/app.css', 'resources/js/app.js'])
+<script src="{{ asset('js/pwa.js') }}" defer></script>
 </head>
 <body data-user-id="{{ auth()->id() }}">
 
@@ -81,6 +86,11 @@
       <div class="avatar">{{ strtoupper($meInitials) ?: '?' }}</div>
       <div style="min-width:0"><b>{{ $me?->name }}</b><small>{{ $meRoles ?: $me?->position }}</small></div>
     </div>
+    <button class="btn primary" type="button" id="pwa-install-btn" hidden
+      style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%">
+      <svg style="width:14px;height:14px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 19h16"/></svg>
+      Install PANDA
+    </button>
     <form method="POST" action="{{ route('logout') }}" style="display:contents">
       @csrf
       <button class="btn" type="submit" style="display:flex;align-items:center;justify-content:center;gap:8px;color:var(--ink-2);width:100%">
@@ -90,6 +100,12 @@
     </form>
   </div>
 </aside>
+
+{{-- iOS Safari has no beforeinstallprompt — this is the fallback instruction banner. --}}
+<div id="pwa-ios-banner" class="pwa-ios-banner" hidden>
+  <span>Install PANDA: tap <b>Share</b> <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;vertical-align:-2px" aria-hidden="true"><path d="M12 3v12m0-12l-4 4m4-4l4 4M5 21h14a2 2 0 0 0 2-2v-5a2 2 0 0 0-2-2h-2M7 12H5a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2"/></svg>, then <b>Add to Home Screen</b>.</span>
+  <button type="button" id="pwa-ios-banner-close" aria-label="Dismiss">&times;</button>
+</div>
 
 <main>
   <section class="screen on">

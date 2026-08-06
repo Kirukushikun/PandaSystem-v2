@@ -307,6 +307,14 @@ footer{margin-top:26px;font-size:11.5px;color:var(--ink-3);text-align:center}
 .toast.on{display:flex}
 .toast .ok{color:var(--green-ok);font-weight:800}
 
+.pwa-ios-banner{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:80;
+  display:flex;align-items:center;gap:12px;max-width:90vw;
+  background:var(--panel);border:1px solid var(--line);border-radius:9px;box-shadow:0 8px 26px rgba(0,0,0,.25);
+  padding:10px 14px;font-size:12.5px;color:var(--ink-2)}
+.pwa-ios-banner b{color:var(--ink)}
+.pwa-ios-banner button{border:0;background:none;color:var(--ink-3);font-size:18px;line-height:1;cursor:pointer;padding:0 2px}
+.pwa-ios-banner button:hover{color:var(--ink)}
+
 /* row-action grammar: View (ghost) · one primary verb · ⋯ kebab for the rest */
 td.acts{text-align:right;white-space:nowrap}
 td.acts .btn,td.acts .iconbtn,td.acts .kebab{margin-left:6px}

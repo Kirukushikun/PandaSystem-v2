@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>PANDA — Sign in</title>
 <link rel="icon" type="image/x-icon" href="{{ asset('images/pan-icon.ico') }}">
+<link rel="manifest" href="{{ asset('manifest.json') }}">
+<link rel="apple-touch-icon" href="{{ asset('images/icon-192.png') }}">
+<meta name="theme-color" content="#1F5E42" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#5CA67F" media="(prefers-color-scheme: dark)">
 {{-- Standalone page ported from panda-login-concept.html — styles inline, no app.css/Vite.
      Extends the concept with the app's data-theme override so the saved theme choice holds here too. --}}
 <script>
@@ -70,6 +74,14 @@ footer{margin-top:22px;text-align:center;font-size:11px;color:var(--ink-3)}
 .dev button small{color:var(--ink-3);font-size:10.5px}
 .dev button:hover{border-color:var(--accent);filter:none}
 .dev button.on{outline:2px solid var(--accent);outline-offset:1px}
+#pwa-install-btn{margin-top:14px;display:flex;align-items:center;justify-content:center;gap:8px}
+.pwa-ios-banner{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:80;
+  display:flex;align-items:center;gap:12px;max-width:90vw;
+  background:var(--panel);border:1px solid var(--line);border-radius:9px;box-shadow:var(--shadow);
+  padding:10px 14px;font-size:12.5px;color:var(--ink-2)}
+.pwa-ios-banner b{color:var(--ink)}
+.pwa-ios-banner button{width:auto;border:0;background:none;color:var(--ink-3);font-size:18px;line-height:1;cursor:pointer;padding:0 2px}
+.pwa-ios-banner button:hover{color:var(--ink);filter:none}
 </style>
 </head>
 <body>
@@ -131,8 +143,19 @@ footer{margin-top:22px;text-align:center;font-size:11px;color:var(--ink-3)}
     });
   </script>
   @endif
+  <button type="button" id="pwa-install-btn" hidden>
+    <svg style="width:14px;height:14px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 19h16"/></svg>
+    Install PANDA
+  </button>
   <footer>PAN SYSTEM · BFC Group</footer>
 </div>
+
+{{-- iOS Safari has no beforeinstallprompt — this is the fallback instruction banner. --}}
+<div id="pwa-ios-banner" class="pwa-ios-banner" hidden>
+  <span>Install PANDA: tap <b>Share</b>, then <b>Add to Home Screen</b>.</span>
+  <button type="button" id="pwa-ios-banner-close" aria-label="Dismiss">&times;</button>
+</div>
+<script src="{{ asset('js/pwa.js') }}" defer></script>
 @if ($turnstileSiteKey)
 <script>
   window.onTurnstileReady = function () {

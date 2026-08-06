@@ -6,7 +6,7 @@
 <title>PANDA — Sign in</title>
 <link rel="icon" type="image/x-icon" href="{{ asset('images/pan-icon.ico') }}">
 <link rel="manifest" href="{{ asset('manifest.json') }}">
-<link rel="apple-touch-icon" href="{{ asset('images/icon-192.png') }}">
+<link rel="apple-touch-icon" href="{{ asset('images/apple-touch-icon.png') }}">
 <meta name="theme-color" content="#1F5E42" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#5CA67F" media="(prefers-color-scheme: dark)">
 {{-- Standalone page ported from panda-login-concept.html — styles inline, no app.css/Vite.
@@ -39,6 +39,7 @@
   --shadow:0 1px 2px rgba(0,0,0,.4),0 14px 40px rgba(0,0,0,.35);
 }
 *{box-sizing:border-box}
+[hidden]{display:none!important} /* keep the hidden attribute authoritative over display classes */
 body{margin:0;min-height:100vh;display:grid;place-items:center;background:var(--ground);color:var(--ink);
   font:14px/1.5 "Segoe UI Variable Text","Segoe UI",-apple-system,"Helvetica Neue",sans-serif;padding:24px}
 .card{width:100%;max-width:380px;background:var(--panel);border:1px solid var(--line);border-radius:14px;

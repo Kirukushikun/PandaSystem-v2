@@ -7,7 +7,7 @@
 <title>{{ $title ?? 'PANDA — PAN Workflow System' }}</title>
 <link rel="icon" type="image/x-icon" href="{{ asset('images/pan-icon.ico') }}">
 <link rel="manifest" href="{{ asset('manifest.json') }}">
-<link rel="apple-touch-icon" href="{{ asset('images/icon-192.png') }}">
+<link rel="apple-touch-icon" href="{{ asset('images/apple-touch-icon.png') }}">
 <meta name="theme-color" content="#1F5E42" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#5CA67F" media="(prefers-color-scheme: dark)">
 {{-- FOUC guard: stamp the saved theme on <html> before first paint --}}

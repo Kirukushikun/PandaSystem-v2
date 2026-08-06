@@ -11,6 +11,19 @@
         });
     }
 
+    // Standalone/PWA windows have no browser chrome (tab spinner, address-bar progress
+    // bar) to signal an in-flight request — a slow login there looks identical to a dead
+    // click, so users tend to hit Sign in repeatedly. Not gated on isStandalone(): the
+    // same double-submit protection is harmless (and still useful) in a regular browser tab.
+    const loginForm = document.querySelector('form.card');
+    const signinBtn = document.getElementById('signin-btn');
+    if (loginForm && signinBtn) {
+        loginForm.addEventListener('submit', () => {
+            signinBtn.disabled = true;
+            document.getElementById('signin-label').innerHTML = '<span class="spinner" aria-hidden="true"></span>Signing in…';
+        });
+    }
+
     function isStandalone() {
         return window.matchMedia('(display-mode: standalone)').matches
             || window.navigator.standalone === true; // legacy iOS Safari flag

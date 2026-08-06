@@ -62,6 +62,15 @@ button{width:100%;border:0;border-radius:8px;background:var(--accent);color:var(
   font:600 14px "Segoe UI Variable Text","Segoe UI",sans-serif;padding:11px;cursor:pointer}
 button:hover{filter:brightness(.95)}
 button:focus-visible,.field input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button:disabled{opacity:.75;cursor:default;filter:none}
+/* Standalone/PWA windows have no browser chrome to show an in-flight spinner, so the
+   button needs its own — otherwise a slow login looks like nothing happened and users
+   click Sign in again. */
+.spinner{display:inline-block;width:13px;height:13px;margin-right:7px;vertical-align:-2px;
+  border:2px solid rgba(255,255,255,.45);border-top-color:currentColor;border-radius:50%;
+  animation:panda-spin .7s linear infinite}
+@keyframes panda-spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion: reduce){.spinner{animation:none}}
 .hint{margin:16px 0 0;text-align:center;font-size:11.5px;color:var(--ink-3)}
 footer{margin-top:22px;text-align:center;font-size:11px;color:var(--ink-3)}
 .dev{width:100%;max-width:380px;margin-top:14px;background:var(--panel);border:1px dashed var(--line);
@@ -114,7 +123,7 @@ footer{margin-top:22px;text-align:center;font-size:11px;color:var(--ink-3)}
       @endif
       <input type="hidden" name="turnstile_token" id="turnstile-token">
     @endif
-    <button type="submit">Sign in</button>
+    <button type="submit" id="signin-btn"><span id="signin-label">Sign in</span></button>
     <p class="hint">Company account required — access is managed by IT Administration.</p>
   </form>
 

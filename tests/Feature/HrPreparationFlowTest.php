@@ -349,6 +349,54 @@ test('the last filed PAN seeds the From values, links the chain, and locks emplo
         ->and($pan->form->employment_status)->toBe(EmploymentStatus::Regular);
 });
 
+test('a newer Approved-but-unfiled PAN outranks an older Filed one for carry-over', function () {
+    // Reproduces a real production case: two tranches of the same wage order — the
+    // 1st is Filed and closed out, the 2nd got Final Approver sign-off months later
+    // but was never served/filed. The 2nd tranche's values are the real current
+    // ones (Approved has no reject/void path) and must win.
+    $filed = prepPan(PanStatus::Filed, ['filed_at' => now()->subMonths(4), 'approved_at' => now()->subMonths(4)]);
+    PanForm::factory()->create([
+        'pan_request_id' => $filed->id,
+        'action_reference' => [['field' => 'basic', 'from' => '15,816.67', 'to' => '16,425.00']],
+    ]);
+
+    $approved = prepPan(PanStatus::Approved, ['approved_at' => now()->subDays(1)]);
+    PanForm::factory()->create([
+        'pan_request_id' => $approved->id,
+        'action_reference' => [['field' => 'basic', 'from' => '16,425.00', 'to' => '17,337.50']],
+    ]);
+
+    $pan = prepPan(PanStatus::InPreparation);
+
+    Livewire::test(PrepareForm::class, ['pan' => $pan->reference])
+        ->assertSet('fromValues.basic', '17,337.50')
+        ->assertSee($approved->reference)
+        ->assertDontSee($filed->reference);
+});
+
+test('an Unserved PAN is never used for carry-over, even if it is the most recent', function () {
+    // PanWorkflow has no transition out of Unserved — nothing ever confirms the
+    // change actually reached the employee, so it must never seed the next PAN.
+    $filed = prepPan(PanStatus::Filed, ['filed_at' => now()->subMonths(4), 'approved_at' => now()->subMonths(4)]);
+    PanForm::factory()->create([
+        'pan_request_id' => $filed->id,
+        'action_reference' => [['field' => 'basic', 'from' => '15,816.67', 'to' => '16,425.00']],
+    ]);
+
+    $unserved = prepPan(PanStatus::Unserved, ['approved_at' => now()->subDays(1)]);
+    PanForm::factory()->create([
+        'pan_request_id' => $unserved->id,
+        'action_reference' => [['field' => 'basic', 'from' => '16,425.00', 'to' => '99,999.00']],
+    ]);
+
+    $pan = prepPan(PanStatus::InPreparation);
+
+    Livewire::test(PrepareForm::class, ['pan' => $pan->reference])
+        ->assertSet('fromValues.basic', '16,425.00')
+        ->assertSee($filed->reference)
+        ->assertDontSee($unserved->reference);
+});
+
 /*
 |--------------------------------------------------------------------------
 | Queue — scoping and closeout actions

@@ -20,6 +20,7 @@ trait GivesFinalApproval
         $pan->update([
             'status' => app(PanWorkflow::class)->apply($pan->status, 'approve_final'),
             'final_approver_id' => auth()->id(),
+            'approved_at' => now(),
         ]);
 
         if ($pan->action_type->autoFinalizesToRegular()) {

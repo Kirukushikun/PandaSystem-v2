@@ -19,7 +19,11 @@
   @if ($legacyPeek)
   <div class="card" style="margin-bottom:14px">
     <div class="sect">Prep simulation — if HR Prep started a new PAN right now</div>
-    <p class="hint" style="padding:0 16px 10px">Runs the real carry-over logic (<code>CarryOverService</code>) against this employee and diffs each field against v1's latest "To" value — the same check a fresh prep would silently rely on.</p>
+    <p class="hint" style="padding:0 16px 10px">Runs the real carry-over logic (<code>CarryOverService</code>) against this employee and diffs each field against v1's "To" value — the same check a fresh prep would silently rely on.
+      @if ($comparisonPan)
+      Comparing against v1's <b>{{ $comparisonPan['pan_number'] }}</b> ({{ $comparisonPan['status'] }}) — not necessarily v1's most recently submitted PAN, but the most recent one that actually has prepared data.
+      @endif
+    </p>
     <div class="twrap"><table class="fromto" style="width:100%;min-width:560px;table-layout:fixed">
       <thead><tr><th style="width:120px">Item</th><th>v2 would carry "From"</th><th class="arrow" style="width:30px"></th><th>v1's actual "To"</th><th style="width:90px">Match?</th></tr></thead>
       <tbody>

@@ -8,20 +8,32 @@ use App\Models\Employee;
 use App\Models\PanRequest;
 
 /**
- * The previous_pan_id chain: an employee's last FILED PAN seeds the next one —
- * its "To" values become the new form's "From" values, and its employment
- * status carries forward (the employment-status lock).
+ * The previous_pan_id chain: an employee's most recently APPROVED PAN seeds the
+ * next one — its "To" values become the new form's "From" values, and its
+ * employment status carries forward (the employment-status lock).
+ *
+ * Approved, not Filed: per PanWorkflow, Approved has no reject/void path — the
+ * only moves from there are mark_served/mark_unserved, so the values are final
+ * the moment a PAN lands on Approved. Served and Filed are just paperwork
+ * tracking after that fact, not further approval gates. Unserved is excluded
+ * deliberately — PanWorkflow has no transition out of it, so a PAN marked
+ * Unserved never reaches Filed under any code path; trusting its values risks
+ * carrying forward a change that may never have actually reached the employee
+ * (resigned, AWOL, refused to sign — see project history for the incident that
+ * prompted this).
  */
 class CarryOverService
 {
-    /** The employee's most recently filed PAN that has prepared paperwork. */
+    private const CARRY_OVER_STATUSES = [PanStatus::Approved, PanStatus::Served, PanStatus::Filed];
+
+    /** The employee's most recently approved PAN that has prepared paperwork. */
     public function previousPanFor(Employee $employee, ?PanRequest $ignore = null): ?PanRequest
     {
         return PanRequest::where('employee_id', $employee->id)
-            ->where('status', PanStatus::Filed->value)
+            ->whereIn('status', array_map(fn (PanStatus $s) => $s->value, self::CARRY_OVER_STATUSES))
             ->whereHas('form')
             ->when($ignore, fn ($q) => $q->whereKeyNot($ignore->id))
-            ->orderByDesc('filed_at')
+            ->orderByDesc('approved_at')
             ->orderByDesc('id')
             ->first();
     }
@@ -65,7 +77,7 @@ class CarryOverService
         return $from;
     }
 
-    /** Carried employment status — locked to the last filed PAN's value. */
+    /** Carried employment status — locked to the last approved PAN's value. */
     public function employmentStatusFor(PanRequest $pan): EmploymentStatus
     {
         return $this->employmentStatusForEmployee($pan->employee, $pan);

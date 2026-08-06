@@ -50,7 +50,10 @@ class Queue extends Component
         $pan = PanRequest::findOrFail($id);
         $this->authorize('markServed', $pan);
 
-        $pan->update(['status' => app(PanWorkflow::class)->apply($pan->status, 'mark_served')]);
+        $pan->update([
+            'status' => app(PanWorkflow::class)->apply($pan->status, 'mark_served'),
+            'served_at' => now(),
+        ]);
         $this->js("showToast('{$pan->reference} marked as Served.')");
     }
 

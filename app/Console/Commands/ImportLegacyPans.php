@@ -180,8 +180,14 @@ class ImportLegacyPans extends Command
                         'confidentiality_tag' => $confidentiality,
                         'origin' => $origin,
                         'submitted_at' => $r['submitted_at'],
-                        // v1 doesn't track a separate "filed at" timestamp — updated_at at the
-                        // point the row reached Filed is the closest available approximation.
+                        // v1 doesn't track separate approved/served/filed timestamps — updated_at
+                        // at the point the row reached each milestone is the closest available
+                        // approximation. Unserved skips Served entirely (PanWorkflow: Approved ->
+                        // Unserved directly), so it gets approved_at but never served_at.
+                        'approved_at' => in_array($status, [PanStatus::Approved, PanStatus::Served, PanStatus::Unserved, PanStatus::Filed], true)
+                            ? $r['updated_at'] : null,
+                        'served_at' => in_array($status, [PanStatus::Served, PanStatus::Filed], true)
+                            ? $r['updated_at'] : null,
                         'filed_at' => $status === PanStatus::Filed ? $r['updated_at'] : null,
                         'legacy_actors' => $legacyActors ?: null,
                     ]

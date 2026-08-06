@@ -26,7 +26,7 @@ class PanRequest extends Model
         'justification', 'status', 'confidentiality_tag',
         'origin', 'requested_by', 'division_head_id', 'hr_preparer_id',
         'hr_approver_id', 'final_approver_id', 'previous_pan_id',
-        'submitted_at', 'filed_at',
+        'submitted_at', 'filed_at', 'approved_at', 'served_at',
         'legacy_id', 'legacy_department', 'legacy_actors',
     ];
 
@@ -39,6 +39,8 @@ class PanRequest extends Model
             'origin' => PanOrigin::class,
             'submitted_at' => 'datetime',
             'filed_at' => 'datetime',
+            'approved_at' => 'datetime',
+            'served_at' => 'datetime',
             'legacy_actors' => 'array',
         ];
     }

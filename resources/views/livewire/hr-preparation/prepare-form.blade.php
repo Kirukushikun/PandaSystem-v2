@@ -94,7 +94,7 @@
       <div class="field"><label>Date Hired <em>*</em></label><input type="date" wire:model.live="date_hired" @error('date_hired') style="border-color:var(--red)" @enderror>
         @error('date_hired')<span class="hint" style="color:var(--red)">{{ $message }}</span>@enderror</div>
       <div class="field"><label>Employment Status</label><input readonly value="{{ $this->employmentStatus }}">
-        <span class="hint">Carried from the last filed PAN — Regularization finalizes it at final approval.</span></div>
+        <span class="hint">Carried from the last approved PAN — Regularization finalizes it at final approval.</span></div>
       <div class="field"><label>Division / Department</label><input readonly value="{{ $pan->employee->department->name }}"></div>
       <div class="field"><label>Effectivity From <em>*</em></label><input type="date" wire:model.live="doe_from" @error('doe_from') style="border-color:var(--red)" @enderror>
         @error('doe_from')<span class="hint" style="color:var(--red)">{{ $message }}</span>@enderror</div>
@@ -116,13 +116,13 @@
     <div class="prevpan">
       <span>⟲ Pre-generated from:</span>
       <a class="refid" href="{{ route('preparation.show', $previous->reference) }}" wire:navigate title="Open the previous PAN">{{ $previous->reference }}</a>
-      <span>— the employee's last filed PAN; its "To" values seeded this form's "From" values.</span>
+      <span>— the employee's last approved PAN; its "To" values seeded this form's "From" values.</span>
       <a wire:click="togglePrev" style="cursor:pointer">{{ $showPrev ? 'See less' : 'See more' }}</a>
     </div>
     <div class="prevdetail" @unless ($showPrev) hidden @endunless>
       <div class="pgrid">
         <div><small>Type of Action</small><br><b>{{ $previous->action_type->label() }}</b></div>
-        <div><small>Status</small><br><b>Filed @if ($previous->filed_at)· {{ $previous->filed_at->format('M j, Y') }}@endif</b></div>
+        <div><small>Status</small><br><b>{{ $previous->status->label() }}@if ($previous->filed_at) · {{ $previous->filed_at->format('M j, Y') }}@endif</b></div>
         <div><small>Effectivity</small><br><b>{{ $previous->form->doe_from?->format('M j, Y') ?? '—' }}</b></div>
         <div><small>Prepared by</small><br><b>{{ $previous->form->preparedBy->name }}</b></div>
         @php

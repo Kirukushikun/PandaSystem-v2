@@ -26,6 +26,9 @@ class CarryOverService
 {
     private const CARRY_OVER_STATUSES = [PanStatus::Approved, PanStatus::Served, PanStatus::Filed];
 
+    /** The six fixed Action Reference fields, plus Leave Credits — everything else is a dynamic allowance row. */
+    private const KNOWN_FIELDS = ['section', 'place', 'head', 'position', 'joblevel', 'basic', 'leavecredits'];
+
     /** The employee's most recently approved PAN that has prepared paperwork. */
     public function previousPanFor(Employee $employee, ?PanRequest $ignore = null): ?PanRequest
     {
@@ -75,6 +78,32 @@ class CarryOverService
         }
 
         return $from;
+    }
+
+    /**
+     * Dynamic allowance rows (Communication Allowance, Meal Allowance, etc.) carried
+     * from the same previous PAN — the six fixed fields and Leave Credits get their
+     * own carry-over above; everything else in the previous PAN's action_reference
+     * is a "from" seed for a matching allowance row here. "To" starts blank, same as
+     * a freshly-added allowance line, for HR to fill in or remove.
+     *
+     * @return array<int, array{label: string, from: string, to: string}>
+     */
+    public function allowancesFor(PanRequest $pan): array
+    {
+        return $this->allowancesForEmployee($pan->employee, $pan);
+    }
+
+    /** Same as allowancesFor(), for an employee with no PAN of their own yet. */
+    public function allowancesForEmployee(Employee $employee, ?PanRequest $ignore = null): array
+    {
+        $previous = $this->previousPanFor($employee, $ignore);
+
+        return collect($previous?->form->action_reference ?? [])
+            ->reject(fn (array $row) => in_array($row['field'], self::KNOWN_FIELDS, true))
+            ->map(fn (array $row) => ['label' => $row['field'], 'from' => $row['to'], 'to' => ''])
+            ->values()
+            ->all();
     }
 
     /** Carried employment status — locked to the last approved PAN's value. */

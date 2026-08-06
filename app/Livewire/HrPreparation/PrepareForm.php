@@ -129,8 +129,11 @@ class PrepareForm extends Component
                 }
             }
         } else {
-            // Fresh preparation: the previous filed PAN's "To" values seed the "From" side.
+            // Fresh preparation: the previous approved PAN's "To" values seed the "From" side —
+            // fixed fields and allowance rows both, so a recurring allowance doesn't have to be
+            // retyped from scratch on every PAN.
             $this->fromValues = $carry->fromValuesFor($this->panRequest);
+            $this->allowances = $carry->allowancesFor($this->panRequest);
             $this->date_hired = $carry->previousPanFor($this->panRequest->employee, $this->panRequest)
                 ?->form->date_hired?->format('Y-m-d') ?? '';
         }

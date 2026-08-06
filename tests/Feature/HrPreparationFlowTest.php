@@ -374,6 +374,27 @@ test('a newer Approved-but-unfiled PAN outranks an older Filed one for carry-ove
         ->assertDontSee($filed->reference);
 });
 
+test('allowance rows carry over from the previous PAN, not just the six fixed fields', function () {
+    // HR-reported bug: fromValuesFor() only ever seeded section/place/head/position/
+    // joblevel/basic — any Communication/Meal/etc. Allowance row silently never
+    // carried over, so HR had to retype every recurring allowance on every PAN.
+    $previous = prepPan(PanStatus::Filed, ['filed_at' => now()->subMonths(2), 'approved_at' => now()->subMonths(2)]);
+    PanForm::factory()->create([
+        'pan_request_id' => $previous->id,
+        'action_reference' => [
+            ['field' => 'basic', 'from' => '16,425.00', 'to' => '16,425.00'],
+            ['field' => 'Communication Allowance', 'from' => '200.00', 'to' => '200.00'],
+        ],
+    ]);
+
+    $pan = prepPan(PanStatus::InPreparation);
+
+    Livewire::test(PrepareForm::class, ['pan' => $pan->reference])
+        ->assertSet('allowances', [
+            ['label' => 'Communication Allowance', 'from' => '200.00', 'to' => ''],
+        ]);
+});
+
 test('an Unserved PAN is never used for carry-over, even if it is the most recent', function () {
     // PanWorkflow has no transition out of Unserved — nothing ever confirms the
     // change actually reached the employee, so it must never seed the next PAN.

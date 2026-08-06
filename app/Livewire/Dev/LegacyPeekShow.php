@@ -70,28 +70,33 @@ class LegacyPeekShow extends Component
      * "If HR Prep started a fresh PAN for this employee right now, would v2's
      * carry-over produce the same From values v1 actually has on file?" — runs
      * the real CarryOverService (not a copy of its logic) against this employee,
-     * then diffs each field against v1's comparison PAN's "To" values (what v1
-     * considers this employee's current real-world value per field).
+     * fixed fields AND allowance rows both, then diffs each against v1's comparison
+     * PAN's "To" values (what v1 considers this employee's current real-world value
+     * per field).
      *
      * @return array<int, array{field: string, v2Simulated: string, v1Actual: string|null, match: bool|null}>
      */
     private function simulateAgainstV1(): array
     {
-        $simulated = app(CarryOverService::class)->fromValuesForEmployee($this->employee);
-        $v1Rows = collect($this->comparisonPan()['action_reference_data'] ?? [])
-            ->keyBy('field');
+        $carry = app(CarryOverService::class);
+        $v1Rows = collect($this->comparisonPan()['action_reference_data'] ?? [])->keyBy('field');
 
-        return collect($simulated)->map(function (string $v2Value, string $field) use ($v1Rows) {
-            $v1Row = $v1Rows->get($field);
+        $diff = fn (string $field, string $v2Value) => [
+            'field' => $field,
+            'v2Simulated' => $v2Value !== '' ? $v2Value : '—',
+            'v1Actual' => $v1Rows->get($field)['to'] ?? null,
+            // null = v1 has nothing to compare (no PAN reached HR Prep, or this field never appears there)
+            'match' => $v1Rows->get($field) === null ? null : trim($v2Value) === trim($v1Rows->get($field)['to']),
+        ];
 
-            return [
-                'field' => $field,
-                'v2Simulated' => $v2Value !== '' ? $v2Value : '—',
-                'v1Actual' => $v1Row['to'] ?? null,
-                // null = v1 has nothing to compare (no PAN reached HR Prep, or this field never appears there)
-                'match' => $v1Row === null ? null : trim($v2Value) === trim($v1Row['to']),
-            ];
-        })->values()->all();
+        $fixed = collect($carry->fromValuesForEmployee($this->employee))
+            ->map(fn (string $v2Value, string $field) => $diff($field, $v2Value))
+            ->values();
+
+        $allowances = collect($carry->allowancesForEmployee($this->employee))
+            ->map(fn (array $row) => $diff($row['label'], $row['from']));
+
+        return $fixed->concat($allowances)->all();
     }
 
     public function render()

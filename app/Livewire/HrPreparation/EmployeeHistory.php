@@ -5,6 +5,7 @@ namespace App\Livewire\HrPreparation;
 use App\Enums\ConfidentialityTag;
 use App\Enums\PanStatus;
 use App\Livewire\HrPreparation\Concerns\StartsHrPan;
+use App\Livewire\Concerns\ManagesLegacyRecords;
 use App\Models\Employee;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -19,6 +20,7 @@ use Livewire\Component;
 class EmployeeHistory extends Component
 {
     use StartsHrPan;
+    use ManagesLegacyRecords;
 
     public Employee $employee;
 
@@ -52,6 +54,13 @@ class EmployeeHistory extends Component
             ],
             'updateEmployee' => $this->employee,
             'isHrHead' => auth()->user()->is_hr_head,
+            // Legacy Records is HR Head-only, full stop — a plain HR Preparer
+            // doesn't get a read-only view of it either, per the feature's scope.
+            'canViewLegacyRecords' => auth()->user()->is_hr_head,
+            'canManageLegacyRecords' => auth()->user()->is_hr_head,
+            'legacyRecords' => auth()->user()->is_hr_head
+                ? $this->employee->employeeAttachments()->with('uploadedBy')->orderByDesc('id')->get()
+                : collect(),
         ]);
     }
 }

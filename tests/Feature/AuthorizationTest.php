@@ -28,6 +28,7 @@ test('module routes 403 without the matching stage permission', function (string
     'employees lens / hrPreparer' => ['/employees', 'hrPreparer'],
     'hr-approval / hrApprover' => ['/hr-approval', 'hrApprover'],
     'final-approval / finalApprover' => ['/final-approval', 'finalApprover'],
+    'final-approval employees lens / finalApprover' => ['/final-approval/employees', 'finalApprover'],
     'admin users / admin' => ['/admin/users', 'admin'],
     'maintenance / admin' => ['/maintenance/logs', 'admin'],
 ]);

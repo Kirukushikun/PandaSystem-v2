@@ -71,6 +71,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/hr-approval', App\Livewire\HrApprover\Queue::class)->middleware('can:hr_approver')->name('hr-approval.queue');
     Route::get('/hr-approval/{pan}', App\Livewire\HrApprover\Show::class)->middleware('can:hr_approver')->name('hr-approval.show');
     Route::get('/final-approval', App\Livewire\FinalApprover\Queue::class)->middleware('can:final_approver')->name('final-approval.queue');
+    Route::middleware('can:final_approver')->group(function () {
+        Route::get('/final-approval/employees', App\Livewire\FinalApprover\Employees::class)->name('final-approval.employees.index');
+        // Named {employeeNo}, not {employee} — see the matching comment on employees.history above.
+        Route::get('/final-approval/employees/{employeeNo}/pans', App\Livewire\FinalApprover\EmployeeHistory::class)->name('final-approval.employees.history');
+    });
     Route::get('/final-approval/{pan}', App\Livewire\FinalApprover\Show::class)->middleware('can:final_approver')->name('final-approval.show');
 
     Route::middleware('can:admin')->group(function () {
@@ -129,6 +134,19 @@ Route::middleware('auth')->group(function () {
     // Roster CRUD: admins and HR Preparers both — see manage_roster gate.
     Route::get('/admin/employees', App\Livewire\Admin\Employees::class)
         ->middleware('can:manage_roster')->name('admin.employees');
+
+    // Legacy Records: HR Head and Final Approver only — never a plain HR Preparer.
+    // Looked up by employee_no, attachment scoped through the relation (never a
+    // bare EmployeeAttachment::find()) — same v1-open-door lesson as pan.attachment.
+    Route::get('/employees/{employeeNo}/legacy-records/{attachment}', function (string $employeeNo, int $attachment) {
+        abort_unless(auth()->user()->is_hr_head || auth()->user()->is_final_approver, 403);
+
+        $employee = \App\Models\Employee::where('employee_no', $employeeNo)->firstOrFail();
+        $file = $employee->employeeAttachments()->find($attachment);
+        abort_unless($file && Storage::exists($file->path), 404);
+
+        return Storage::download($file->path, $file->original_name);
+    })->name('employees.legacy-record');
 
     // Attachment + print: policy-checked per record — these are the direct-link
     // entry points v1 left open. Looked up by reference, 404 when unknown.

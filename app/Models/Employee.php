@@ -34,6 +34,11 @@ class Employee extends Model
         return $this->hasMany(PanRequest::class);
     }
 
+    public function employeeAttachments(): HasMany
+    {
+        return $this->hasMany(EmployeeAttachment::class);
+    }
+
     /**
      * The deletion guard (v1 lesson — policy + query, never just the UI):
      * an employee with a PAN anywhere in the workflow can't be removed.

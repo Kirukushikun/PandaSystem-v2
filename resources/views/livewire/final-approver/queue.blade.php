@@ -3,6 +3,8 @@
   <div class="htop">
     <div><h2>Final Sign-off</h2>
       <p>Act on requests individually or in bulk — select rows, or target all requests of one action type at once. Rejection returns a PAN to HR Preparation with a mandatory reason.</p></div>
+    <div class="spacer"></div>
+    <a class="btn" href="{{ route('final-approval.employees.index') }}" wire:navigate style="text-decoration:none">Employees</a>
   </div>
 
   <div class="stats">

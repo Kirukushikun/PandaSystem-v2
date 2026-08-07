@@ -1,12 +1,12 @@
+{{-- Read-only clone of hr-preparation/employee-history.blade.php — no "Update PAN"
+     action, no Manila filtering (Final Approver has no confidentiality distinction),
+     plus the new Legacy Records panel (view/download only, $canManage=false). --}}
 <div>
-  <p class="crumb">HR Preparation · signed in as {{ $isHrHead ? 'HR Head Preparer' : 'HR Preparer' }}</p>
+  <p class="crumb">Final Approver</p>
   <div class="htop">
     <div><h2>PAN History — {{ $employee->name }} <span class="ref" style="font-size:14px">{{ $employee->employee_no }}</span></h2>
-    <p>Every PAN on record for this employee, newest first. Each PAN's "From" values chain from the previous one's "To" values.</p></div>
+    <p>Every PAN on record for this employee, newest first.</p></div>
     <div class="spacer"></div>
-    @can('createHr', App\Models\PanRequest::class)
-    <button class="btn primary" type="button" wire:click="startUpdate({{ $employee->id }})">Update PAN</button>
-    @endcan
   </div>
 
   <div class="stats">
@@ -17,7 +17,7 @@
   </div>
 
   @if ($pans->isEmpty())
-  <x-empty-state title="No PANs yet" message="This employee has no PAN on record — start one with Update PAN." />
+  <x-empty-state title="No PANs yet" message="This employee has no PAN on record." />
   @else
   <div class="card"><div class="twrap"><table>
     <thead><tr><th>Reference</th><th>Type of Action</th><th>Effectivity</th><th>Key Change</th><th>Status</th><th></th></tr></thead>
@@ -33,7 +33,7 @@
         <td @if ($changed && $changed['num']) class="num" @endif>{{ $changed ? $changed['from'].' → '.$changed['to'] : '—' }}</td>
         <td><x-status-pill :status="$pan->status->value" /></td>
         <x-row-actions>
-          <a class="btn ghost" href="{{ route('preparation.show', $pan->reference) }}" wire:navigate style="text-decoration:none">View</a>
+          <a class="btn ghost" href="{{ route('final-approval.show', $pan->reference) }}" wire:navigate style="text-decoration:none">View</a>
           @if ($pan->form)
           <x-print-btn href="{{ route('pan.print', $pan->reference) }}" />
           @endif
@@ -44,14 +44,9 @@
   </table></div></div>
   @endif
 
-  @if ($canViewLegacyRecords)
-  <x-employee.legacy-records :employee="$employee" :legacy-records="$legacyRecords" :can-manage="$canManageLegacyRecords"
-    :show-upload-modal="$showLegacyUploadModal" :new-records="$newLegacyRecords" />
-  @endif
+  <x-employee.legacy-records :employee="$employee" :legacy-records="$legacyRecords" :can-manage="false" />
 
   <div style="display:flex;margin-top:14px">
-    <a class="btn" href="{{ route('employees.index') }}" wire:navigate style="text-decoration:none">← Back to employees</a>
+    <a class="btn" href="{{ route('final-approval.employees.index') }}" wire:navigate style="text-decoration:none">← Back to employees</a>
   </div>
-
-  @include('livewire.hr-preparation.partials.update-pan-modal')
 </div>

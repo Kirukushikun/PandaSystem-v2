@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Legacy Records — placement options</title>
+<link rel="stylesheet" href="panda-ui-concept.css">
+<style>
+/* mockup-only scaffolding — not part of the design system, just to host the two options */
+body{padding:28px}
+.wrap{max-width:1060px;margin:0 auto}
+.pagehead{margin-bottom:22px}
+.pagehead h1{margin:0 0 4px;font-size:20px}
+.pagehead p{margin:0;color:var(--ink-2);font-size:13px;max-width:70ch}
+.opttabs{display:flex;gap:2px;border-bottom:1px solid var(--line);margin-bottom:20px;position:sticky;top:0;background:var(--ground);z-index:10;padding-top:4px}
+.opttab{border:0;background:none;font:inherit;font-size:14px;font-weight:700;color:var(--ink-3);
+  padding:10px 18px;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+.opttab:hover{color:var(--ink)}
+.opttab.on{color:var(--accent);border-bottom-color:var(--accent)}
+.optlabel{display:block;font-size:11px;font-weight:400;color:var(--ink-3);margin-top:1px}
+.optpane{display:none}
+.optpane.on{display:block}
+.roleswitch{display:flex;gap:8px;align-items:center;margin-bottom:18px;font-size:12.5px;color:var(--ink-2)}
+.roleswitch .chip{cursor:pointer}
+/* legacy record row */
+.legacypanel{margin-top:22px}
+.legacypanel .htop{margin-bottom:12px}
+.legacyrow{display:flex;align-items:center;gap:12px;padding:11px 16px;border-bottom:1px solid var(--line-soft);font-size:13px}
+.legacyrow:last-child{border-bottom:0}
+.legacyrow .ic{flex:none;width:34px;height:34px;border-radius:8px;background:var(--red-soft);color:var(--red);
+  display:grid;place-items:center;font-size:10px;font-weight:800;letter-spacing:.02em}
+.legacyrow .ic.img{background:var(--blue-soft);color:var(--blue)}
+.legacyrow .who{min-width:0;flex:1}
+.legacyrow .who b{display:block;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.legacyrow .who small{color:var(--ink-3);font-size:11.5px}
+.legacyempty{padding:26px 16px;text-align:center;color:var(--ink-3);font-size:13px}
+/* option B: kebab-triggered modal, and inline expand row */
+.exprow td{background:var(--panel-2);padding:0}
+.exprow .inner{padding:14px 16px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="pagehead">
+    <h1>Legacy Records — 2 placement options</h1>
+    <p>Same feature (HR Head uploads scanned/legacy PAN copies against an employee, fixed to Manila confidentiality for now), two different homes for the UI. No backend here — pick one and implementation proceeds from there.</p>
+  </div>
+
+  <div class="roleswitch">
+    Viewing as:
+    <button class="chip on" data-role="hrhead">HR Head</button>
+    <button class="chip" data-role="prep">HR Preparer (not Head)</button>
+    <button class="chip" data-role="final">Final Approver</button>
+  </div>
+
+  <div class="opttabs">
+    <button class="opttab on" data-opt="a">Option A<span class="optlabel">Panel on the Employee History page</span></button>
+    <button class="opttab" data-opt="b">Option B<span class="optlabel">Kebab action + modal on the Employees roster</span></button>
+  </div>
+
+  <!-- ================= OPTION A ================= -->
+  <div class="optpane on" id="opt-a">
+    <p class="crumb">HR Preparation · Employees · EMP-01265</p>
+    <div class="htop">
+      <div>
+        <h2>Crisel Joy Mangalino</h2>
+        <p>EMP-01265 · Feedmill · Poultry Farm Complex</p>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:18px">
+      <div class="sect">PAN history</div>
+      <div class="twrap"><table>
+        <thead><tr><th>Reference</th><th>Type of Action</th><th>Filed</th><th>Status</th><th></th></tr></thead>
+        <tbody>
+          <tr><td class="ref">PAN-BFC-2026-353</td><td>Wage Order — 2nd tranche</td><td>—</td>
+            <td><span class="pill p-appr">Approved — for serving</span></td>
+            <td class="acts"><button class="btn ghost">View</button></td></tr>
+          <tr><td class="ref">PAN-BFC-2025-981</td><td>Wage Order — 1st tranche</td><td>Feb 14, 2025</td>
+            <td><span class="pill p-filed">Filed</span></td>
+            <td class="acts"><button class="btn ghost">View</button></td></tr>
+        </tbody>
+      </table></div>
+    </div>
+
+    <div class="card legacypanel">
+      <div class="htop" style="padding:14px 16px 0">
+        <div>
+          <h2 style="font-size:15px">Legacy Records</h2>
+          <p>Scanned copies of PANs that predate this system. <span class="tagdot t-manila" title="Manila"></span> Manila-confidentiality only, for now.</p>
+        </div>
+        <div class="spacer"></div>
+        <button class="btn primary role-hrhead" id="a-upload-btn">+ Upload Legacy Record</button>
+      </div>
+      <div id="a-list">
+        <div class="legacyrow">
+          <div class="ic">PDF</div>
+          <div class="who"><b>Mangalino_2019_Regularization.pdf</b><small>1.8 MB · uploaded by M. Dela Cruz · Mar 3, 2026</small></div>
+          <button class="btn ghost">Open</button>
+          <button class="btn ghost role-hrhead" style="color:var(--red)">Remove</button>
+        </div>
+        <div class="legacyrow">
+          <div class="ic img">IMG</div>
+          <div class="who"><b>Mangalino_2016_original_PAN_scan.jpg</b><small>3.2 MB · uploaded by M. Dela Cruz · Mar 3, 2026</small></div>
+          <button class="btn ghost">Open</button>
+          <button class="btn ghost role-hrhead" style="color:var(--red)">Remove</button>
+        </div>
+      </div>
+    </div>
+    <p class="locknote" style="margin-top:8px">Non-Head HR Preparers and Final Approver see this same panel but without the Upload/Remove controls — view &amp; download only.</p>
+  </div>
+
+  <!-- ================= OPTION B ================= -->
+  <div class="optpane" id="opt-b">
+    <p class="crumb">HR Preparation · Employees</p>
+    <div class="htop">
+      <div>
+        <h2>Employees</h2>
+        <p>Roster of active employees. Use the ⋯ menu to view Legacy Records for an employee without leaving this list.</p>
+      </div>
+    </div>
+    <div class="bar">
+      <div class="search">⌕<input placeholder="Search by name or employee no…" value="Mangalino"></div>
+    </div>
+    <div class="card"><div class="twrap"><table>
+      <thead><tr><th>Employee No.</th><th>Name</th><th>Department</th><th>Farm</th><th></th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="ref">EMP-01265</td>
+          <td><div class="who"><b>Crisel Joy Mangalino</b></div></td>
+          <td>Feedmill</td><td>Poultry Farm Complex</td>
+          <td class="acts">
+            <button class="btn ghost">View PANs</button>
+            <button class="btn primary">Update PAN</button>
+            <div class="kebab open" id="b-kebab">
+              <button class="kbtn" title="More actions">⋯</button>
+              <div class="kmenu">
+                <button class="kitem" id="b-open-legacy">Legacy Records <small>2 on file</small></button>
+              </div>
+            </div>
+          </td>
+        </tr>
+        <tr class="exprow" id="b-exprow" hidden>
+          <td colspan="5">
+            <div class="inner">
+              <div class="htop" style="margin-bottom:8px">
+                <div>
+                  <h2 style="font-size:14px">Legacy Records — Crisel Joy Mangalino <span class="tagdot t-manila" title="Manila"></span></h2>
+                </div>
+                <div class="spacer"></div>
+                <button class="btn primary role-hrhead" style="padding:6px 12px;font-size:12.5px">+ Upload</button>
+              </div>
+              <div class="legacyrow" style="background:var(--panel);border:1px solid var(--line);border-radius:8px;margin-bottom:6px">
+                <div class="ic">PDF</div>
+                <div class="who"><b>Mangalino_2019_Regularization.pdf</b><small>1.8 MB · uploaded by M. Dela Cruz · Mar 3, 2026</small></div>
+                <button class="btn ghost">Open</button>
+                <button class="btn ghost role-hrhead" style="color:var(--red)">Remove</button>
+              </div>
+              <div class="legacyrow" style="background:var(--panel);border:1px solid var(--line);border-radius:8px">
+                <div class="ic img">IMG</div>
+                <div class="who"><b>Mangalino_2016_original_PAN_scan.jpg</b><small>3.2 MB · uploaded by M. Dela Cruz · Mar 3, 2026</small></div>
+                <button class="btn ghost">Open</button>
+                <button class="btn ghost role-hrhead" style="color:var(--red)">Remove</button>
+              </div>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table></div></div>
+    <p class="locknote" style="margin-top:8px">Row expands inline — no navigation away from the roster. Same visibility rule: Upload/Remove only for HR Head.</p>
+  </div>
+
+</div>
+
+<!-- upload modal, shared look for either option -->
+<div class="overlay" id="upload-overlay">
+  <div class="modal">
+    <h3>Upload Legacy Record <button class="x" id="upload-close">&times;</button></h3>
+    <div style="padding:16px 18px">
+      <p class="note manila"><span class="ic">●</span> Saved as Manila confidentiality — visible to HR Head and Final Approver only, same as any other Manila-tagged record.</p>
+      <div class="upload">Drag files here or <b>browse</b><br><small>PDF, JPG or PNG · up to 10 MB each</small></div>
+    </div>
+    <div class="formfoot"><div class="spacer"></div><button class="btn" id="upload-cancel">Cancel</button><button class="btn primary">Upload</button></div>
+  </div>
+</div>
+
+<script>
+document.querySelectorAll('.opttab').forEach(function (tab) {
+  tab.addEventListener('click', function () {
+    document.querySelectorAll('.opttab').forEach(function (t) { t.classList.remove('on'); });
+    document.querySelectorAll('.optpane').forEach(function (p) { p.classList.remove('on'); });
+    tab.classList.add('on');
+    document.getElementById('opt-' + tab.dataset.opt).classList.add('on');
+  });
+});
+document.querySelectorAll('.roleswitch .chip').forEach(function (chip) {
+  chip.addEventListener('click', function () {
+    document.querySelectorAll('.roleswitch .chip').forEach(function (c) { c.classList.remove('on'); });
+    chip.classList.add('on');
+    var isHrHead = chip.dataset.role === 'hrhead';
+    document.querySelectorAll('.role-hrhead').forEach(function (el) { el.style.display = isHrHead ? '' : 'none'; });
+  });
+});
+document.getElementById('a-upload-btn').addEventListener('click', function () {
+  document.getElementById('upload-overlay').classList.add('on');
+});
+document.getElementById('upload-close').addEventListener('click', function () {
+  document.getElementById('upload-overlay').classList.remove('on');
+});
+document.getElementById('upload-cancel').addEventListener('click', function () {
+  document.getElementById('upload-overlay').classList.remove('on');
+});
+document.getElementById('b-open-legacy').addEventListener('click', function () {
+  var row = document.getElementById('b-exprow');
+  row.hidden = !row.hidden;
+});
+</script>
+</body>
+</html>

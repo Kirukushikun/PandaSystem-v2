@@ -15,6 +15,9 @@
     <div class="search">⌕<input placeholder="Search PANs awaiting HR approval…" wire:model.live.debounce.300ms="search"></div>
     <button class="chip @if ($filter === 'awaiting') on @endif" type="button" wire:click="$set('filter', 'awaiting')">Awaiting approval</button>
     <button class="chip @if ($filter === 'later') on @endif" type="button" wire:click="$set('filter', 'later')">Further along</button>
+    <x-filters-menu :open="$showFilters" :active="$this->hasActiveFilters()" clear="clearPanFilters">
+      <x-pan-filters />
+    </x-filters-menu>
   </div>
 
   @if ($pans->isEmpty())

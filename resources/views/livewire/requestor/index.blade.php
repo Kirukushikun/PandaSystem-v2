@@ -21,6 +21,9 @@
     <button class="chip @if ($filter === 'all') on @endif" type="button" wire:click="$set('filter', 'all')">All</button>
     <button class="chip @if ($filter === 'progress') on @endif" type="button" wire:click="$set('filter', 'progress')">In progress</button>
     <button class="chip @if ($filter === 'completed') on @endif" type="button" wire:click="$set('filter', 'completed')">Completed</button>
+    <x-filters-menu :open="$showFilters" :active="$this->hasActiveFilters()" clear="clearPanFilters">
+      <x-pan-filters />
+    </x-filters-menu>
   </div>
 
   @if ($pans->isEmpty())

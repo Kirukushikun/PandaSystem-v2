@@ -9,6 +9,7 @@ use App\Services\PanWorkflow;
 use Illuminate\Database\Eloquent\Builder;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
+use App\Livewire\Concerns\FiltersPanRequests;
 use App\Livewire\Concerns\WithPerPage;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -17,6 +18,7 @@ use Livewire\WithPagination;
 #[Title('Preparation Queue — PANDA')]
 class Queue extends Component
 {
+    use FiltersPanRequests;
     use WithPagination;
     use WithPerPage;
 
@@ -38,6 +40,16 @@ class Queue extends Component
 
     public function updatedTagFilter(): void
     {
+        $this->resetPage();
+    }
+
+    /** Overrides FiltersPanRequests' version to also reset tagFilter, which lives here, not the trait. */
+    public function clearPanFilters(): void
+    {
+        $this->tagFilter = 'all';
+        $this->sort = 'newest';
+        $this->actionTypeFilter = null;
+        $this->departmentFilter = null;
         $this->resetPage();
     }
 
@@ -135,7 +147,12 @@ class Queue extends Component
             // 'untagged' here means the enum's Untagged case — AwaitingTag PANs, since
             // tagging is what moves them out of that status in the first place.
             ->when($this->tagFilter !== 'all', fn (Builder $q) => $q
-                ->where('confidentiality_tag', $this->tagFilter));
+                ->where('confidentiality_tag', $this->tagFilter))
+            // WHERE-only (type of action, department) — safe to share with the grouped
+            // stats query below; sort is an ORDER BY and is applied separately, only to
+            // the paginated list, so it never risks tripping GROUP BY over a column
+            // that isn't part of it.
+            ->tap(fn (Builder $q) => $this->applyPanFilters($q));
     }
 
     public function render()
@@ -155,7 +172,7 @@ class Queue extends Component
             ->when($this->filter === 'prepare', fn (Builder $q) => $q->whereIn('status', $prepare))
             ->when($this->filter === 'approval', fn (Builder $q) => $q->whereIn('status', $approval))
             ->when($this->filter === 'serve', fn (Builder $q) => $q->whereIn('status', $serve))
-            ->orderByDesc('id')
+            ->tap(fn (Builder $q) => $this->applyPanSort($q))
             ->paginate($this->perPage);
 
         // All three stats are status buckets over the same scope — one grouped query.

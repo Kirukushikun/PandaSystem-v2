@@ -13,6 +13,12 @@
     <x-stat :value="$stats['rejected']" label="Rejected this quarter" tone="bad" />
   </div>
 
+  <div class="bar">
+    <x-filters-menu :open="$showFilters" :active="$this->hasActiveFilters()" clear="clearPanFilters">
+      <x-pan-filters />
+    </x-filters-menu>
+  </div>
+
   @if ($pans->isEmpty())
   <x-empty-state title="All caught up" message="Nothing is waiting for your final sign-off. Approved PANs move on to HR Preparation for serving." />
   @else

@@ -8,6 +8,7 @@ use App\Services\PanWorkflow;
 use Illuminate\Database\Eloquent\Builder;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
+use App\Livewire\Concerns\FiltersPanRequests;
 use App\Livewire\Concerns\WithPerPage;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -16,6 +17,7 @@ use Livewire\WithPagination;
 #[Title('HR Approval Queue — PANDA')]
 class Queue extends Component
 {
+    use FiltersPanRequests;
     use WithPagination;
     use WithPerPage;
 
@@ -105,7 +107,7 @@ class Queue extends Component
                     ->orWhere('action_type', 'like', '%'.str_replace(' ', '-', strtolower($this->search)).'%')
                     ->orWhereHas('employee', fn (Builder $q) => $q->where('name', 'like', "%{$this->search}%")));
             })
-            ->orderByDesc('id')
+            ->tap(fn (Builder $q) => $this->applyPanFiltersAndSort($q))
             ->paginate($this->perPage);
 
         // Three stats, one aggregate pass (conditions are mixed, so CASE sums not GROUP BY).

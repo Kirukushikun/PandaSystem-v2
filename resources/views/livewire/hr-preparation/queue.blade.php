@@ -19,18 +19,22 @@
     <button class="chip @if ($filter === 'prepare') on @endif" type="button" wire:click="$set('filter', 'prepare')">To prepare</button>
     <button class="chip @if ($filter === 'approval') on @endif" type="button" wire:click="$set('filter', 'approval')">In approval</button>
     <button class="chip @if ($filter === 'serve') on @endif" type="button" wire:click="$set('filter', 'serve')">To serve / file</button>
-  </div>
-
-  {{-- Confidentiality filter — Manila only shows up for HR Head Preparers; a normal
-       preparer never sees Manila rows anyway (scope() already strips them), so the
-       chip would just be dead weight for that role. --}}
-  <div class="bar">
-    <button class="chip @if ($tagFilter === 'all') on @endif" type="button" wire:click="$set('tagFilter', 'all')">All tags</button>
-    <button class="chip @if ($tagFilter === 'untagged') on @endif" type="button" wire:click="$set('tagFilter', 'untagged')"><x-tag-dot /> Untagged</button>
-    <button class="chip @if ($tagFilter === 'tarlac') on @endif" type="button" wire:click="$set('tagFilter', 'tarlac')"><x-tag-dot tag="tarlac" /> Tarlac</button>
-    @if ($isHrHead)
-    <button class="chip @if ($tagFilter === 'manila') on @endif" type="button" wire:click="$set('tagFilter', 'manila')"><x-tag-dot tag="manila" /> Manila</button>
-    @endif
+    <x-filters-menu :open="$showFilters" :active="$this->hasActiveFilters() || $tagFilter !== 'all'" clear="clearPanFilters">
+      {{-- Confidentiality filter — Manila only shows up for HR Head Preparers; a normal
+           preparer never sees Manila rows anyway (scope() already strips them), so the
+           chip would just be dead weight for that role. --}}
+      <div class="filters-section-label">Tags</div>
+      <div class="bar">
+        <button class="chip @if ($tagFilter === 'all') on @endif" type="button" wire:click="$set('tagFilter', 'all')">All tags</button>
+        <button class="chip @if ($tagFilter === 'untagged') on @endif" type="button" wire:click="$set('tagFilter', 'untagged')"><x-tag-dot /> Untagged</button>
+        <button class="chip @if ($tagFilter === 'tarlac') on @endif" type="button" wire:click="$set('tagFilter', 'tarlac')"><x-tag-dot tag="tarlac" /> Tarlac</button>
+        @if ($isHrHead)
+        <button class="chip @if ($tagFilter === 'manila') on @endif" type="button" wire:click="$set('tagFilter', 'manila')"><x-tag-dot tag="manila" /> Manila</button>
+        @endif
+      </div>
+      <hr class="filters-divider">
+      <x-pan-filters />
+    </x-filters-menu>
   </div>
 
   @if ($pans->isEmpty())

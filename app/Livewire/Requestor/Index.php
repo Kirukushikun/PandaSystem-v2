@@ -7,6 +7,7 @@ use App\Models\PanRequest;
 use App\Services\PanWorkflow;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
+use App\Livewire\Concerns\FiltersPanRequests;
 use App\Livewire\Concerns\WithPerPage;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -15,6 +16,7 @@ use Livewire\WithPagination;
 #[Title('My PAN Requests — PANDA')]
 class Index extends Component
 {
+    use FiltersPanRequests;
     use WithPagination;
     use WithPerPage;
 
@@ -66,7 +68,7 @@ class Index extends Component
             ->when($this->filter === 'completed', fn ($q) => $q->whereIn('status', [
                 PanStatus::Filed, PanStatus::Withdrawn, PanStatus::Voided, PanStatus::Unserved,
             ]))
-            ->orderByDesc('id')
+            ->tap(fn ($q) => $this->applyPanFiltersAndSort($q))
             ->paginate($this->perPage);
 
         // One grouped query instead of four counts; the buckets are summed in PHP.

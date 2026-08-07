@@ -8,6 +8,7 @@ use App\Services\PanWorkflow;
 use Illuminate\Database\Eloquent\Builder;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
+use App\Livewire\Concerns\FiltersPanRequests;
 use App\Livewire\Concerns\ScopesDivisionPans;
 use App\Livewire\Concerns\WithPerPage;
 use Livewire\Component;
@@ -17,6 +18,7 @@ use Livewire\WithPagination;
 #[Title('Department Queue — PANDA')]
 class Queue extends Component
 {
+    use FiltersPanRequests;
     use ScopesDivisionPans;
     use WithPagination;
     use WithPerPage;
@@ -122,7 +124,7 @@ class Queue extends Component
             })
             ->when($this->filter === 'action', fn (Builder $q) => $q->whereIn('status', $awaiting))
             ->when($this->filter === 'completed', fn (Builder $q) => $q->whereIn('status', $terminal))
-            ->orderByDesc('id')
+            ->tap(fn (Builder $q) => $this->applyPanFiltersAndSort($q))
             ->paginate($this->perPage);
 
         // awaiting/later are pure status buckets — one grouped query covers both;

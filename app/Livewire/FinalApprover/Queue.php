@@ -3,6 +3,7 @@
 namespace App\Livewire\FinalApprover;
 
 use App\Enums\PanStatus;
+use App\Livewire\Concerns\FiltersPanRequests;
 use App\Livewire\FinalApprover\Concerns\GivesFinalApproval;
 use App\Models\PanRequest;
 use App\Models\PanReturn;
@@ -15,6 +16,7 @@ use Livewire\Component;
 #[Title('Final Sign-off — PANDA')]
 class Queue extends Component
 {
+    use FiltersPanRequests;
     use GivesFinalApproval;
 
     /** Bulk selection — PAN ids as strings (checkbox values dehydrate as strings). */
@@ -33,7 +35,7 @@ class Queue extends Component
     {
         return PanRequest::where('status', PanStatus::ForFinalApproval)
             ->with(['employee.department', 'form'])
-            ->orderByDesc('id')
+            ->tap(fn ($q) => $this->applyPanFiltersAndSort($q))
             ->get();
     }
 

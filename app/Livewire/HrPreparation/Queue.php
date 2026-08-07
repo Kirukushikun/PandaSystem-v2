@@ -24,12 +24,19 @@ class Queue extends Component
 
     public string $filter = 'all'; // all | prepare | approval | serve
 
+    public string $tagFilter = 'all'; // all | manila | tarlac | untagged
+
     public function updatedSearch(): void
     {
         $this->resetPage();
     }
 
     public function updatedFilter(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedTagFilter(): void
     {
         $this->resetPage();
     }
@@ -124,7 +131,11 @@ class Queue extends Component
                 PanStatus::Withdrawn->value,
             ])
             ->when(! auth()->user()->is_hr_head, fn (Builder $q) => $q
-                ->where('confidentiality_tag', '!=', ConfidentialityTag::Manila->value));
+                ->where('confidentiality_tag', '!=', ConfidentialityTag::Manila->value))
+            // 'untagged' here means the enum's Untagged case — AwaitingTag PANs, since
+            // tagging is what moves them out of that status in the first place.
+            ->when($this->tagFilter !== 'all', fn (Builder $q) => $q
+                ->where('confidentiality_tag', $this->tagFilter));
     }
 
     public function render()

@@ -103,7 +103,7 @@ footer{margin-top:22px;text-align:center;font-size:11px;color:var(--ink-3)}
     @csrf
     <div class="brand">
       <h1>PANDA<span>&nbsp;v2</span></h1>
-      <p>Personnel Action Notice workflow · BFC Group</p>
+      <p>Personnel Action Notice Document Automation</p>
     </div>
     @if ($errors->has('email'))
       <p style="margin:0 0 14px;font-size:12.5px;color:var(--red)">{{ $errors->first('email') }}</p>

@@ -30,7 +30,7 @@
 <aside class="side">
   <div class="brand">
     <h1>PANDA<span>&nbsp;v2</span></h1>
-    <p>Personnel Action Notice workflow</p>
+    <p>Personnel Action Notice Document Automation</p>
   </div>
   {{-- Links hidden per gate are UX only — every route enforces the same gate + policies --}}
   <nav class="navsec" aria-label="Modules">

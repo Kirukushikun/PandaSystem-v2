@@ -27,6 +27,7 @@ class UserFactory extends Factory
             'is_hr_head' => false,
             'is_dh_head' => false,
             'is_admin' => false,
+            'is_proxy_approver' => false,
         ];
     }
 
@@ -68,5 +69,10 @@ class UserFactory extends Factory
     public function admin(): static
     {
         return $this->state(['is_admin' => true]);
+    }
+
+    public function proxyApprover(): static
+    {
+        return $this->state(['is_proxy_approver' => true]);
     }
 }

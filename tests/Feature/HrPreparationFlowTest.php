@@ -125,6 +125,43 @@ test('saving writes the pan_form; blank "To" fields carry the "From" value throu
         ->and($rows->firstWhere('field', 'place')['to'])->toBe($rows->firstWhere('field', 'place')['from']);
 });
 
+test('a PAN whose Division Head approval was proxy-approved pre-fills and requires remarks', function () {
+    $pan = prepPan(PanStatus::InPreparation);
+    $pan->returns()->create([
+        'action' => 'proxy_approve_dh',
+        'from_status' => PanStatus::WithDivisionHead,
+        'to_status' => PanStatus::AwaitingTag,
+        'reason' => 'The approval waiting period took too long',
+        'returned_by' => User::factory()->proxyApprover()->create()->id,
+    ]);
+
+    $test = Livewire::test(PrepareForm::class, ['pan' => $pan->reference])
+        ->assertSet('remarks', 'Division Head approval was proxy-approved — The approval waiting period took too long');
+
+    $test->set('date_hired', '2023-02-02')
+        ->set('doe_from', '2026-08-16')
+        ->set('remarks', '')
+        ->call('save')
+        ->assertHasErrors(['remarks']);
+
+    $test->set('remarks', 'Confirmed with HR Head — proceeding as-is.')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect($pan->fresh()->form->remarks)->toBe('Confirmed with HR Head — proceeding as-is.');
+});
+
+test('a normal PAN never requires remarks', function () {
+    $pan = prepPan(PanStatus::InPreparation);
+
+    Livewire::test(PrepareForm::class, ['pan' => $pan->reference])
+        ->assertSet('remarks', '')
+        ->set('date_hired', '2023-02-02')
+        ->set('doe_from', '2026-08-16')
+        ->call('save')
+        ->assertHasNoErrors();
+});
+
 test('reopening for revision reloads a "To" value even when it was deliberately left equal to "From"', function () {
     // Real reported bug: Position (and Place) are the only fixed fields with a real,
     // non-blank "From" — a preparer who confirms it unchanged by retyping the same

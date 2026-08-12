@@ -199,6 +199,9 @@
 
     <div class="sect">Remarks</div>
     <div class="formgrid" style="padding-top:10px">
+      @if ($pan->wasProxyApproved())
+      <div class="note warn full"><span class="ic">!</span>This PAN's Division Head approval was proxy-approved. Remarks are required here to document why — edit the seeded text below or add your own context.</div>
+      @endif
       <div class="field full"><textarea rows="2" wire:model="remarks" maxlength="1000" placeholder="e.g. Per approved 2026 org structure."></textarea>
         @error('remarks')<span class="hint" style="color:var(--red)">{{ $message }}</span>@enderror</div>
     </div>

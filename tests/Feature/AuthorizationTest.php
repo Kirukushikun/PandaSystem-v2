@@ -24,6 +24,7 @@ test('module routes 403 without the matching stage permission', function (string
 })->with([
     'requests / requestor' => ['/requests', 'requestor'],
     'division / divisionHead' => ['/division', 'divisionHead'],
+    'proxy-approval / proxyApprover' => ['/proxy-approval', 'proxyApprover'],
     'preparation / hrPreparer' => ['/preparation', 'hrPreparer'],
     'employees lens / hrPreparer' => ['/employees', 'hrPreparer'],
     'hr-approval / hrApprover' => ['/hr-approval', 'hrApprover'],

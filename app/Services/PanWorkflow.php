@@ -54,6 +54,12 @@ class PanWorkflow
         'confirm' => ['from' => [PanStatus::ForConfirmation], 'to' => PanStatus::ForHrApproval, 'by' => 'division_head', 'reason' => false],
         'dispute' => ['from' => [PanStatus::ForConfirmation], 'to' => PanStatus::InPreparation, 'by' => 'division_head', 'reason' => true],
 
+        // Proxy Approver — temporary override for stalled Division Head stages
+        // (Tarlac/Untagged only; see ProxyApprovalEligibility). Lands the same
+        // place the real action would.
+        'proxy_approve_dh' => ['from' => [PanStatus::WithDivisionHead], 'to' => PanStatus::AwaitingTag, 'by' => 'proxy_approver', 'reason' => true],
+        'proxy_approve_confirmation' => ['from' => [PanStatus::ForConfirmation], 'to' => PanStatus::ForHrApproval, 'by' => 'proxy_approver', 'reason' => true],
+
         // HR Approver stage (returns ONE step back — to the preparer, never the requestor)
         'approve_hr' => ['from' => [PanStatus::ForHrApproval], 'to' => PanStatus::ForFinalApproval, 'by' => 'hr_approver', 'reason' => false],
         'return_to_preparer' => ['from' => [PanStatus::ForHrApproval], 'to' => PanStatus::ReturnedToPreparer, 'by' => 'hr_approver', 'reason' => true],
@@ -80,12 +86,13 @@ class PanWorkflow
     /**
      * Apply an action to a status. Returns the new status; throws on illegal moves.
      *
-     * $confidentialityTag matters only for 'approve_division': a PAN that already
-     * carries a tag (i.e. this isn't its first trip through Division Head — it was
-     * sent back to the Requestor and resubmitted after HR Preparation had already
-     * tagged it) skips AwaitingTag and re-enters InPreparation directly. Re-tagging
-     * something already tagged is pure re-entry of a decision already made, and
-     * risks the retagger picking a different confidentiality than the first pass.
+     * $confidentialityTag matters only for 'approve_division'/'proxy_approve_dh':
+     * a PAN that already carries a tag (i.e. this isn't its first trip through
+     * Division Head — it was sent back to the Requestor and resubmitted after HR
+     * Preparation had already tagged it) skips AwaitingTag and re-enters
+     * InPreparation directly. Re-tagging something already tagged is pure
+     * re-entry of a decision already made, and risks the retagger picking a
+     * different confidentiality than the first pass.
      */
     public function apply(PanStatus $from, string $action, ?ConfidentialityTag $confidentialityTag = null): PanStatus
     {
@@ -95,7 +102,7 @@ class PanWorkflow
             throw IllegalPanTransition::notAllowedFrom($action, $from);
         }
 
-        if ($action === 'approve_division' && $confidentialityTag !== null && $confidentialityTag !== ConfidentialityTag::Untagged) {
+        if (in_array($action, ['approve_division', 'proxy_approve_dh'], true) && $confidentialityTag !== null && $confidentialityTag !== ConfidentialityTag::Untagged) {
             return PanStatus::InPreparation;
         }
 

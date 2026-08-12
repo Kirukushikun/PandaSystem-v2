@@ -51,6 +51,7 @@ class Logs extends Component
                     'dispute' => 'Div Head',
                     'return_to_preparer' => 'HR Approve',
                     'reject_final' => 'Final',
+                    'proxy_approve_dh', 'proxy_approve_confirmation' => 'Proxy Approver',
                     default => 'HR Prep', // void, mark_unserved
                 },
                 'text' => "{$return->returnedBy->name} — ".str_replace('_', ' ', $return->action)

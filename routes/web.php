@@ -57,6 +57,10 @@ Route::middleware('auth')->group(function () {
         Route::get('/division/{pan}', App\Livewire\DivisionHead\Show::class)->name('division.show');
     });
 
+    Route::middleware('can:proxy_approver')->group(function () {
+        Route::get('/proxy-approval', App\Livewire\ProxyApprover\Queue::class)->name('proxy-approval.queue');
+    });
+
     Route::middleware('can:hr_preparer')->group(function () {
         Route::get('/preparation', App\Livewire\HrPreparation\Queue::class)->name('preparation.queue');
         Route::get('/preparation/{pan}/edit', PrepareForm::class)->name('preparation.edit');
@@ -129,6 +133,7 @@ Route::middleware('auth')->group(function () {
             return $disk->download($path);
         })->name('maintenance.backups.download');
         Route::get('/maintenance/danger', DangerZone::class)->name('maintenance.danger');
+        Route::get('/maintenance/proxy-approver', App\Livewire\Maintenance\ProxyApproverSettings::class)->name('maintenance.proxy-approver');
     });
 
     // Roster CRUD: admins and HR Preparers both — see manage_roster gate.

@@ -6,6 +6,7 @@ use App\Enums\ConfidentialityTag;
 use App\Enums\PanStatus;
 use App\Models\PanRequest;
 use App\Models\User;
+use App\Services\ProxyApprovalEligibility;
 
 /**
  * The single source of truth for who may see or act on a PAN — checked on EVERY
@@ -102,6 +103,26 @@ class PanRequestPolicy
     public function dispute(User $user, PanRequest $pan): bool
     {
         return $pan->status === PanStatus::ForConfirmation && $this->headsStageFor($user, $pan);
+    }
+
+    // Proxy Approver — temporary, transparent override for stalled Division Head
+    // stages. Manila stays untouched; eligibility (kill switch + staleness) is
+    // centralized in ProxyApprovalEligibility so the policy and the queue can't drift.
+
+    public function proxyApproveDh(User $user, PanRequest $pan): bool
+    {
+        return $pan->status === PanStatus::WithDivisionHead
+            && $pan->confidentiality_tag !== ConfidentialityTag::Manila
+            && $user->is_proxy_approver
+            && app(ProxyApprovalEligibility::class)->eligible($pan);
+    }
+
+    public function proxyApproveConfirmation(User $user, PanRequest $pan): bool
+    {
+        return $pan->status === PanStatus::ForConfirmation
+            && $pan->confidentiality_tag !== ConfidentialityTag::Manila
+            && $user->is_proxy_approver
+            && app(ProxyApprovalEligibility::class)->eligible($pan);
     }
 
     // HR Preparation stages — Manila PANs may only be worked by HR Head preparers;

@@ -136,6 +136,16 @@ class PrepareForm extends Component
             $this->allowances = $carry->allowancesFor($this->panRequest);
             $this->date_hired = $carry->previousPanFor($this->panRequest->employee, $this->panRequest)
                 ?->form->date_hired?->format('Y-m-d') ?? '';
+
+            // Division Head approval was proxy-approved — the preparer must document why (remarks
+            // becomes required in rules()); seed a real, editable starting value rather than a
+            // placeholder, since an untouched placeholder submits empty and would fail that rule.
+            if ($this->remarks === '' && $this->panRequest->wasProxyApproved()) {
+                $log = $this->panRequest->returns()->where('action', 'proxy_approve_dh')->latest('id')->first();
+                if ($log !== null) {
+                    $this->remarks = "Division Head approval was proxy-approved — {$log->reason}";
+                }
+            }
         }
 
         if ($this->panRequest->action_type->includesLeaveCredits()) {
@@ -305,7 +315,7 @@ class PrepareForm extends Component
             'toValues.*' => 'nullable|string|max:255',
             'toValues.leavecredits' => ['nullable', \Illuminate\Validation\Rule::in(self::LEAVE_CREDIT_OPTIONS)],
             'allowances.*.to' => 'nullable|string|max:255',
-            'remarks' => 'nullable|string|max:1000',
+            'remarks' => $this->panRequest->wasProxyApproved() ? 'required|string|max:1000' : 'nullable|string|max:1000',
         ];
     }
 

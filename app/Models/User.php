@@ -24,7 +24,7 @@ class User extends Authenticatable
         'external_id', 'username', 'email', 'name', 'position', 'farm_id',
         'is_requestor', 'is_division_head', 'is_hr_preparer',
         'is_hr_approver', 'is_final_approver',
-        'is_hr_head', 'is_dh_head', 'is_admin',
+        'is_hr_head', 'is_dh_head', 'is_admin', 'is_proxy_approver',
         'esign_path',
     ];
 
@@ -41,6 +41,7 @@ class User extends Authenticatable
             'is_hr_head' => 'boolean',
             'is_dh_head' => 'boolean',
             'is_admin' => 'boolean',
+            'is_proxy_approver' => 'boolean',
         ];
     }
 
@@ -74,6 +75,9 @@ class User extends Authenticatable
             $this->is_hr_approver => route('hr-approval.queue'),
             $this->is_final_approver => route('final-approval.queue'),
             $this->is_admin => route('admin.users'),
+            // Proxy Approver is an add-on grant, not a primary identity — only
+            // decides landing for an account that holds no other role.
+            $this->is_proxy_approver => route('proxy-approval.queue'),
             default => route('help.glossary'), // no roles: the one page everyone may see
         };
     }

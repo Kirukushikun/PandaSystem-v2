@@ -88,6 +88,14 @@ class PanRequest extends Model
         return $this->hasMany(PanReturn::class);
     }
 
+    /** Ever proxy-approved at either Division-Head-gated stage — see ProxyApprovalEligibility. */
+    public function wasProxyApproved(): bool
+    {
+        return $this->returns()
+            ->whereIn('action', ['proxy_approve_dh', 'proxy_approve_confirmation'])
+            ->exists();
+    }
+
     /** The most recent return/dispute/rejection — lets a queue explain *why* a PAN is back, not just that it is. */
     public function latestReturn(): HasOne
     {

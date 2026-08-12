@@ -4,4 +4,5 @@
   <a class="stab @if (request()->routeIs('maintenance.reference')) on @endif" href="{{ route('maintenance.reference') }}" wire:navigate style="text-decoration:none">Reference Values</a>
   <a class="stab @if (request()->routeIs('maintenance.backups')) on @endif" href="{{ route('maintenance.backups') }}" wire:navigate style="text-decoration:none">Backup &amp; Restore</a>
   <a class="stab @if (request()->routeIs('maintenance.danger')) on @endif" href="{{ route('maintenance.danger') }}" wire:navigate style="text-decoration:none">Danger Zone</a>
+  <a class="stab @if (request()->routeIs('maintenance.proxy-approver')) on @endif" href="{{ route('maintenance.proxy-approver') }}" wire:navigate style="text-decoration:none">Proxy Approver</a>
 </div>

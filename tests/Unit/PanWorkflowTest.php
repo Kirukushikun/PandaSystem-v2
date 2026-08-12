@@ -165,11 +165,11 @@ test('the available actions per status match the Glossary', function (PanStatus 
     expect($this->workflow->actionsFrom($from))->toEqualCanonicalizing($expected);
 })->with([
     'Draft' => [PanStatus::Draft, ['submit']],
-    'With Division Head' => [PanStatus::WithDivisionHead, ['approve_division', 'return_to_requestor']],
+    'With Division Head' => [PanStatus::WithDivisionHead, ['approve_division', 'return_to_requestor', 'proxy_approve_dh']],
     'Returned to Requestor' => [PanStatus::ReturnedToRequestor, ['resubmit', 'withdraw']],
     'Awaiting Tag' => [PanStatus::AwaitingTag, ['tag', 'void']],
     'In Preparation' => [PanStatus::InPreparation, ['submit_for_confirmation', 'void', 'send_back_to_requestor']],
-    'For Confirmation' => [PanStatus::ForConfirmation, ['confirm', 'dispute']],
+    'For Confirmation' => [PanStatus::ForConfirmation, ['confirm', 'dispute', 'proxy_approve_confirmation']],
     'Returned to Preparer' => [PanStatus::ReturnedToPreparer, ['resubmit_to_hr', 'void', 'send_back_to_requestor']],
     'For HR Approval' => [PanStatus::ForHrApproval, ['approve_hr', 'return_to_preparer']],
     'For Final Approval' => [PanStatus::ForFinalApproval, ['approve_final', 'reject_final']],
@@ -178,7 +178,7 @@ test('the available actions per status match the Glossary', function (PanStatus 
 ]);
 
 test('every backward or destructive move demands a mandatory reason', function () {
-    $reasonRequired = ['return_to_requestor', 'dispute', 'return_to_preparer', 'reject_final', 'void', 'mark_unserved', 'send_back_to_requestor'];
+    $reasonRequired = ['return_to_requestor', 'dispute', 'return_to_preparer', 'reject_final', 'void', 'mark_unserved', 'send_back_to_requestor', 'proxy_approve_dh', 'proxy_approve_confirmation'];
 
     foreach (array_keys(PanWorkflow::TRANSITIONS) as $action) {
         expect($this->workflow->requiresReason($action))
@@ -187,7 +187,7 @@ test('every backward or destructive move demands a mandatory reason', function (
 });
 
 test('every action names the stage permission a policy must check', function () {
-    $stages = ['requestor', 'division_head', 'hr_preparer', 'hr_approver', 'final_approver'];
+    $stages = ['requestor', 'division_head', 'hr_preparer', 'hr_approver', 'final_approver', 'proxy_approver'];
 
     foreach (array_keys(PanWorkflow::TRANSITIONS) as $action) {
         expect($this->workflow->permissionFor($action))->toBeIn($stages);

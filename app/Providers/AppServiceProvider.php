@@ -34,6 +34,9 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('hr_head', fn (User $u) => $u->is_hr_head);
         Gate::define('dh_head', fn (User $u) => $u->is_dh_head);
         Gate::define('admin', fn (User $u) => $u->is_admin);
+        // Temporary override for stalled Division Head approvals — see ProxyApprovalEligibility
+        // for the per-record staleness/kill-switch check enforced on top of this.
+        Gate::define('proxy_approver', fn (User $u) => $u->is_proxy_approver);
         // Employee roster CRUD (Administration → Employees): admins own it, but HR
         // Preparers are the ones who actually know when someone's hired, so they get
         // in too. Removal stays admin-only — see EmployeePolicy::delete.

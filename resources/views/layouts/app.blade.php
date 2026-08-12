@@ -41,6 +41,9 @@
     @can('division_head')
     <a class="navbtn @if(request()->routeIs('division.*')) active @endif" href="{{ route('division.queue') }}" wire:navigate><span class="dot"></span>Division Head</a>
     @endcan
+    @can('proxy_approver')
+    <a class="navbtn @if(request()->routeIs('proxy-approval.*')) active @endif" href="{{ route('proxy-approval.queue') }}" wire:navigate><span class="dot"></span>Division Head — Proxy Approver</a>
+    @endcan
     {{-- employees.* is the HR-Prep roster lens (/employees), part of this module per the mockup --}}
     @can('hr_preparer')
     <a class="navbtn @if(request()->routeIs('preparation.*') || request()->routeIs('employees.*')) active @endif" href="{{ route('preparation.queue') }}" wire:navigate><span class="dot"></span>HR Preparation</a>

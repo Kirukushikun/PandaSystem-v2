@@ -13,16 +13,19 @@
     ];
     $ordered = $returns->sortByDesc('id')->values();
 @endphp
+@php
+    $isProxy = fn ($return) => in_array($return->action, ['proxy_approve_dh', 'proxy_approve_confirmation'], true);
+@endphp
 @if ($ordered->isNotEmpty())
 <div class="rethist">
   <div class="rethist-head"><span class="ic">!</span><span>{{ $ordered->count() }} {{ Str::plural('return', $ordered->count()) }} on this request</span></div>
   <div class="rethist-body">
     <div class="tl">
       @foreach ($ordered as $i => $return)
-      <details class="tl-row" data-tone="{{ $tones[$return->from_status->value] ?? 'draft' }}" @if ($i === 0) open @endif>
+      <details class="tl-row" data-tone="{{ $isProxy($return) ? 'proxy' : ($tones[$return->from_status->value] ?? 'draft') }}" @if ($i === 0) open @endif>
         <summary>
           <span class="tl-dot"></span>
-          <span class="tl-stage">{{ $return->from_status->label() }}</span>
+          <span class="tl-stage">{{ $isProxy($return) ? 'Proxy-approved — '.$return->from_status->label() : $return->from_status->label() }}</span>
           <span class="tl-arrow">→</span>
           <span class="tl-by">{{ $return->returnedBy?->name ?? '—' }}</span>
           <span class="tl-time">{{ $return->created_at->format('M j, Y') }}</span>

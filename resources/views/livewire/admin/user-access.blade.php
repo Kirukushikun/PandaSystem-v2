@@ -20,6 +20,7 @@
           'hr_head'        => ['HR Head', 'Manila PANs at HR Preparation'],
           'dh_head'        => ['DH Head', 'Manila PANs at division stage, all departments'],
           'admin'          => ['Admin', 'administration screens'],
+          'proxy_approver' => ['Proxy Approver', 'temporary override for stalled Division Head approvals — see Maintenance'],
         ] as $key => [$label, $note])
         {{-- DH Head (formerly "Confidentiality Approver"): flips their Division Head queue to ONLY Manila-tagged PANs, all departments --}}
         <div class="permrow" @if ($key === 'hr_head') style="border-top:2px solid var(--line);margin-top:4px;padding-top:12px" @endif>

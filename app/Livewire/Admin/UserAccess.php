@@ -45,6 +45,7 @@ class UserAccess extends Component
         'hr_head' => 'is_hr_head',
         'dh_head' => 'is_dh_head',
         'admin' => 'is_admin',
+        'proxy_approver' => 'is_proxy_approver',
     ];
 
     public function mount(string $user): void

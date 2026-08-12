@@ -28,7 +28,7 @@ function stalePan(PanStatus $status, array $extra = []): PanRequest
     return PanRequest::factory()->status($status)->create([
         'employee_id' => test()->employee->id,
         'department_id' => test()->department->id,
-        'updated_at' => now()->subDays(20),
+        'submitted_at' => now()->subDays(20),
         ...$extra,
     ]);
 }
@@ -37,11 +37,11 @@ test('only Tarlac/Untagged PANs past the threshold appear, never Manila, never f
     $stale = stalePan(PanStatus::WithDivisionHead, ['reference' => 'PAN-2026-91001']);
     $fresh = PanRequest::factory()->status(PanStatus::WithDivisionHead)->create([
         'employee_id' => $this->employee->id, 'department_id' => $this->department->id,
-        'updated_at' => now()->subDays(2), 'reference' => 'PAN-2026-91002',
+        'submitted_at' => now()->subDays(2), 'reference' => 'PAN-2026-91002',
     ]);
     $manila = PanRequest::factory()->status(PanStatus::WithDivisionHead)->manila()->create([
         'employee_id' => $this->employee->id, 'department_id' => $this->department->id,
-        'updated_at' => now()->subDays(20), 'reference' => 'PAN-2026-91003',
+        'submitted_at' => now()->subDays(20), 'reference' => 'PAN-2026-91003',
     ]);
 
     Livewire::test(Queue::class)
@@ -51,7 +51,7 @@ test('only Tarlac/Untagged PANs past the threshold appear, never Manila, never f
 });
 
 test('a PAN already proxy-approved once is eligible again immediately, no repeat wait', function () {
-    $pan = stalePan(PanStatus::WithDivisionHead, ['updated_at' => now()->subDays(20)]);
+    $pan = stalePan(PanStatus::WithDivisionHead);
     Livewire::test(Queue::class)
         ->call('startReason', $pan->id, 'proxy_approve_dh')
         ->set('reason', 'The approval waiting period took too long')
@@ -61,9 +61,10 @@ test('a PAN already proxy-approved once is eligible again immediately, no repeat
     $pan->refresh();
     expect($pan->status)->toBe(PanStatus::AwaitingTag);
 
-    // Simulate it reaching ForConfirmation moments later (fresh updated_at) — should
-    // still be eligible because it already carries a proxy_approve_dh log.
-    $pan->update(['status' => PanStatus::ForConfirmation, 'updated_at' => now()]);
+    // Simulate it reaching ForConfirmation moments later — submitted_at never resets
+    // on a real transition, so it's still 20 days old; eligibility here should come
+    // from the prior proxy_approve_dh log, not from staleness at all.
+    $pan->update(['status' => PanStatus::ForConfirmation]);
 
     Livewire::test(Queue::class)->assertSee($pan->reference);
 });

@@ -24,7 +24,7 @@
   <x-empty-state title="Nothing stuck right now" message="No Division-Head-gated PAN has gone past the threshold — check back later, or adjust the threshold in Maintenance." />
   @else
   <div class="card"><div class="twrap"><table>
-    <thead><tr><th>Reference</th><th>Employee</th><th>Department</th><th>Type of Action</th><th>Stage</th><th>Waiting since</th><th></th></tr></thead>
+    <thead><tr><th>Reference</th><th>Employee</th><th>Department</th><th>Type of Action</th><th>Stage</th><th>Submitted</th><th></th></tr></thead>
     <tbody>
       @foreach ($pans as $pan)
       @php $stageIsDh = $pan->status === App\Enums\PanStatus::WithDivisionHead; @endphp
@@ -34,7 +34,7 @@
         <td>{{ $pan->department->name }}</td>
         <td>{{ $pan->action_type->label() }}</td>
         <td><x-status-pill :status="$pan->status->value" /></td>
-        <td class="num">{{ $pan->updated_at->diffForHumans() }}</td>
+        <td class="num">{{ $pan->submitted_at?->diffForHumans() ?? '—' }}</td>
         <x-row-actions>
           @if ($pan->wasProxyApproved())
           <span class="chip" title="Already proxy-approved once — eligible without waiting again">Prior proxy action</span>

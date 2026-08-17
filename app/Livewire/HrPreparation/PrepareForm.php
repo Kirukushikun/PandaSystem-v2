@@ -190,9 +190,10 @@ class PrepareForm extends Component
     }
 
 
+    /** A freshly-added row has no carry-over source at all — "From" is inputtable, unlike a carried row's locked text. */
     public function addAllowance(): void
     {
-        $this->allowances[] = ['label' => $this->allowanceType, 'from' => '—', 'to' => ''];
+        $this->allowances[] = ['label' => $this->allowanceType, 'from' => '', 'to' => '', 'editable' => true];
     }
 
     public function removeAllowance(int $index): void

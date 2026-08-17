@@ -491,6 +491,39 @@ test('allowance rows carry over from the previous PAN, not just the six fixed fi
         ]);
 });
 
+test('a freshly-added allowance row has an inputtable "From" — nothing to carry it over from', function () {
+    $pan = prepPan(PanStatus::InPreparation);
+
+    $test = Livewire::test(PrepareForm::class, ['pan' => $pan->reference])
+        ->call('addAllowance')
+        ->assertSee('wire:model="allowances.0.from"', false)
+        ->set('allowances.0.from', '150.00')
+        ->set('allowances.0.to', '200.00')
+        ->set('date_hired', '2026-08-01')
+        ->set('doe_from', '2026-08-16')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $row = collect($pan->fresh()->form->action_reference)->firstWhere('field', 'Communication Allowance');
+    expect($row['from'])->toBe('150.00')
+        ->and($row['to'])->toBe('200.00');
+});
+
+test('a carried-over allowance row keeps its "From" locked, unlike a freshly-added one', function () {
+    $previous = prepPan(PanStatus::Filed, ['filed_at' => now()->subMonths(2), 'approved_at' => now()->subMonths(2)]);
+    PanForm::factory()->create([
+        'pan_request_id' => $previous->id,
+        'action_reference' => [
+            ['field' => 'Communication Allowance', 'from' => '200.00', 'to' => '200.00'],
+        ],
+    ]);
+    $pan = prepPan(PanStatus::InPreparation);
+
+    Livewire::test(PrepareForm::class, ['pan' => $pan->reference])
+        ->assertDontSee('wire:model="allowances.0.from"', false)
+        ->assertSee('200.00');
+});
+
 test('an Unserved PAN is never used for carry-over, even if it is the most recent', function () {
     // PanWorkflow has no transition out of Unserved — nothing ever confirms the
     // change actually reached the employee, so it must never seed the next PAN.

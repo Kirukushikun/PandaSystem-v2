@@ -200,7 +200,14 @@
         </tr>
         @foreach ($allowances as $i => $allowance)
         <tr wire:key="allowance-{{ $i }}"><td class="lbl">{{ $allowance['label'] }}</td>
-          <td class="num">{{ $allowance['from'] }}</td><td class="arrow">→</td>
+          <td class="num">
+            @if ($allowance['editable'] ?? false)
+            <input class="toin numin" wire:model="allowances.{{ $i }}.from" placeholder="₱ 0.00" maxlength="255" autocomplete="new-password" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore data-form-type="other" name="allowance-from-{{ $i }}-{{ $pan->id }}">
+            @else
+            {{ $allowance['from'] !== '' ? $allowance['from'] : '—' }}
+            @endif
+          </td>
+          <td class="arrow">→</td>
           <td class="num"><input class="toin numin @if (trim($allowance['to']) !== '') filled @endif" wire:model="allowances.{{ $i }}.to" placeholder="₱ 0.00" maxlength="255" autocomplete="new-password" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore data-form-type="other" name="allowance-to-{{ $i }}-{{ $pan->id }}"></td>
           <td><button class="rowdel" type="button" title="Remove allowance row" wire:click="removeAllowance({{ $i }})">×</button></td></tr>
         @endforeach

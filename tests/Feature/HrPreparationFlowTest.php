@@ -162,6 +162,65 @@ test('a normal PAN never requires remarks', function () {
         ->assertHasNoErrors();
 });
 
+test('a newly-created employee with no previous PAN gets inputtable "From" fields instead of stuck hyphens', function () {
+    // HR concern: Section/Head/Job Level/Basic have nothing to carry over for a
+    // fresh hire's first PAN — the "—" placeholder used to be the final answer,
+    // with no way to record the employee's actual current values at all. Place
+    // and Position are still seeded from the Employee record (never blank), but
+    // become editable inputs too — populated, not locked — so print always has
+    // real "From" values even on someone's very first PAN.
+    $pan = prepPan(PanStatus::InPreparation);
+
+    $test = Livewire::test(PrepareForm::class, ['pan' => $pan->reference])
+        ->assertSee('wire:model="fromValues.section"', false)
+        ->assertSee('wire:model="fromValues.place"', false)
+        ->assertSee('wire:model="fromValues.head"', false)
+        ->assertSee('wire:model="fromValues.position"', false)
+        ->assertSee('wire:model="fromValues.joblevel"', false)
+        ->assertSee('wire:model="fromValues.basic"', false)
+        // Place/Position arrive pre-filled from the Employee record, not blank.
+        ->assertSet('fromValues.place', $pan->employee->farm->name)
+        ->assertSet('fromValues.position', $pan->employee->position)
+        ->assertSet('fromValues.section', '');
+
+    $test->set('fromValues.section', 'Farrowing')
+        ->set('fromValues.head', 'Juan Dela Cruz')
+        ->set('fromValues.joblevel', 'JL1')
+        ->set('fromValues.basic', '15,000.00')
+        ->set('date_hired', '2026-08-01')
+        ->set('doe_from', '2026-08-16')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $rows = collect($pan->fresh()->form->action_reference);
+    expect($rows->firstWhere('field', 'section')['from'])->toBe('Farrowing')
+        ->and($rows->firstWhere('field', 'head')['from'])->toBe('Juan Dela Cruz')
+        ->and($rows->firstWhere('field', 'joblevel')['from'])->toBe('JL1')
+        ->and($rows->firstWhere('field', 'basic')['from'])->toBe('15,000.00')
+        ->and($rows->firstWhere('field', 'place')['from'])->toBe($pan->employee->farm->name)
+        ->and($rows->firstWhere('field', 'position')['from'])->toBe($pan->employee->position);
+});
+
+test('once a previous PAN exists, "From" goes back to being read-only carried-over text', function () {
+    $previous = prepPan(PanStatus::Filed, ['filed_at' => now()->subMonths(2), 'approved_at' => now()->subMonths(2)]);
+    PanForm::factory()->create([
+        'pan_request_id' => $previous->id,
+        'action_reference' => [
+            ['field' => 'section', 'from' => '—', 'to' => 'Farrowing'],
+            ['field' => 'place', 'from' => 'BFC', 'to' => 'BFC'],
+            ['field' => 'head', 'from' => '—', 'to' => 'John Doe'],
+            ['field' => 'position', 'from' => 'Farm Helper', 'to' => 'Farm Helper'],
+            ['field' => 'joblevel', 'from' => '—', 'to' => 'JL2'],
+            ['field' => 'basic', 'from' => '—', 'to' => '15,000.00'],
+        ],
+    ]);
+    $pan = prepPan(PanStatus::InPreparation, ['previous_pan_id' => $previous->id]);
+
+    Livewire::test(PrepareForm::class, ['pan' => $pan->reference])
+        ->assertDontSee('wire:model="fromValues.section"', false)
+        ->assertSee('Farrowing'); // carried-over "From" shown as plain text
+});
+
 test('reopening for revision reloads a "To" value even when it was deliberately left equal to "From"', function () {
     // Real reported bug: Position (and Place) are the only fixed fields with a real,
     // non-blank "From" — a preparer who confirms it unchanged by retyping the same

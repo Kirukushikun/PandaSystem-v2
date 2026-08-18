@@ -44,6 +44,9 @@ class PrepareForm extends Component
 
     public string $remarks = '';
 
+    /** Editable dropdown, not free text — EmploymentStatus::cases() are the only valid values. */
+    public string $employment_status = '';
+
     /** Fixed Action Reference rows: field => value. From is carried; To is typed. */
     public array $fromValues = [];
 
@@ -119,6 +122,7 @@ class PrepareForm extends Component
             $this->doe_to = $form->doe_to?->format('Y-m-d') ?? '';
             $this->wage_no = (string) $form->wage_no;
             $this->remarks = (string) $form->remarks;
+            $this->employment_status = $form->employment_status->value;
 
             foreach ($form->action_reference as $row) {
                 if (in_array($row['field'], [...self::FIXED_FIELDS, 'leavecredits'], true)) {
@@ -136,6 +140,7 @@ class PrepareForm extends Component
             $this->allowances = $carry->allowancesFor($this->panRequest);
             $this->date_hired = $carry->previousPanFor($this->panRequest->employee, $this->panRequest)
                 ?->form->date_hired?->format('Y-m-d') ?? '';
+            $this->employment_status = $carry->employmentStatusFor($this->panRequest)->value;
 
             // Division Head approval was proxy-approved — the preparer must document why (remarks
             // becomes required in rules()); seed a real, editable starting value rather than a
@@ -152,13 +157,6 @@ class PrepareForm extends Component
             $this->fromValues['leavecredits'] ??= '';
             $this->toValues['leavecredits'] ??= '';
         }
-    }
-
-    /** The carried employment status — locked; Regularization finalizes it later, at final approval. */
-    public function getEmploymentStatusProperty(): string
-    {
-        return ($this->panRequest->form?->employment_status
-            ?? app(CarryOverService::class)->employmentStatusFor($this->panRequest))->label();
     }
 
     public function applyTag(): void
@@ -317,6 +315,7 @@ class PrepareForm extends Component
             'toValues.leavecredits' => ['nullable', \Illuminate\Validation\Rule::in(self::LEAVE_CREDIT_OPTIONS)],
             'allowances.*.to' => 'nullable|string|max:255',
             'remarks' => $this->panRequest->wasProxyApproved() ? 'required|string|max:1000' : 'nullable|string|max:1000',
+            'employment_status' => ['required', \Illuminate\Validation\Rule::enum(\App\Enums\EmploymentStatus::class)],
         ];
     }
 
@@ -350,8 +349,7 @@ class PrepareForm extends Component
             ['pan_request_id' => $this->panRequest->id],
             [
                 'date_hired' => $this->date_hired,
-                'employment_status' => $this->panRequest->form?->employment_status
-                    ?? app(CarryOverService::class)->employmentStatusFor($this->panRequest),
+                'employment_status' => $this->employment_status,
                 'doe_from' => $this->doe_from,
                 'doe_to' => $this->doe_to ?: null,
                 'wage_no' => $this->panRequest->action_type->requiresWageNumber() ? $this->wage_no : null,

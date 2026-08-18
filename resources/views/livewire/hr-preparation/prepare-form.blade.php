@@ -93,8 +93,14 @@
     <div class="formgrid" style="padding-top:10px">
       <div class="field"><label>Date Hired <em>*</em></label><input type="date" wire:model.live="date_hired" @error('date_hired') style="border-color:var(--red)" @enderror>
         @error('date_hired')<span class="hint" style="color:var(--red)">{{ $message }}</span>@enderror</div>
-      <div class="field"><label>Employment Status</label><input readonly value="{{ $this->employmentStatus }}">
-        <span class="hint">Carried from the last approved PAN — Regularization finalizes it at final approval.</span></div>
+      <div class="field"><label>Employment Status</label>
+        <select wire:model="employment_status" @error('employment_status') style="border-color:var(--red)" @enderror>
+          @foreach (App\Enums\EmploymentStatus::cases() as $status)
+          <option value="{{ $status->value }}">{{ $status->label() }}</option>
+          @endforeach
+        </select>
+        @error('employment_status')<span class="hint" style="color:var(--red)">{{ $message }}</span>@enderror
+        <span class="hint">Pre-selected from the last approved PAN (or Regular for a first-time PAN, Probationary for a Regularization) — editable here. Regularization still finalizes it to Regular at final approval regardless.</span></div>
       <div class="field"><label>Division / Department</label><input readonly value="{{ $pan->employee->department->name }}"></div>
       <div class="field"><label>Effectivity From <em>*</em></label><input type="date" wire:model.live="doe_from" @error('doe_from') style="border-color:var(--red)" @enderror>
         @error('doe_from')<span class="hint" style="color:var(--red)">{{ $message }}</span>@enderror</div>

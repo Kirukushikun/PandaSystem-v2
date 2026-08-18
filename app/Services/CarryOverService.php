@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\ActionType;
 use App\Enums\EmploymentStatus;
 use App\Enums\PanStatus;
 use App\Models\Employee;
@@ -106,16 +107,32 @@ class CarryOverService
             ->all();
     }
 
-    /** Carried employment status — locked to the last approved PAN's value. */
+    /** Carried employment status — seeded from the last approved PAN's value, editable from there. */
     public function employmentStatusFor(PanRequest $pan): EmploymentStatus
     {
-        return $this->employmentStatusForEmployee($pan->employee, $pan);
+        return $this->employmentStatusForEmployee($pan->employee, $pan, $pan->action_type);
     }
 
-    /** Same as employmentStatusFor(), for an employee with no PAN of their own yet. */
-    public function employmentStatusForEmployee(Employee $employee, ?PanRequest $ignore = null): EmploymentStatus
+    /**
+     * Same as employmentStatusFor(), for an employee with no PAN of their own yet.
+     *
+     * With no previous PAN to carry a value from, the default used to be
+     * unconditionally Probationary — correct for a Regularization (that's the
+     * whole point of the action), but wrong for anything else: a first-time PAN
+     * for, say, a Salary Alignment has no reason to assume the employee is
+     * probationary. $actionType is optional (the dev "legacy peek" preview has
+     * no specific action in play) — Probationary stays the fallback when it's
+     * not given, matching the old behavior there.
+     */
+    public function employmentStatusForEmployee(Employee $employee, ?PanRequest $ignore = null, ?ActionType $actionType = null): EmploymentStatus
     {
-        return $this->previousPanFor($employee, $ignore)?->form->employment_status
-            ?? EmploymentStatus::Probationary;
+        $previous = $this->previousPanFor($employee, $ignore)?->form->employment_status;
+        if ($previous !== null) {
+            return $previous;
+        }
+
+        return ($actionType !== null && $actionType !== ActionType::Regularization)
+            ? EmploymentStatus::Regular
+            : EmploymentStatus::Probationary;
     }
 }

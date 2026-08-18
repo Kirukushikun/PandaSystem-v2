@@ -445,6 +445,33 @@ test('the last filed PAN seeds the From values, links the chain, and locks emplo
         ->and($pan->form->employment_status)->toBe(EmploymentStatus::Regular);
 });
 
+test('a first-time PAN defaults to Regular, not Probationary, unless the action is Regularization', function () {
+    // HR-reported bug: a brand-new employee's very first PAN unconditionally
+    // defaulted to Probationary regardless of action type — wrong for anything
+    // that isn't actually a Regularization (e.g. Salary Alignment).
+    $salaryAlignment = prepPan(PanStatus::InPreparation, ['action_type' => 'salary-alignment']);
+    Livewire::test(PrepareForm::class, ['pan' => $salaryAlignment->reference])
+        ->assertSet('employment_status', EmploymentStatus::Regular->value);
+
+    $regularization = prepPan(PanStatus::InPreparation, ['action_type' => 'regularization']);
+    Livewire::test(PrepareForm::class, ['pan' => $regularization->reference])
+        ->assertSet('employment_status', EmploymentStatus::Probationary->value);
+});
+
+test('employment status is an editable dropdown — HR can override the default and it persists', function () {
+    $pan = prepPan(PanStatus::InPreparation, ['action_type' => 'salary-alignment']);
+
+    Livewire::test(PrepareForm::class, ['pan' => $pan->reference])
+        ->assertSet('employment_status', EmploymentStatus::Regular->value)
+        ->set('employment_status', EmploymentStatus::Casual->value)
+        ->set('date_hired', '2026-08-01')
+        ->set('doe_from', '2026-08-16')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect($pan->fresh()->form->employment_status)->toBe(EmploymentStatus::Casual);
+});
+
 test('a newer Approved-but-unfiled PAN outranks an older Filed one for carry-over', function () {
     // Reproduces a real production case: two tranches of the same wage order — the
     // 1st is Filed and closed out, the 2nd got Final Approver sign-off months later

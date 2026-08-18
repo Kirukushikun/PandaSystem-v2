@@ -5,6 +5,8 @@ namespace App\Livewire\Admin;
 use App\Models\Department;
 use App\Models\Farm;
 use App\Models\User;
+use App\Services\LoginLockoutService;
+use Illuminate\Support\Facades\Log;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -22,6 +24,9 @@ class UserAccess extends Component
     use WithFileUploads;
 
     public User $account;
+
+    /** Whether the account is currently sitting out the 15-minute login lockout. */
+    public bool $isLocked = false;
 
     /** Toggle state for the eight permission switches (persisted on Save). */
     public array $perms = [];
@@ -59,6 +64,17 @@ class UserAccess extends Component
         $this->heads = $this->account->headedDepartments()->pluck('departments.id')->all();
         $this->farmId = $this->account->farm_id;
         $this->position = (string) $this->account->position;
+        $this->isLocked = app(LoginLockoutService::class)->isLocked($this->account->email);
+    }
+
+    /** Admin bypass — clears the 15-minute lockout instead of the account waiting it out. */
+    public function unlockAccount(): void
+    {
+        app(LoginLockoutService::class)->clear($this->account->email);
+        $this->isLocked = false;
+
+        Log::info('Login lockout manually cleared', ['email' => $this->account->email, 'cleared_by' => auth()->id()]);
+        $this->js("showToast('{$this->account->name} — login lockout cleared.')");
     }
 
     public function togglePerm(string $key): void

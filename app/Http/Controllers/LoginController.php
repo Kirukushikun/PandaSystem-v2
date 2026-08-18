@@ -4,11 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\AccessLog;
 use App\Models\User;
+use App\Services\LoginLockoutService;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
@@ -20,9 +20,7 @@ use Illuminate\View\View;
  */
 class LoginController extends Controller
 {
-    private const MAX_ATTEMPTS = 3;
-
-    private const LOCKOUT_SECONDS = 900; // 15 minutes
+    public function __construct(private LoginLockoutService $lockout) {}
 
     public function showLogin(): View
     {
@@ -90,7 +88,7 @@ class LoginController extends Controller
             }
         }
 
-        if ($this->isLocked($email)) {
+        if ($this->lockout->isLocked($email)) {
             return back()->withErrors([
                 'email' => 'Account temporarily locked. Please try again in 15 minutes.',
             ])->withInput();
@@ -120,10 +118,10 @@ class LoginController extends Controller
                 ]);
 
             if (! $authResponse->successful()) {
-                $this->incrementAttempts($email);
+                $attempts = $this->lockout->recordFailure($email);
                 $this->logAccess($email, false, $request);
 
-                $left = self::MAX_ATTEMPTS - $this->getAttempts($email);
+                $left = $this->lockout->maxAttempts() - $attempts;
                 $message = $authResponse->json()['message'] ?? 'Incorrect email or password.';
 
                 if ($left > 0) {
@@ -160,7 +158,7 @@ class LoginController extends Controller
             $user = User::find($userResponse->json()['id'] ?? null);
 
             if (! $user) {
-                $this->incrementAttempts($email);
+                $this->lockout->recordFailure($email);
                 $this->logAccess($email, false, $request);
 
                 return back()->withErrors([
@@ -168,7 +166,7 @@ class LoginController extends Controller
                 ])->withInput();
             }
 
-            $this->clearAttempts($email);
+            $this->lockout->clear($email);
             $this->logAccess($email, true, $request);
             Auth::loginUsingId($user->id);
             $request->session()->regenerate();
@@ -185,7 +183,7 @@ class LoginController extends Controller
                 'email' => 'Authentication service is currently unreachable. Please try again shortly.',
             ])->withInput();
         } catch (\Throwable $e) {
-            $this->incrementAttempts($email);
+            $this->lockout->recordFailure($email);
             $this->logAccess($email, false, $request);
             Log::error('Auth login flow failed unexpectedly', ['email' => $email, 'error' => $e->getMessage()]);
 
@@ -201,7 +199,7 @@ class LoginController extends Controller
         $user = User::where('email', $email)->first();
 
         if (! $user) {
-            $this->incrementAttempts($email);
+            $this->lockout->recordFailure($email);
             $this->logAccess($email, false, $request);
 
             return back()->withErrors([
@@ -209,7 +207,7 @@ class LoginController extends Controller
             ])->withInput();
         }
 
-        $this->clearAttempts($email);
+        $this->lockout->clear($email);
         $this->logAccess($email, true, $request);
         Auth::loginUsingId($user->id);
         $request->session()->regenerate();
@@ -224,34 +222,6 @@ class LoginController extends Controller
         $request->session()->regenerateToken();
 
         return redirect()->route('login');
-    }
-
-    private function isLocked(string $email): bool
-    {
-        return Cache::has('login_lockout_'.sha1($email));
-    }
-
-    private function getAttempts(string $email): int
-    {
-        return Cache::get('login_attempts_'.sha1($email), 0);
-    }
-
-    private function incrementAttempts(string $email): void
-    {
-        $key = 'login_attempts_'.sha1($email);
-        $attempts = $this->getAttempts($email) + 1;
-
-        Cache::put($key, $attempts, now()->addMinutes(15));
-
-        if ($attempts >= self::MAX_ATTEMPTS) {
-            Cache::put('login_lockout_'.sha1($email), true, self::LOCKOUT_SECONDS);
-        }
-    }
-
-    private function clearAttempts(string $email): void
-    {
-        Cache::forget('login_attempts_'.sha1($email));
-        Cache::forget('login_lockout_'.sha1($email));
     }
 
     private function logAccess(string $email, bool $success, Request $request): void

@@ -64,6 +64,31 @@ test('an admin cannot switch off their own admin flag', function () {
         ->assertSet('perms.admin', true);
 });
 
+test('a locked-out account shows the unlock banner, and unlocking clears it without waiting 15 minutes', function () {
+    $account = User::factory()->requestor()->create();
+    app(App\Services\LoginLockoutService::class)->recordFailure($account->email);
+    app(App\Services\LoginLockoutService::class)->recordFailure($account->email);
+    app(App\Services\LoginLockoutService::class)->recordFailure($account->email);
+
+    expect(app(App\Services\LoginLockoutService::class)->isLocked($account->email))->toBeTrue();
+
+    Livewire::test(UserAccess::class, ['user' => $account->username])
+        ->assertSet('isLocked', true)
+        ->assertSee('locked out')
+        ->call('unlockAccount')
+        ->assertSet('isLocked', false);
+
+    expect(app(App\Services\LoginLockoutService::class)->isLocked($account->email))->toBeFalse();
+});
+
+test('an account with no lockout shows no banner', function () {
+    $account = User::factory()->requestor()->create();
+
+    Livewire::test(UserAccess::class, ['user' => $account->username])
+        ->assertSet('isLocked', false)
+        ->assertDontSee('locked out');
+});
+
 test('the e-signature uploads to the private disk and serves via the esign route', function () {
     Storage::fake();
     $account = User::factory()->create();

@@ -7,6 +7,14 @@
     <a class="btn" href="{{ route('admin.users') }}" wire:navigate style="text-decoration:none">← Back to users</a>
   </div>
 
+  @if ($isLocked)
+  <div class="note warn"><span class="ic">!</span>
+    <span>This account is currently locked out after too many failed login attempts — it clears on its own in up to 15 minutes.</span>
+    <div class="spacer"></div>
+    <button class="btn primary" type="button" wire:click="unlockAccount" wire:confirm="Clear the login lockout for {{ $account->name }}? They'll be able to sign in immediately.">Unlock now</button>
+  </div>
+  @endif
+
   <div class="twocol">
     <div class="pane">
       <h3>Stage permissions &amp; flags</h3>

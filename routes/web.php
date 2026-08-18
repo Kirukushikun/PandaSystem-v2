@@ -150,7 +150,7 @@ Route::middleware('auth')->group(function () {
         $file = $employee->employeeAttachments()->find($attachment);
         abort_unless($file && Storage::exists($file->path), 404);
 
-        return Storage::download($file->path, $file->original_name);
+        return Storage::response($file->path, $file->original_name);
     })->name('employees.legacy-record');
 
     // Attachment + print: policy-checked per record — these are the direct-link
@@ -162,7 +162,7 @@ Route::middleware('auth')->group(function () {
         $file = $panRequest->attachments()->find($attachment); // scoped — can't reach another PAN's file by id
         abort_unless($file && Storage::exists($file->path), 404);
 
-        return Storage::download($file->path, $file->original_name);
+        return Storage::response($file->path, $file->original_name);
     })->name('pan.attachment');
 
     Route::get('/pan/{pan}/print', function (string $pan) {

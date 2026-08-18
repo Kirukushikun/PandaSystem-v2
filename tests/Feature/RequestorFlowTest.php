@@ -222,7 +222,7 @@ test('the index lists only the signed-in requestor\'s PANs', function () {
         ->assertDontSee('PAN-2026-22222');
 });
 
-test('the attachment downloads for the owner via the policy-gated route', function () {
+test('the attachment opens inline (viewable in a new tab, not forced to download) for the owner via the policy-gated route', function () {
     Livewire::test(Form::class)
         ->set('employee_id', $this->employee->id)
         ->set('action_type', 'wage-order')
@@ -235,5 +235,5 @@ test('the attachment downloads for the owner via the policy-gated route', functi
 
     $this->get('/pan/'.$pan->reference.'/attachment/'.$attachment->id)
         ->assertOk()
-        ->assertDownload('wage_order.pdf');
+        ->assertHeader('Content-Disposition', 'inline; filename=wage_order.pdf');
 });

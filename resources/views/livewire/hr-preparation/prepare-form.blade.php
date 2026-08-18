@@ -56,7 +56,7 @@
         <div class="attachrow" wire:key="prep-existing-{{ $existing->id }}"><span class="pdf">PDF</span> {{ $existing->original_name }}
           <small>· {{ number_format($existing->size / 1024) }} KB</small>
           <span class="spacer"></span>
-          <a class="btn ghost" href="{{ route('pan.attachment', [$pan->reference, $existing->id]) }}" style="text-decoration:none">Open</a>
+          <a class="btn ghost" href="{{ route('pan.attachment', [$pan->reference, $existing->id]) }}" target="_blank" rel="noopener" style="text-decoration:none">Open</a>
           <button class="btn ghost" type="button" wire:click="removeAttachment({{ $existing->id }})" wire:confirm="Remove {{ $existing->original_name }}?">Remove</button>
         </div>
         @endforeach

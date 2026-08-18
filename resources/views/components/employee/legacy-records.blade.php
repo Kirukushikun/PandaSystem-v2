@@ -26,7 +26,7 @@
       {{ $record->original_name }}
       <small>· {{ number_format($record->size / 1024) }} KB · uploaded by {{ $record->uploadedBy->name }} · {{ $record->created_at->format('M j, Y') }}</small>
       <span class="spacer"></span>
-      <a class="btn ghost" href="{{ route('employees.legacy-record', [$employee->employee_no, $record->id]) }}" style="text-decoration:none">Open</a>
+      <a class="btn ghost" href="{{ route('employees.legacy-record', [$employee->employee_no, $record->id]) }}" target="_blank" rel="noopener" style="text-decoration:none">Open</a>
       @if ($canManage)
       <button class="btn ghost" type="button" style="color:var(--red)" wire:click="removeLegacyRecord({{ $record->id }})" wire:confirm="Remove {{ $record->original_name }}?">Remove</button>
       @endif

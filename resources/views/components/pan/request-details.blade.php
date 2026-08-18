@@ -28,7 +28,7 @@
     <div class="attachrow" style="margin-bottom:4px"><span class="pdf">PDF</span> {{ $file->original_name }}
       <small>· {{ number_format($file->size / 1024) }} KB</small>
       <span class="spacer"></span>
-      <a class="btn ghost" href="{{ route('pan.attachment', [$panReference, $file->id]) }}" style="text-decoration:none">Open</a>
+      <a class="btn ghost" href="{{ route('pan.attachment', [$panReference, $file->id]) }}" target="_blank" rel="noopener" style="text-decoration:none">Open</a>
     </div>
     @empty
     <div class="attachrow"><small style="color:var(--ink-3)">No documents attached yet — at least one is required before submitting.</small></div>

@@ -49,6 +49,9 @@ class Show extends Component
 
         $this->panRequest->update([
             'status' => app(PanWorkflow::class)->apply($this->panRequest->status, 'confirm'),
+            // See DivisionHead\Queue::confirmPrepared() — an HR-originated PAN never
+            // touches approve_division, so this is its only chance to record who acted.
+            'division_head_id' => $this->panRequest->division_head_id ?? auth()->id(),
         ]);
         $this->js("showToast('{$this->panRequest->reference} confirmed — forwarded to HR Approver.')");
         $this->redirectRoute('division.queue', navigate: true);

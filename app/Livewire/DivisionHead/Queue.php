@@ -65,7 +65,14 @@ class Queue extends Component
         $pan = PanRequest::findOrFail($id);
         $this->authorize('confirm', $pan);
 
-        $pan->update(['status' => app(PanWorkflow::class)->apply($pan->status, 'confirm')]);
+        $pan->update([
+            'status' => app(PanWorkflow::class)->apply($pan->status, 'confirm'),
+            // An HR-originated PAN skips WithDivisionHead/approve() entirely, so this is
+            // its only Division Head touch — without this, division_head_id (and print's
+            // "Recommended By") stays null forever. Never overwrite an existing value:
+            // a normal PAN's first approver is the correct attribution, not whoever confirms.
+            'division_head_id' => $pan->division_head_id ?? auth()->id(),
+        ]);
         $this->js("showToast('{$pan->reference} confirmed — forwarded to HR Approver.')");
     }
 

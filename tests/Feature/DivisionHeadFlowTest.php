@@ -80,6 +80,27 @@ test('confirming an HR-prepared PAN forwards it to the HR Approver', function ()
     expect($pan->fresh()->status)->toBe(PanStatus::ForHrApproval);
 });
 
+test('confirming an HR-originated PAN records the confirming Division Head — its only DH touch', function () {
+    // HR-originated PANs (origin='hr') skip Requestor/WithDivisionHead entirely, so
+    // approve_division (the only other place division_head_id gets set) never runs.
+    // Without this, print's "Recommended By" stays blank forever for these PANs.
+    $pan = deptPan(PanStatus::ForConfirmation, ['origin' => 'hr', 'requested_by' => null, 'division_head_id' => null]);
+
+    Livewire::test(Queue::class)->call('confirmPrepared', $pan->id);
+
+    expect($pan->fresh()->division_head_id)->toBe($this->head->id);
+});
+
+test('confirming never overwrites an already-recorded division head', function () {
+    $pan = deptPan(PanStatus::ForConfirmation, ['division_head_id' => $this->head->id]);
+    $otherHead = User::factory()->divisionHead()->create();
+    $otherHead->headedDepartments()->attach($this->department);
+
+    Livewire::actingAs($otherHead)->test(Queue::class)->call('confirmPrepared', $pan->id);
+
+    expect($pan->fresh()->division_head_id)->toBe($this->head->id);
+});
+
 test('disputing a prepared PAN sends it back to In Preparation with the reason on record', function () {
     $pan = deptPan(PanStatus::ForConfirmation);
 

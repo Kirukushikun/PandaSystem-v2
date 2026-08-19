@@ -21,7 +21,7 @@
         BROOKSIDE FARMS CORPORATION <br>
         Anupul, Bamban, Tarlac
       </h3>
-      <h1 class="font-courier">NOTICE OF PERSONNEL ACTION</h1>
+      <h1 class="font-courier">PERSONNEL ACTION NOTICE</h1>
       <h2 class="font-courier text-[#70ad47]">
         @if ($pan->action_type->requiresWageNumber() && $form->wage_no)
           WAGE ORDER NO. {{ strtoupper($form->wage_no) }}

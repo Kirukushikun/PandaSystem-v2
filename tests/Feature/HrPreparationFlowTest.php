@@ -167,8 +167,9 @@ test('a newly-created employee with no previous PAN gets inputtable "From" field
     // fresh hire's first PAN — the "—" placeholder used to be the final answer,
     // with no way to record the employee's actual current values at all. Place
     // and Position are still seeded from the Employee record (never blank), but
-    // become editable inputs too — populated, not locked — so print always has
-    // real "From" values even on someone's very first PAN.
+    // are editable inputs too — populated, not locked — so print always has
+    // real "From" values even on someone's very first PAN. (All "From" fields
+    // are inputtable regardless of carry-over now — see the next test.)
     $pan = prepPan(PanStatus::InPreparation);
 
     $test = Livewire::test(PrepareForm::class, ['pan' => $pan->reference])
@@ -201,7 +202,9 @@ test('a newly-created employee with no previous PAN gets inputtable "From" field
         ->and($rows->firstWhere('field', 'position')['from'])->toBe($pan->employee->position);
 });
 
-test('once a previous PAN exists, "From" goes back to being read-only carried-over text', function () {
+test('"From" stays editable even once a previous PAN exists, pre-filled with the carried-over value', function () {
+    // Every "From" field is inputtable regardless of carry-over — HR can correct
+    // a carried value (e.g. it was itself wrong) instead of being stuck with it.
     $previous = prepPan(PanStatus::Filed, ['filed_at' => now()->subMonths(2), 'approved_at' => now()->subMonths(2)]);
     PanForm::factory()->create([
         'pan_request_id' => $previous->id,
@@ -217,8 +220,9 @@ test('once a previous PAN exists, "From" goes back to being read-only carried-ov
     $pan = prepPan(PanStatus::InPreparation, ['previous_pan_id' => $previous->id]);
 
     Livewire::test(PrepareForm::class, ['pan' => $pan->reference])
-        ->assertDontSee('wire:model="fromValues.section"', false)
-        ->assertSee('Farrowing'); // carried-over "From" shown as plain text
+        ->assertSee('wire:model="fromValues.section"', false)
+        ->assertSet('fromValues.section', 'Farrowing') // pre-filled with the carried value
+        ->assertSet('fromValues.position', 'Farm Helper');
 });
 
 test('reopening for revision reloads a "To" value even when it was deliberately left equal to "From"', function () {
@@ -536,7 +540,7 @@ test('a freshly-added allowance row has an inputtable "From" — nothing to carr
         ->and($row['to'])->toBe('200.00');
 });
 
-test('a carried-over allowance row keeps its "From" locked, unlike a freshly-added one', function () {
+test('a carried-over allowance row\'s "From" is editable too, pre-filled with the carried value', function () {
     $previous = prepPan(PanStatus::Filed, ['filed_at' => now()->subMonths(2), 'approved_at' => now()->subMonths(2)]);
     PanForm::factory()->create([
         'pan_request_id' => $previous->id,
@@ -547,8 +551,8 @@ test('a carried-over allowance row keeps its "From" locked, unlike a freshly-add
     $pan = prepPan(PanStatus::InPreparation);
 
     Livewire::test(PrepareForm::class, ['pan' => $pan->reference])
-        ->assertDontSee('wire:model="allowances.0.from"', false)
-        ->assertSee('200.00');
+        ->assertSee('wire:model="allowances.0.from"', false)
+        ->assertSet('allowances.0.from', '200.00');
 });
 
 test('an Unserved PAN is never used for carry-over, even if it is the most recent', function () {

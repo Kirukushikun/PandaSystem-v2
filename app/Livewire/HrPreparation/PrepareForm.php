@@ -188,10 +188,9 @@ class PrepareForm extends Component
     }
 
 
-    /** A freshly-added row has no carry-over source at all — "From" is inputtable, unlike a carried row's locked text. */
     public function addAllowance(): void
     {
-        $this->allowances[] = ['label' => $this->allowanceType, 'from' => '', 'to' => '', 'editable' => true];
+        $this->allowances[] = ['label' => $this->allowanceType, 'from' => '', 'to' => ''];
     }
 
     public function removeAllowance(int $index): void
@@ -311,8 +310,10 @@ class PrepareForm extends Component
             'doe_from' => 'required|date',
             'doe_to' => 'nullable|date|after_or_equal:doe_from',
             'wage_no' => $this->panRequest->action_type->requiresWageNumber() ? 'required|string|max:50' : 'nullable|string|max:50',
+            'fromValues.*' => 'nullable|string|max:255',
             'toValues.*' => 'nullable|string|max:255',
             'toValues.leavecredits' => ['nullable', \Illuminate\Validation\Rule::in(self::LEAVE_CREDIT_OPTIONS)],
+            'allowances.*.from' => 'nullable|string|max:255',
             'allowances.*.to' => 'nullable|string|max:255',
             'remarks' => $this->panRequest->wasProxyApproved() ? 'required|string|max:1000' : 'nullable|string|max:1000',
             'employment_status' => ['required', \Illuminate\Validation\Rule::enum(\App\Enums\EmploymentStatus::class)],

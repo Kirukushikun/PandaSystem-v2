@@ -158,11 +158,7 @@
         <tr wire:key="fixed-{{ $field }}">
           <td class="lbl">{{ $label }}</td>
           <td>
-            @if (is_null($previous))
             <input class="toin" wire:model="fromValues.{{ $field }}" placeholder="—" maxlength="255" autocomplete="new-password" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore data-form-type="other" name="from-{{ $field }}-{{ $pan->id }}">
-            @else
-            {{ ($fromValues[$field] ?? '') !== '' ? $fromValues[$field] : '—' }}
-            @endif
           </td>
           <td class="arrow">→</td>
           <td><input class="toin @if (($toValues[$field] ?? '') !== '') filled @endif" wire:model="toValues.{{ $field }}" placeholder="No change" maxlength="255" autocomplete="new-password" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore data-form-type="other" name="to-{{ $field }}-{{ $pan->id }}"></td>
@@ -174,11 +170,7 @@
         <tr wire:key="fixed-leavecredits">
           <td class="lbl">Leave Credits</td>
           <td>
-            @if (is_null($previous))
             <input class="toin" wire:model="fromValues.leavecredits" placeholder="—" maxlength="255" autocomplete="new-password" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore data-form-type="other" name="from-leavecredits-{{ $pan->id }}">
-            @else
-            {{ ($fromValues['leavecredits'] ?? '') !== '' ? $fromValues['leavecredits'] : '—' }}
-            @endif
           </td>
           <td class="arrow">→</td>
           <td><select class="toin @if (($toValues['leavecredits'] ?? '') !== '') filled @endif" wire:model.live="toValues.leavecredits" style="width:100%">
@@ -194,11 +186,7 @@
         <tr wire:key="fixed-basic">
           <td class="lbl">Basic Pay</td>
           <td class="num">
-            @if (is_null($previous))
             <input class="toin numin" wire:model="fromValues.basic" placeholder="₱ 0.00" maxlength="255" autocomplete="new-password" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore data-form-type="other" name="from-basic-{{ $pan->id }}">
-            @else
-            {{ ($fromValues['basic'] ?? '') !== '' ? '₱ '.$fromValues['basic'] : '—' }}
-            @endif
           </td>
           <td class="arrow">→</td>
           <td class="num"><input class="toin numin @if (($toValues['basic'] ?? '') !== '') filled @endif" wire:model="toValues.basic" placeholder="₱ 0.00" maxlength="255" autocomplete="new-password" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore data-form-type="other" name="to-basic-{{ $pan->id }}"></td>
@@ -207,11 +195,7 @@
         @foreach ($allowances as $i => $allowance)
         <tr wire:key="allowance-{{ $i }}"><td class="lbl">{{ $allowance['label'] }}</td>
           <td class="num">
-            @if ($allowance['editable'] ?? false)
             <input class="toin numin" wire:model="allowances.{{ $i }}.from" placeholder="₱ 0.00" maxlength="255" autocomplete="new-password" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore data-form-type="other" name="allowance-from-{{ $i }}-{{ $pan->id }}">
-            @else
-            {{ $allowance['from'] !== '' ? $allowance['from'] : '—' }}
-            @endif
           </td>
           <td class="arrow">→</td>
           <td class="num"><input class="toin numin @if (trim($allowance['to']) !== '') filled @endif" wire:model="allowances.{{ $i }}.to" placeholder="₱ 0.00" maxlength="255" autocomplete="new-password" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore data-form-type="other" name="allowance-to-{{ $i }}-{{ $pan->id }}"></td>

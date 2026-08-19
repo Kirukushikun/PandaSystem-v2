@@ -48,10 +48,10 @@
       :rows="$rows"
       :remarks="$form->remarks" />
 
-    @can('patchEmptyFromValues', $pan)
-      @if (count($emptyFromFields) > 0)
+    @can('patchMissingPrintDetails', $pan)
+      @if (count($emptyFromFields) > 0 || $needsDivisionHead)
       <div class="sect" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
-        <span>Missing "From" value(s) <small style="font-weight:400;color:var(--ink-3)">— temporary fix for PANs created before this was corrected</small></span>
+        <span>Missing print detail(s) <small style="font-weight:400;color:var(--ink-3)">— temporary fix for PANs created before this was corrected</small></span>
         @if (! $showQuickFix)
         <button class="btn ghost" type="button" wire:click="startQuickFix" style="text-transform:none;letter-spacing:normal">Fill in missing values</button>
         @endif
@@ -64,11 +64,18 @@
           @error('emptyFromValues.'.$field)<span class="hint" style="color:var(--red)">{{ $message }}</span>@enderror
         </div>
         @endforeach
-      </div>
-      <div class="formfoot">
-        <button class="btn" type="button" wire:click="$set('showQuickFix', false)">Cancel</button>
-        <div class="spacer"></div>
-        <button class="btn primary" type="button" wire:click="saveQuickFix">Save From value(s)</button>
+        @if ($needsDivisionHead)
+        <div class="field"><label>Recommended By — Division Head</label>
+          <select wire:model="selectedDivisionHead">
+            <option value="">— Select —</option>
+            @foreach ($divisionHeadCandidates as $candidate)
+            <option value="{{ $candidate->id }}">{{ $candidate->name }}</option>
+            @endforeach
+          </select>
+          <span class="hint">Never recorded for this PAN — print's "Recommended By" line otherwise stays blank.</span>
+          @error('selectedDivisionHead')<span class="hint" style="color:var(--red)">{{ $message }}</span>@enderror
+        </div>
+        @endif
       </div>
       @endif
       @endif
@@ -77,9 +84,15 @@
 
     <div class="formfoot">
       <a class="btn" href="{{ route('preparation.queue') }}" wire:navigate style="text-decoration:none">← Back to queue</a>
+      @if ($showQuickFix)
+      <button class="btn" type="button" wire:click="$set('showQuickFix', false)">Cancel</button>
+      @endif
       <div class="spacer"></div>
       @if ($form)
       <x-print-btn href="{{ route('pan.print', $pan->reference) }}" />
+      @endif
+      @if ($showQuickFix)
+      <button class="btn primary" type="button" wire:click="saveQuickFix">Save missing detail(s)</button>
       @endif
       @can('tag', $pan)
       <a class="btn primary" href="{{ route('preparation.edit', $pan->reference) }}" wire:navigate style="text-decoration:none">Tag &amp; Prepare</a>

@@ -2,9 +2,12 @@
 
 namespace App\Livewire\HrPreparation;
 
+use App\Enums\ConfidentialityTag;
 use App\Enums\PanStatus;
 use App\Models\PanForm;
 use App\Models\PanRequest;
+use App\Models\User;
+use Illuminate\Support\Collection;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -16,15 +19,24 @@ class Show extends Component
     public PanRequest $panRequest;
 
     /**
-     * Temporary quick-fix (see PanRequestPolicy::patchEmptyFromValues): lets HR
-     * fill in a still-blank "From" value straight from this view, for PANs that
-     * got stuck with a dash before the no-previous-PAN default was corrected.
-     * Deliberately narrow — only touches action_reference.*.from, nothing else:
-     * no allowance rows added/removed, no pan_returns entry, no notification.
+     * Temporary quick-fix (see PanRequestPolicy::patchMissingPrintDetails): lets HR
+     * fill in a still-blank "From" value and/or pick a Division Head for print's
+     * "Recommended By", straight from this view — for PANs that predate the fixes
+     * made to the live workflow. Deliberately narrow: only touches
+     * action_reference.*.from and division_head_id, nothing else — no allowance
+     * rows, no pan_returns entry, no notification, no status change.
      */
     public bool $showQuickFix = false;
 
     public array $emptyFromValues = [];
+
+    public string $selectedDivisionHead = '';
+
+    /** Statuses where division_head_id should already be set — the PAN has moved past confirmation. */
+    private const NEEDS_DIVISION_HEAD_STATUSES = [
+        PanStatus::ForHrApproval, PanStatus::ForFinalApproval, PanStatus::Approved,
+        PanStatus::Served, PanStatus::Unserved, PanStatus::Filed,
+    ];
 
     public function mount(string $pan): void
     {
@@ -44,18 +56,37 @@ class Show extends Component
             ->all();
     }
 
+    /** Only once the PAN has actually moved past confirmation — before that, null is still legitimate. */
+    private function needsDivisionHead(): bool
+    {
+        return $this->panRequest->division_head_id === null
+            && in_array($this->panRequest->status, self::NEEDS_DIVISION_HEAD_STATUSES, true);
+    }
+
+    /** Manila -> DH Head population, same as who actually confirms it live; routine -> the PAN's own department head(s). */
+    private function divisionHeadCandidates(): Collection
+    {
+        return $this->panRequest->confidentiality_tag === ConfidentialityTag::Manila
+            ? User::where('is_dh_head', true)->orderBy('name')->get()
+            : $this->panRequest->department->heads()->orderBy('name')->get();
+    }
+
     public function startQuickFix(): void
     {
-        $this->authorize('patchEmptyFromValues', $this->panRequest);
+        $this->authorize('patchMissingPrintDetails', $this->panRequest);
 
         $this->emptyFromValues = array_fill_keys(array_keys($this->emptyFromFields()), '');
+        $this->selectedDivisionHead = '';
         $this->showQuickFix = true;
     }
 
     public function saveQuickFix(): void
     {
-        $this->authorize('patchEmptyFromValues', $this->panRequest);
-        $this->validate(['emptyFromValues.*' => 'nullable|string|max:255']);
+        $this->authorize('patchMissingPrintDetails', $this->panRequest);
+        $this->validate([
+            'emptyFromValues.*' => 'nullable|string|max:255',
+            'selectedDivisionHead' => 'nullable|integer|exists:users,id',
+        ]);
 
         $form = $this->panRequest->form;
         $reference = collect($form->action_reference)->map(function (array $row) {
@@ -68,10 +99,18 @@ class Show extends Component
         })->all();
 
         $form->update(['action_reference' => $reference]);
+
+        // Never overwrite an already-recorded Division Head — same "only fill the
+        // gap" rule as the From values above.
+        if ($this->selectedDivisionHead !== '' && $this->needsDivisionHead()) {
+            $this->panRequest->update(['division_head_id' => (int) $this->selectedDivisionHead]);
+        }
+
         $this->panRequest->refresh();
         $this->showQuickFix = false;
         $this->emptyFromValues = [];
-        $this->js("showToast('Missing From value(s) saved.')");
+        $this->selectedDivisionHead = '';
+        $this->js("showToast('Missing print detail(s) saved.')");
     }
 
     /** Same journey strip as the other Show views — one truth for stage progress. */
@@ -106,6 +145,8 @@ class Show extends Component
             'current' => $current,
             'isHrHead' => auth()->user()->is_hr_head,
             'emptyFromFields' => $this->emptyFromFields(),
+            'needsDivisionHead' => $this->needsDivisionHead(),
+            'divisionHeadCandidates' => $this->needsDivisionHead() ? $this->divisionHeadCandidates() : collect(),
         ]);
     }
 }

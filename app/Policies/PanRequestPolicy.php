@@ -142,12 +142,16 @@ class PanRequestPolicy
 
     /**
      * Temporary quick-fix, reachable from the View page regardless of stage: fill
-     * in a still-blank "From" value on an already-prepared PAN — for records that
-     * got stuck with a dash before the no-previous-PAN default was fixed. Same
-     * population as normal preparation (Manila -> HR Head only); no status gate,
-     * since prepare()'s own window has usually long closed by the time this applies.
+     * in a still-blank "From" value, and/or pick a Division Head for print's
+     * "Recommended By" when it was never recorded — both for records that predate
+     * fixes made to the live workflow (no-previous-PAN default; HR-originated PANs
+     * never writing division_head_id at confirmation). Same population as normal
+     * preparation (Manila -> HR Head only); no status gate, since prepare()'s own
+     * window has usually long closed by the time this applies. Print-only in
+     * effect — never touches the actual PanWorkflow status or leaves an audit
+     * entry, so it doesn't misrepresent that the PAN was ever re-processed.
      */
-    public function patchEmptyFromValues(User $user, PanRequest $pan): bool
+    public function patchMissingPrintDetails(User $user, PanRequest $pan): bool
     {
         return $pan->form !== null && $this->preparesFor($user, $pan);
     }

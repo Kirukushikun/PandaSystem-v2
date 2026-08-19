@@ -47,6 +47,32 @@
       :wage-no="$pan->action_type->requiresWageNumber() ? ($form->wage_no ?? '—') : null"
       :rows="$rows"
       :remarks="$form->remarks" />
+
+    @can('patchEmptyFromValues', $pan)
+      @if (count($emptyFromFields) > 0)
+      <div class="sect">Missing "From" value(s) <small style="font-weight:400;color:var(--ink-3)">— temporary fix for PANs created before this was corrected</small></div>
+      @if (! $showQuickFix)
+      <div class="formfoot" style="padding-top:0">
+        <div class="spacer"></div>
+        <button class="btn ghost" type="button" wire:click="startQuickFix">Fill in missing values</button>
+      </div>
+      @else
+      <div class="formgrid" style="padding-top:10px">
+        @foreach ($emptyFromFields as $field => $label)
+        <div class="field"><label>{{ $label }}</label>
+          <input wire:model="emptyFromValues.{{ $field }}" placeholder="—" maxlength="255">
+          @error('emptyFromValues.'.$field)<span class="hint" style="color:var(--red)">{{ $message }}</span>@enderror
+        </div>
+        @endforeach
+      </div>
+      <div class="formfoot">
+        <button class="btn" type="button" wire:click="$set('showQuickFix', false)">Cancel</button>
+        <div class="spacer"></div>
+        <button class="btn primary" type="button" wire:click="saveQuickFix">Save From value(s)</button>
+      </div>
+      @endif
+      @endif
+    @endcan
     @endif
 
     <div class="formfoot">

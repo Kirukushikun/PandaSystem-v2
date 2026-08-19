@@ -140,6 +140,18 @@ class PanRequestPolicy
             && $this->preparesFor($user, $pan);
     }
 
+    /**
+     * Temporary quick-fix, reachable from the View page regardless of stage: fill
+     * in a still-blank "From" value on an already-prepared PAN — for records that
+     * got stuck with a dash before the no-previous-PAN default was fixed. Same
+     * population as normal preparation (Manila -> HR Head only); no status gate,
+     * since prepare()'s own window has usually long closed by the time this applies.
+     */
+    public function patchEmptyFromValues(User $user, PanRequest $pan): bool
+    {
+        return $pan->form !== null && $this->preparesFor($user, $pan);
+    }
+
     public function void(User $user, PanRequest $pan): bool
     {
         return in_array($pan->status, [PanStatus::AwaitingTag, PanStatus::InPreparation, PanStatus::ReturnedToPreparer], true)

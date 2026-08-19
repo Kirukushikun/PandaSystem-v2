@@ -41,6 +41,21 @@ class PanForm extends Model
         return $this->belongsTo(User::class, 'prepared_by');
     }
 
+    /** The Action Reference field's display label — fixed fields get a proper name; a dynamic allowance renders its own. */
+    public static function fieldLabel(string $field): string
+    {
+        return match ($field) {
+            'section' => 'Section',
+            'place' => 'Place of Assignment',
+            'head' => 'Immediate Head',
+            'position' => 'Position',
+            'joblevel' => 'Job Level',
+            'basic' => 'Basic Pay',
+            'leavecredits' => 'Leave Credits',
+            default => $field,
+        };
+    }
+
     /**
      * action_reference JSON → x-pan.prepared-details rows. Fixed fields get their
      * display labels; unknown fields (dynamic allowances) render their own name.
@@ -52,16 +67,7 @@ class PanForm extends Model
         $peso = fn (string $value) => in_array($value, ['', '—'], true) ? '—' : '₱ '.$value;
 
         return array_map(fn (array $row) => [
-            'label' => match ($row['field']) {
-                'section' => 'Section',
-                'place' => 'Place of Assignment',
-                'head' => 'Immediate Head',
-                'position' => 'Position',
-                'joblevel' => 'Job Level',
-                'basic' => 'Basic Pay',
-                'leavecredits' => 'Leave Credits',
-                default => $row['field'],
-            },
+            'label' => self::fieldLabel($row['field']),
             'from' => $money($row['field']) ? $peso($row['from']) : $row['from'],
             'to' => $money($row['field']) ? $peso($row['to']) : $row['to'],
             // Highlights any value HR actually entered — not just ones that changed —

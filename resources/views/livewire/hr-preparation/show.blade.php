@@ -50,13 +50,13 @@
 
     @can('patchEmptyFromValues', $pan)
       @if (count($emptyFromFields) > 0)
-      <div class="sect">Missing "From" value(s) <small style="font-weight:400;color:var(--ink-3)">— temporary fix for PANs created before this was corrected</small></div>
-      @if (! $showQuickFix)
-      <div class="formfoot" style="padding-top:0">
-        <div class="spacer"></div>
-        <button class="btn ghost" type="button" wire:click="startQuickFix">Fill in missing values</button>
+      <div class="sect" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+        <span>Missing "From" value(s) <small style="font-weight:400;color:var(--ink-3)">— temporary fix for PANs created before this was corrected</small></span>
+        @if (! $showQuickFix)
+        <button class="btn ghost" type="button" wire:click="startQuickFix" style="text-transform:none;letter-spacing:normal">Fill in missing values</button>
+        @endif
       </div>
-      @else
+      @if ($showQuickFix)
       <div class="formgrid" style="padding-top:10px">
         @foreach ($emptyFromFields as $field => $label)
         <div class="field"><label>{{ $label }}</label>

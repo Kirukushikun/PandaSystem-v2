@@ -81,21 +81,46 @@ test('saving fills only the blank field, leaves everything else untouched, and l
         ->and($pan->returns()->count())->toBe(0); // no audit log entry
 });
 
-test('a hand-crafted attempt to overwrite an already-filled "From" is ignored', function () {
+test('a hand-crafted attempt to overwrite an already-filled non-Place/Position "From" is ignored', function () {
+    // Place/Position are deliberately always-overwritable (see the next test) — this
+    // one covers every other fixed field, which stays blank-only.
     $preparer = User::factory()->hrPreparer()->create();
     $pan = preparedPan([
         ['field' => 'section', 'from' => '—', 'to' => 'Farrowing'],
-        ['field' => 'position', 'from' => 'Farm Helper', 'to' => 'Farm Helper'],
+        ['field' => 'joblevel', 'from' => 'JL2', 'to' => 'JL2'],
     ]);
 
     Livewire::actingAs($preparer)->test(Show::class, ['pan' => $pan->reference])
         ->call('startQuickFix')
-        ->set('emptyFromValues.position', 'Tampered Value') // "position" was never blank
+        ->set('emptyFromValues.joblevel', 'Tampered Value') // "joblevel" was never blank
         ->call('saveQuickFix')
         ->assertHasNoErrors();
 
-    expect(collect($pan->fresh()->form->action_reference)->firstWhere('field', 'position')['from'])
-        ->toBe('Farm Helper');
+    expect(collect($pan->fresh()->form->action_reference)->firstWhere('field', 'joblevel')['from'])
+        ->toBe('JL2');
+});
+
+test('Place of Assignment and Position are always offered, pre-filled, and can be corrected even though never blank', function () {
+    $preparer = User::factory()->hrPreparer()->create();
+    $pan = preparedPan([
+        ['field' => 'place', 'from' => 'BFC', 'to' => 'BFC'],
+        ['field' => 'position', 'from' => 'Farm Helper', 'to' => 'Farm Helper'],
+    ]);
+
+    Livewire::actingAs($preparer)->test(Show::class, ['pan' => $pan->reference])
+        ->assertSee('Missing print detail(s)', false) // shows even though nothing is blank
+        ->call('startQuickFix')
+        ->assertSet('emptyFromValues.place', 'BFC') // pre-filled with the current value
+        ->assertSet('emptyFromValues.position', 'Farm Helper')
+        ->set('emptyFromValues.place', 'RH')
+        ->set('emptyFromValues.position', 'Farm Operator')
+        ->call('saveQuickFix')
+        ->assertHasNoErrors();
+
+    $rows = collect($pan->fresh()->form->action_reference);
+    expect($rows->firstWhere('field', 'place')['from'])->toBe('RH')
+        ->and($rows->firstWhere('field', 'place')['to'])->toBe('BFC') // "to" untouched
+        ->and($rows->firstWhere('field', 'position')['from'])->toBe('Farm Operator');
 });
 
 test('a Manila PAN is restricted to HR Head, same as normal preparation', function () {

@@ -38,6 +38,14 @@ class Show extends Component
         PanStatus::Served, PanStatus::Unserved, PanStatus::Filed,
     ];
 
+    /**
+     * Place/Position are seeded from the Employee record, so they're never
+     * genuinely blank — but HR asked for a one-time chance to correct them here
+     * too (the employee's assignment may have been recorded wrong originally),
+     * unlike the other fixed fields below which only ever get filled when blank.
+     */
+    private const ALWAYS_EDITABLE_FIELDS = ['place' => 'Place of Assignment', 'position' => 'Position'];
+
     public function mount(string $pan): void
     {
         $this->panRequest = PanRequest::where('reference', $pan)
@@ -47,12 +55,23 @@ class Show extends Component
         $this->authorize('view', $this->panRequest);
     }
 
-    /** field => label, for every action_reference row still sitting on the "—" placeholder. */
+    /** field => label, for every action_reference row still sitting on the "—" placeholder (excludes Place/Position — see ALWAYS_EDITABLE_FIELDS). */
     private function emptyFromFields(): array
     {
         return collect($this->panRequest->form?->action_reference ?? [])
+            ->reject(fn (array $row) => array_key_exists($row['field'], self::ALWAYS_EDITABLE_FIELDS))
             ->filter(fn (array $row) => in_array($row['from'], ['', '—'], true))
             ->mapWithKeys(fn (array $row) => [$row['field'] => PanForm::fieldLabel($row['field'])])
+            ->all();
+    }
+
+    /** field => label, for Place/Position — offered unconditionally, not just when blank. */
+    private function alwaysEditableFields(): array
+    {
+        $reference = collect($this->panRequest->form?->action_reference ?? []);
+
+        return collect(self::ALWAYS_EDITABLE_FIELDS)
+            ->filter(fn (string $label, string $field) => $reference->firstWhere('field', $field) !== null)
             ->all();
     }
 
@@ -75,7 +94,12 @@ class Show extends Component
     {
         $this->authorize('patchMissingPrintDetails', $this->panRequest);
 
+        $reference = collect($this->panRequest->form->action_reference ?? []);
         $this->emptyFromValues = array_fill_keys(array_keys($this->emptyFromFields()), '');
+        foreach (array_keys($this->alwaysEditableFields()) as $field) {
+            $current = $reference->firstWhere('field', $field)['from'] ?? '';
+            $this->emptyFromValues[$field] = in_array($current, ['', '—'], true) ? '' : $current;
+        }
         $this->selectedDivisionHead = '';
         $this->showQuickFix = true;
     }
@@ -91,7 +115,10 @@ class Show extends Component
         $form = $this->panRequest->form;
         $reference = collect($form->action_reference)->map(function (array $row) {
             $typed = trim($this->emptyFromValues[$row['field']] ?? '');
-            if ($typed !== '' && in_array($row['from'], ['', '—'], true)) {
+            $wasBlank = in_array($row['from'], ['', '—'], true);
+            $alwaysEditable = array_key_exists($row['field'], self::ALWAYS_EDITABLE_FIELDS);
+
+            if ($typed !== '' && ($wasBlank || $alwaysEditable)) {
                 $row['from'] = $typed;
             }
 
@@ -145,6 +172,7 @@ class Show extends Component
             'current' => $current,
             'isHrHead' => auth()->user()->is_hr_head,
             'emptyFromFields' => $this->emptyFromFields(),
+            'alwaysEditableFields' => $this->alwaysEditableFields(),
             'needsDivisionHead' => $this->needsDivisionHead(),
             'divisionHeadCandidates' => $this->needsDivisionHead() ? $this->divisionHeadCandidates() : collect(),
         ]);

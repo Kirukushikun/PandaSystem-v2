@@ -49,15 +49,21 @@
       :remarks="$form->remarks" />
 
     @can('patchMissingPrintDetails', $pan)
-      @if (count($emptyFromFields) > 0 || $needsDivisionHead)
+      @if (count($emptyFromFields) > 0 || count($alwaysEditableFields) > 0 || $needsDivisionHead)
       <div class="sect" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
-        <span>Missing print detail(s) <small style="font-weight:400;color:var(--ink-3)">— temporary fix for PANs created before this was corrected</small></span>
+        <span>Missing print detail(s) <small style="font-weight:400;color:var(--ink-3)">— one-time review before printing</small></span>
         @if (! $showQuickFix)
         <button class="btn ghost" type="button" wire:click="startQuickFix" style="text-transform:none;letter-spacing:normal">Fill in missing values</button>
         @endif
       </div>
       @if ($showQuickFix)
       <div class="formgrid" style="padding-top:10px">
+        @foreach ($alwaysEditableFields as $field => $label)
+        <div class="field"><label>{{ $label }}</label>
+          <input wire:model="emptyFromValues.{{ $field }}" placeholder="—" maxlength="255">
+          @error('emptyFromValues.'.$field)<span class="hint" style="color:var(--red)">{{ $message }}</span>@enderror
+        </div>
+        @endforeach
         @foreach ($emptyFromFields as $field => $label)
         <div class="field"><label>{{ $label }}</label>
           <input wire:model="emptyFromValues.{{ $field }}" placeholder="—" maxlength="255">

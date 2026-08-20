@@ -167,7 +167,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/pan/{pan}/print', function (string $pan) {
         $panRequest = PanRequest::where('reference', $pan)
-            ->with(['employee.department', 'form.preparedBy', 'divisionHead', 'hrApprover', 'finalApprover'])
+            ->with(['employee.department', 'employee.farm', 'form.preparedBy', 'divisionHead', 'hrApprover', 'finalApprover'])
             ->firstOrFail();
         Gate::authorize('view', $panRequest);
         abort_if($panRequest->form === null, 404); // nothing to print until HR has prepared it

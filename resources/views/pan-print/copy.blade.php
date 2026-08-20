@@ -9,6 +9,13 @@
       ['label' => 'Recommended By:', 'user' => $pan->divisionHead],
       ['label' => 'Approved By:', 'user' => $pan->finalApprover],
   ];
+  $fullFarmName = [
+      'BFC' => 'BROOKSIDE FARMS CORPORATION',
+      'BRD' => 'BROOKDALE FARMS CORPORATION',
+      'BDL' => 'BROOKDALE FARMS CORPORATION',
+      'PFC' => 'POULTRYPURE FARMS CORPORATION',
+      'RH' => 'RH FARMS',
+  ];
 @endphp
   <div class="inner-border px-3 py-5 flex flex-col items-center">
     <div class="copy absolute text-lg font-bold text-gray-400 tracking-widest">
@@ -18,7 +25,7 @@
     <div class="print-header">
       <img src="{{ asset('images/BGC.png') }}" alt="">
       <h3 class="font-courier">
-        BROOKSIDE FARMS CORPORATION <br>
+        {{ $fullFarmName[$pan->employee->farm->name] ?? $pan->employee->farm->name }} <br>
         Anupul, Bamban, Tarlac
       </h3>
       <h1 class="font-courier">PERSONNEL ACTION NOTICE</h1>

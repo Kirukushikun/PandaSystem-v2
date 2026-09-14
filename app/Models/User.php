@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\UserSource;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -25,7 +26,7 @@ class User extends Authenticatable
         'is_requestor', 'is_division_head', 'is_hr_preparer',
         'is_hr_approver', 'is_final_approver',
         'is_hr_head', 'is_dh_head', 'is_admin', 'is_proxy_approver',
-        'esign_path',
+        'esign_path', 'source',
     ];
 
     protected $hidden = ['remember_token'];
@@ -42,6 +43,7 @@ class User extends Authenticatable
             'is_dh_head' => 'boolean',
             'is_admin' => 'boolean',
             'is_proxy_approver' => 'boolean',
+            'source' => UserSource::class,
         ];
     }
 

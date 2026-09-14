@@ -6,6 +6,7 @@ use App\Models\Department;
 use App\Models\Farm;
 use App\Models\User;
 use App\Services\LoginLockoutService;
+use App\Services\UserPermissionWriter;
 use Illuminate\Support\Facades\Log;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -122,13 +123,9 @@ class UserAccess extends Component
             'heads.*' => 'exists:departments,id',
         ], [], ['farmId' => 'farm / site']);
 
-        $columns = [];
-        foreach (self::PERM_COLUMNS as $key => $column) {
-            $columns[$column] = $this->perms[$key];
-        }
+        UserPermissionWriter::write($this->account, $this->perms);
 
         $this->account->update([
-            ...$columns,
             'farm_id' => $this->farmId,
             'position' => $this->position,
         ]);

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthenticationController;
 use App\Http\Controllers\LoginController;
+use App\Livewire\Admin\AccessHub;
 use App\Livewire\Admin\UserAccess;
 use App\Livewire\Admin\Users;
 use App\Livewire\Dev\LegacyPeekIndex;
@@ -119,6 +120,7 @@ Route::middleware('auth')->group(function () {
 
         Route::get('/admin/users', Users::class)->name('admin.users');
         Route::get('/admin/users/{user}', UserAccess::class)->name('admin.users.access');
+        Route::get('/admin/access-hub', AccessHub::class)->name('admin.access-hub');
 
         // Mockup's Maintenance subtabs are separate routes (per CLAUDE.md UI contract)
         Route::redirect('/maintenance', '/maintenance/logs');

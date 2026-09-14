@@ -63,4 +63,12 @@ return [
         'key' => env('LEGACY_V1_API_KEY', ''),
     ],
 
+    // Access Hub sync (project-overview/hub-integration-guide.md). client_id/secret
+    // are NOT here — they live in the access_hub_connections row, issued at
+    // enrollment time. Blank base_uri disables sync — see App\Services\AccessHubService.
+    'access_hub' => [
+        'base_uri' => env('ACCESS_HUB_BASE_URI', ''),
+        'project_key' => env('ACCESS_HUB_PROJECT_KEY', 'panda-v2'),
+    ],
+
 ];

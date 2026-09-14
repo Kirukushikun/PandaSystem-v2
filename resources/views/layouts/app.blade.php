@@ -59,6 +59,7 @@
   <nav class="navsec" aria-label="Administration">
     <h2>Administration</h2>
     <a class="navbtn @if(request()->routeIs('admin.users*')) active @endif" href="{{ route('admin.users') }}" wire:navigate><span class="dot"></span>User Access</a>
+    <a class="navbtn @if(request()->routeIs('admin.access-hub')) active @endif" href="{{ route('admin.access-hub') }}" wire:navigate><span class="dot"></span>Access Hub</a>
     <a class="navbtn @if(request()->routeIs('maintenance.*')) active @endif" href="{{ route('maintenance.logs') }}" wire:navigate><span class="dot"></span>Maintenance</a>
   </nav>
   @endcan

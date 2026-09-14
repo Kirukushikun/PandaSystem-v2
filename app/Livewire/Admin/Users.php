@@ -4,6 +4,7 @@ namespace App\Livewire\Admin;
 
 use App\Livewire\Concerns\WithPerPage;
 use App\Models\User;
+use App\Services\AccessHubService;
 use App\Services\UserDirectoryService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -32,6 +33,9 @@ class Users extends Component
     public string $search = '';
 
     public string $filter = 'all'; // all | heads | hr | admins | noaccess (directory mode only)
+
+    /** Access Hub sync lives in its own nested component (AccessHub) — this just opens/closes it. */
+    public bool $showHubModal = false;
 
     public function updatedSearch(): void
     {
@@ -223,6 +227,7 @@ class Users extends Component
         return view('livewire.admin.users', [
             'rows' => $rows,
             'directoryMode' => $directory->enabled(),
+            'hubEnabled' => app(AccessHubService::class)->enabled(),
             'stats' => [
                 'total' => (int) $stats->total,
                 'heads' => (int) $stats->heads,

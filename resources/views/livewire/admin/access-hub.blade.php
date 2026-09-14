@@ -1,16 +1,14 @@
+{{-- Embedded inside User Accounts' "Sync from Hub" modal — not a standalone page. --}}
 <div>
-  <p class="crumb">Administration</p>
-  <div class="htop">
-    <div><h2>Access Hub</h2>
-      <p>Sync roster access from the central Access Hub. Nothing is written until you review and confirm below.</p></div>
-    <div class="spacer"></div>
-    <p class="hint" style="margin:0 14px 0 0">Last synced:
+  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:0 0 14px">
+    <p class="hint" style="margin:0">Last synced:
       @if ($lastSyncedAt)
         <span @if ($lastSyncedAt->diffInDays() > 30) style="color:var(--amber);font-weight:600" @endif>{{ $lastSyncedAt->diffForHumans() }}</span>
       @else
         never
       @endif
     </p>
+    <div class="spacer"></div>
     @if ($enrolled)
     <button class="btn" type="button" wire:click="runSync" wire:loading.attr="disabled" wire:target="runSync">
       <span wire:loading.remove wire:target="runSync">Sync now</span>
@@ -23,7 +21,7 @@
   </div>
 
   @if (! $enrolled && $preview === null && $fetchError === null)
-  <div class="note info"><span class="ic">i</span><span>Not connected yet — the roster here is managed by hand in User Access, same as always. Connect to start syncing roles from the hub.</span></div>
+  <div class="note info"><span class="ic">i</span><span>Not connected yet — the roster stays managed by hand until you connect.</span></div>
   @endif
 
   @if ($fetchError === 'unreachable')
@@ -39,7 +37,7 @@
   @endif
 
   @if ($preview !== null && ! $preview['empty'])
-  <div class="pane" style="margin-bottom:16px">
+  <div class="pane" style="margin-bottom:14px">
     <h3>New <small style="font-weight:400;color:var(--ink-3)">— the hub knows them, this system doesn't yet</small></h3>
     <div class="pad">
       @forelse ($preview['new'] as $row)
@@ -54,7 +52,7 @@
     </div>
   </div>
 
-  <div class="pane" style="margin-bottom:16px">
+  <div class="pane" style="margin-bottom:14px">
     <h3>Changed <small style="font-weight:400;color:var(--ink-3)">— access here would differ, or they went inactive</small></h3>
     <div class="pad">
       @forelse ($preview['changed'] as $row)
@@ -71,7 +69,7 @@
     </div>
   </div>
 
-  <div class="pane" style="margin-bottom:16px">
+  <div class="pane" style="margin-bottom:14px">
     <h3>Local only <small style="font-weight:400;color:var(--ink-3)">— never touched, shown for reassurance</small></h3>
     <div class="pad">
       @forelse ($preview['local_only'] as $row)

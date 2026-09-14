@@ -6,16 +6,15 @@ use App\Models\AccessHubConnection;
 use App\Services\AccessHubService;
 use App\Services\AccessHubSyncService;
 use Illuminate\Support\Carbon;
-use Livewire\Attributes\Layout;
-use Livewire\Attributes\Title;
 use Livewire\Component;
 
 /**
  * Preview-then-apply sync from the Access Hub — project-overview/hub-integration-guide.md.
  * Never writes on its own; every create/update/revoke is a row the admin explicitly ticked.
+ * Embedded inside User Accounts' "Sync from Hub" modal (resources/views/livewire/admin/users.blade.php)
+ * — this is an extension of that roster screen, not a standalone page, so it has no
+ * route/nav entry of its own.
  */
-#[Layout('layouts.app')]
-#[Title('Access Hub — PANDA')]
 class AccessHub extends Component
 {
     public bool $showEnrollModal = false;

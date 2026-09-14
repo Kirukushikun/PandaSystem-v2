@@ -13,6 +13,9 @@
     @if ($directoryMode)
     <button class="btn ghost" type="button" wire:click="refreshDirectory">⟳ Refresh directory</button>
     @endif
+    @if ($hubEnabled)
+    <button class="btn ghost" type="button" wire:click="$set('showHubModal', true)">⇄ Sync from Hub</button>
+    @endif
   </div>
 
   <div class="stats">
@@ -72,5 +75,13 @@
     </tbody>
   </table></div></div>
   {{ $rows->links('components.pagination') }}
+  @endif
+
+  @if ($hubEnabled)
+  <x-modal id="hub-sync-modal" :open="$showHubModal" close="$set('showHubModal', false)" title="Sync from Access Hub">
+    <div style="padding:16px">
+      <livewire:admin.access-hub />
+    </div>
+  </x-modal>
   @endif
 </div>

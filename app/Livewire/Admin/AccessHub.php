@@ -54,8 +54,15 @@ class AccessHub extends Component
     {
         $this->validate(['enrollCode' => 'required|string']);
 
-        if (! app(AccessHubService::class)->enroll($this->enrollCode)) {
-            $this->enrollError = 'Could not enroll — check the code and try again.';
+        $result = app(AccessHubService::class)->enroll($this->enrollCode);
+
+        if ($result !== 'ok') {
+            $this->enrollError = match ($result) {
+                'invalid_code' => 'That code is wrong, expired, or already used.',
+                'unknown_project' => 'The hub does not recognize this project.',
+                'rate_limited' => 'Too many attempts — wait a moment and try again.',
+                default => 'Could not reach the Access Hub to enroll.',
+            };
 
             return;
         }
@@ -102,7 +109,8 @@ class AccessHub extends Component
         $this->preview = $result;
         $this->fetchError = null;
         $this->lastSyncedAt = AccessHubConnection::current()->last_synced_at;
-        $this->selectedNew = [];
+        // New rows are safe to tick by default (guide §4.5); Changed rows need eyes first.
+        $this->selectedNew = collect($result['new'])->pluck('hub.user_id')->all();
         $this->selectedChanged = [];
     }
 

@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin;
 
+use App\Enums\UserSource;
 use App\Models\Department;
 use App\Models\Farm;
 use App\Models\User;
@@ -128,6 +129,10 @@ class UserAccess extends Component
         $this->account->update([
             'farm_id' => $this->farmId,
             'position' => $this->position,
+            // A hand edit through this panel is manual intent — from here on Access
+            // Hub sync must never touch this row again (it only ever manages
+            // source=hub rows). See project-overview/hub-integration-guide.md §4.1.
+            'source' => UserSource::Manual,
         ]);
         $this->account->requestorDepartments()->sync($this->requestsFor);
         $this->account->headedDepartments()->sync($this->heads);

@@ -28,6 +28,8 @@
   <div class="note warn"><span class="ic">!</span><span>Could not reach the Access Hub. Nothing was changed — try again shortly.</span></div>
   @elseif ($fetchError === 'unauthorized')
   <div class="note warn"><span class="ic">!</span><span>The hub rejected this connection's credentials. <button type="button" class="btn ghost" style="padding:2px 8px;font-size:12px" wire:click="resetConnection">Reset connection</button> and enroll again.</span></div>
+  @elseif ($fetchError === 'rate_limited')
+  <div class="note warn"><span class="ic">!</span><span>The hub is rate-limiting sync requests — wait a moment and try again.</span></div>
   @elseif ($fetchError === 'not_enrolled' && $enrolled)
   <div class="note warn"><span class="ic">!</span><span>Sync is not configured for this environment.</span></div>
   @endif

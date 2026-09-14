@@ -7,6 +7,10 @@
     <a class="btn" href="{{ route('admin.users') }}" wire:navigate style="text-decoration:none">← Back to users</a>
   </div>
 
+  @if ($account->source === App\Enums\UserSource::Hub)
+  <div class="note info"><span class="ic">i</span><span>This account is managed by Access Hub sync. Saving any change here switches it to manually-managed — future hub syncs will no longer update or revoke it.</span></div>
+  @endif
+
   @if ($isLocked)
   <div class="note warn"><span class="ic">!</span>
     <span>This account is currently locked out after too many failed login attempts — it clears on its own in up to 15 minutes.</span>

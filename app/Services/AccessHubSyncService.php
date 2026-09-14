@@ -183,7 +183,9 @@ class AccessHubSyncService
             'name' => $person['name'],
             'email' => $person['email'],
             'username' => $this->uniqueUsername($person['email'], $person['user_id']),
-            'position' => $person['position'] ?? null, // display-only, per guide §3
+            // farm/department/position are display-only per guide §3 — shown in the
+            // preview, deliberately never persisted (no bearing on access, and this
+            // app's farm is a real Farm-table FK, not free text like the hub's string).
             'source' => UserSource::Hub,
         ]);
         $user->id = $person['user_id']; // must match the hub, never auto-increment — guide §4.6

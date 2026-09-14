@@ -265,6 +265,86 @@ test('empty response shows nothing to sync', function () {
         ->assertSee('Nothing to sync');
 });
 
+test('a 429 on /grants is rate_limited, distinct from a generic unreachable failure', function () {
+    enrollConnection();
+    fakeHubGrants([], status: 429);
+
+    Livewire::test(AccessHub::class)
+        ->call('runSync')
+        ->assertOk()
+        ->assertSee('rate-limiting sync requests');
+});
+
+test('a 429 on /enroll shows a distinct rate-limited message, not a generic one', function () {
+    Http::fake(['https://hub.test/api/v1/enroll' => Http::response([], 429)]);
+
+    Livewire::test(AccessHub::class)
+        ->set('enrollCode', 'connect-me')
+        ->call('enroll')
+        ->assertSee('Too many attempts');
+
+    expect(AccessHubConnection::current()->isEnrolled())->toBeFalse();
+});
+
+test('an invalid enroll code gets its own message', function () {
+    Http::fake(['https://hub.test/api/v1/enroll' => Http::response([], 422)]);
+
+    Livewire::test(AccessHub::class)->set('enrollCode', 'bad')->call('enroll')
+        ->assertSee('wrong, expired, or already used');
+});
+
+test('an unrecognized project key gets its own message, distinct from a bad code', function () {
+    Http::fake(['https://hub.test/api/v1/enroll' => Http::response([], 404)]);
+
+    Livewire::test(AccessHub::class)->set('enrollCode', 'bad')->call('enroll')
+        ->assertSee('does not recognize this project');
+});
+
+// --- New rows are pre-ticked by default (guide §4.5: "Safe — tick all") ------------
+
+test('New rows arrive pre-selected; Changed rows do not', function () {
+    User::factory()->create(['id' => 9010, 'source' => UserSource::Hub, 'is_division_head' => false]);
+    enrollConnection();
+    fakeHubGrants([
+        hubPerson(['user_id' => 9011, 'roles' => ['manager']]), // new
+        hubPerson(['user_id' => 9010, 'roles' => ['division_head']]), // changed
+    ]);
+
+    $component = Livewire::test(AccessHub::class)->call('runSync');
+
+    expect($component->get('selectedNew'))->toBe([9011])
+        ->and($component->get('selectedChanged'))->toBe([]);
+});
+
+// --- Exact wire protocol (guide §5-equivalent verification: assert what's actually sent) --
+
+test('fetchGrants sends X-Client-Id/X-Client-Secret, not x-api-key or Authorization', function () {
+    enrollConnection();
+    fakeHubGrants([]);
+
+    app(\App\Services\AccessHubSyncService::class)->compare();
+
+    Http::assertSent(function ($request) {
+        return $request->url() === 'https://hub.test/api/v1/grants'
+            && $request->hasHeader('X-Client-Id', 'cid')
+            && $request->hasHeader('X-Client-Secret', 'secret')
+            && ! $request->hasHeader('x-api-key')
+            && ! $request->hasHeader('Authorization');
+    });
+});
+
+test('enroll posts code, project_key, and environment as the request body', function () {
+    config(['services.access_hub.project_key' => 'panda-v2']);
+    Http::fake(['https://hub.test/api/v1/enroll' => Http::response(['client_id' => 'a', 'client_secret' => 'b'])]);
+
+    app(\App\Services\AccessHubService::class)->enroll('the-code');
+
+    Http::assertSent(fn ($request) => $request->url() === 'https://hub.test/api/v1/enroll'
+        && $request['code'] === 'the-code'
+        && $request['project_key'] === 'panda-v2'
+        && $request['environment'] === app()->environment());
+});
+
 // --- Regression: UserAccess still saves correctly through the shared writer --------
 
 test('UserAccess::save() still persists permission toggles after the shared-writer refactor', function () {
@@ -277,4 +357,46 @@ test('UserAccess::save() still persists permission toggles after the shared-writ
         ->call('save');
 
     expect($account->fresh()->is_requestor)->toBeTrue();
+});
+
+// --- A hub-created row stores no farm/department/position (display-only, guide §3) --
+
+test('a newly-created hub row leaves position unset — display-only, never persisted', function () {
+    $preview = app(AccessHubSyncService::class)->compareAgainst([
+        hubPerson(['user_id' => 9012, 'position' => 'Senior Accountant']),
+    ]);
+    app(AccessHubSyncService::class)->apply($preview, [9012], []);
+
+    expect(User::find(9012)->position)->toBeNull();
+});
+
+// --- A hand edit on a hub-owned row detaches it from sync -----------------------------
+
+test('saving a hub-owned account through UserAccess flips it to manual', function () {
+    $account = User::factory()->create(['source' => UserSource::Hub, 'is_admin' => false]);
+
+    Livewire::test(UserAccess::class, ['user' => $account->username])
+        ->call('togglePerm', 'requestor')
+        ->set('farmId', $account->farm_id)
+        ->set('position', 'Edited by hand')
+        ->call('save');
+
+    expect($account->fresh()->source)->toBe(UserSource::Manual);
+});
+
+test('a hub-owned account detached by a hand edit is untouched by the next sync', function () {
+    $account = User::factory()->create(['id' => 9013, 'source' => UserSource::Hub, 'is_division_head' => false]);
+
+    Livewire::test(UserAccess::class, ['user' => $account->username])
+        ->call('togglePerm', 'division_head') // manual grant, deliberately not what the hub maps
+        ->set('farmId', $account->farm_id)
+        ->set('position', $account->position ?? 'Manager')
+        ->call('save');
+
+    $preview = app(AccessHubSyncService::class)->compareAgainst([
+        hubPerson(['user_id' => 9013, 'roles' => ['manager']]), // hub disagrees — would map to requestor only
+    ]);
+
+    expect(collect($preview['changed'])->firstWhere('user.id', 9013))->toBeNull();
+    expect($account->fresh()->is_division_head)->toBeTrue(); // the hand grant survives
 });

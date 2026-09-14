@@ -12,16 +12,17 @@ use Illuminate\Support\Facades\Log;
  * list of people and their org role(s). Optional feature — blank base_uri or no
  * enrollment yet means "no sync available," never a broken page (guide §1).
  *
- * TODO: confirm the exact auth header shape for /api/v1/grants and the enroll
- * response shape for /api/v1/enroll against the hub repo's docs/api.md before
- * this goes live — that document wasn't available while wiring this up. The
- * shape below mirrors UserDirectoryService's x-api-key convention as a
- * placeholder; nothing else in this feature depends on it being exactly right
- * yet (see hub-integration-guide.md §5 — "real fetch" is the last build step).
+ * Wire protocol confirmed at https://accesshub.bfcgroup.ph — no path suffix on
+ * the base URL (that's the human /login page, not the API root):
+ *   POST /api/v1/enroll  {code, project_key, environment} -> {client_id, client_secret}
+ *                         422 bad/expired code, 404 unknown project, 429 rate limited
+ *   GET  /api/v1/grants   auth via X-Client-Id / X-Client-Secret headers (not
+ *                         x-api-key, not Authorization: Bearer)
+ *                         401/403 revoked or invalid, 429 rate limited (60/min)
  */
 class AccessHubService
 {
-    /** 'not_enrolled' | 'unreachable' | 'unauthorized' | null — set by the last fetchGrants() call. */
+    /** 'not_enrolled' | 'unreachable' | 'unauthorized' | 'rate_limited' | null — set by the last fetchGrants() call. */
     private ?string $lastFailure = null;
 
     public function enabled(): bool
@@ -78,6 +79,13 @@ class AccessHubService
             return null;
         }
 
+        if ($response->status() === 429) {
+            Log::warning('Access Hub rate-limited this request');
+            $this->lastFailure = 'rate_limited';
+
+            return null;
+        }
+
         if (! $response->successful()) {
             Log::warning('Access Hub API error', ['status' => $response->status()]);
             $this->lastFailure = 'unreachable';
@@ -88,8 +96,12 @@ class AccessHubService
         return $response->json('people') ?? [];
     }
 
-    /** First-time enrollment: exchange a connection code for a client_id/client_secret pair. */
-    public function enroll(string $code): bool
+    /**
+     * First-time enrollment: exchange a connection code for a client_id/client_secret pair.
+     *
+     * @return string 'ok' | 'invalid_code' | 'unknown_project' | 'rate_limited' | 'unreachable'
+     */
+    public function enroll(string $code): string
     {
         try {
             $response = Http::withOptions(['verify' => storage_path('cacert.pem')])
@@ -102,13 +114,33 @@ class AccessHubService
         } catch (ConnectionException $e) {
             Log::warning('Access Hub enrollment unreachable', ['error' => $e->getMessage()]);
 
-            return false;
+            return 'unreachable';
+        }
+
+        $status = $response->status();
+
+        if ($status === 422) {
+            Log::warning('Access Hub enrollment code invalid, expired, or already used');
+
+            return 'invalid_code';
+        }
+
+        if ($status === 404) {
+            Log::warning('Access Hub does not recognize this project key');
+
+            return 'unknown_project';
+        }
+
+        if ($status === 429) {
+            Log::warning('Access Hub rate-limited enrollment attempts');
+
+            return 'rate_limited';
         }
 
         if (! $response->successful()) {
-            Log::warning('Access Hub enrollment rejected', ['status' => $response->status()]);
+            Log::warning('Access Hub enrollment rejected', ['status' => $status]);
 
-            return false;
+            return 'unreachable';
         }
 
         $clientId = $response->json('client_id');
@@ -117,7 +149,7 @@ class AccessHubService
         if (! $clientId || ! $clientSecret) {
             Log::warning('Access Hub enrollment response missing credentials');
 
-            return false;
+            return 'unreachable';
         }
 
         AccessHubConnection::current()->update([
@@ -125,6 +157,6 @@ class AccessHubService
             'client_secret' => $clientSecret,
         ]);
 
-        return true;
+        return 'ok';
     }
 }

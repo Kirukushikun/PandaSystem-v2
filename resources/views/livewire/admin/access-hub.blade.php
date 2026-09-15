@@ -22,7 +22,10 @@
       <span wire:loading.remove wire:target="runSync">Sync now</span>
       <span wire:loading wire:target="runSync">Syncing…</span>
     </button>
-    <button class="btn danger" type="button" wire:click="resetConnection" wire:confirm="Reset the Access Hub connection? You'll need a new connection code to sync again.">Reset connection</button>
+    <button class="btn danger" type="button" wire:click="resetConnection" wire:confirm="Reset the Access Hub connection? You'll need a new connection code to sync again." wire:loading.attr="disabled" wire:target="resetConnection">
+      <span wire:loading.remove wire:target="resetConnection">Reset connection</span>
+      <span wire:loading wire:target="resetConnection">Resetting…</span>
+    </button>
     @else
     <button class="btn primary" type="button" wire:click="openEnroll">Connect to Access Hub</button>
     @endif
@@ -52,7 +55,7 @@
     <div class="pad">
       @forelse ($preview['new'] as $row)
       <div class="logrow" wire:key="new-{{ $row['hub']['user_id'] }}">
-        <input type="checkbox" wire:model="selectedNew" value="{{ $row['hub']['user_id'] }}">
+        <input type="checkbox" wire:model="selectedNew" value="{{ $row['hub']['user_id'] }}" wire:loading.attr="disabled" wire:target="apply">
         <span style="flex:1">{{ $row['hub']['name'] }} <small style="color:var(--ink-3)">{{ $row['hub']['farm'] ?? '—' }} · {{ $row['hub']['department'] ?? '—' }} · {{ $row['hub']['position'] ?? '—' }}</small></span>
         <span style="font-size:11px;color:var(--ink-3)">{{ implode(', ', $row['hub']['roles'] ?? []) }}</span>
       </div>
@@ -67,7 +70,7 @@
     <div class="pad">
       @forelse ($preview['changed'] as $row)
       <div class="logrow" wire:key="chg-{{ $row['user']->id }}">
-        <input type="checkbox" wire:model="selectedChanged" value="{{ $row['user']->id }}">
+        <input type="checkbox" wire:model="selectedChanged" value="{{ $row['user']->id }}" wire:loading.attr="disabled" wire:target="apply">
         <span style="flex:1">{{ $row['user']->name }} <small style="color:var(--ink-3)">{{ $row['hub']['farm'] ?? '—' }} · {{ $row['hub']['department'] ?? '—' }} · {{ $row['hub']['position'] ?? '—' }}</small></span>
         <span style="font-size:11px;color:{{ $row['type'] === 'revoke' ? 'var(--red)' : 'var(--amber)' }}">
           {{ $row['type'] === 'revoke' ? 'Inactive at hub — will revoke' : 'Will update: '.implode(', ', $row['hub']['roles'] ?? []) }}
@@ -100,7 +103,11 @@
   </div>
 
   <div style="display:flex;justify-content:flex-end">
-    <button class="btn primary" type="button" wire:click="apply" @if (empty($selectedNew) && empty($selectedChanged)) disabled @endif>Apply selected changes</button>
+    <button class="btn primary" type="button" wire:click="apply" wire:loading.attr="disabled" wire:target="apply"
+      @if (empty($selectedNew) && empty($selectedChanged)) disabled @endif>
+      <span wire:loading.remove wire:target="apply">Apply selected changes</span>
+      <span wire:loading wire:target="apply">Applying…</span>
+    </button>
   </div>
   @endif
 
@@ -113,8 +120,11 @@
       </div>
     </div>
     <x-slot:footer>
-      <button class="btn" type="button" wire:click="$set('showEnrollModal', false)">Cancel</button>
-      <button class="btn primary" type="button" wire:click="enroll">Connect</button>
+      <button class="btn" type="button" wire:click="$set('showEnrollModal', false)" wire:loading.attr="disabled" wire:target="enroll">Cancel</button>
+      <button class="btn primary" type="button" wire:click="enroll" wire:loading.attr="disabled" wire:target="enroll">
+        <span wire:loading.remove wire:target="enroll">Connect</span>
+        <span wire:loading wire:target="enroll">Connecting…</span>
+      </button>
     </x-slot:footer>
   </x-modal>
 </div>

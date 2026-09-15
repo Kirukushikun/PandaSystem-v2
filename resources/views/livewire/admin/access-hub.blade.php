@@ -55,7 +55,7 @@
     <div class="pad">
       @forelse ($preview['new'] as $row)
       <div class="logrow" wire:key="new-{{ $row['hub']['user_id'] }}">
-        <input type="checkbox" wire:model="selectedNew" value="{{ $row['hub']['user_id'] }}" wire:loading.attr="disabled" wire:target="apply">
+        <input type="checkbox" wire:model.live="selectedNew" value="{{ $row['hub']['user_id'] }}" wire:loading.attr="disabled" wire:target="apply">
         <span style="flex:1">{{ $row['hub']['name'] }} <small style="color:var(--ink-3)">{{ $row['hub']['farm'] ?? '—' }} · {{ $row['hub']['department'] ?? '—' }} · {{ $row['hub']['position'] ?? '—' }}</small></span>
         <span style="font-size:11px;color:var(--ink-3)">{{ implode(', ', $row['hub']['roles'] ?? []) }}</span>
       </div>
@@ -70,7 +70,7 @@
     <div class="pad">
       @forelse ($preview['changed'] as $row)
       <div class="logrow" wire:key="chg-{{ $row['user']->id }}">
-        <input type="checkbox" wire:model="selectedChanged" value="{{ $row['user']->id }}" wire:loading.attr="disabled" wire:target="apply">
+        <input type="checkbox" wire:model.live="selectedChanged" value="{{ $row['user']->id }}" wire:loading.attr="disabled" wire:target="apply">
         <span style="flex:1">{{ $row['user']->name }} <small style="color:var(--ink-3)">{{ $row['hub']['farm'] ?? '—' }} · {{ $row['hub']['department'] ?? '—' }} · {{ $row['hub']['position'] ?? '—' }}</small></span>
         <span style="font-size:11px;color:{{ $row['type'] === 'revoke' ? 'var(--red)' : 'var(--amber)' }}">
           {{ $row['type'] === 'revoke' ? 'Inactive at hub — will revoke' : 'Will update: '.implode(', ', $row['hub']['roles'] ?? []) }}

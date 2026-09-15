@@ -66,9 +66,11 @@ return [
     // Access Hub sync (project-overview/hub-integration-guide.md). client_id/secret
     // are NOT here — they live in the access_hub_connections row, issued at
     // enrollment time. Blank base_uri disables sync — see App\Services\AccessHubService.
+    // Env var names (HUB_BASE_URL / HUB_PROJECT_KEY, not ACCESS_HUB_*) match what's
+    // already set on the hub's own admin side / production .env — don't rename these.
     'access_hub' => [
-        'base_uri' => env('ACCESS_HUB_BASE_URI', ''),
-        'project_key' => env('ACCESS_HUB_PROJECT_KEY', 'panda-v2'),
+        'base_uri' => env('HUB_BASE_URL', ''),
+        'project_key' => env('HUB_PROJECT_KEY', 'panda-v2'),
     ],
 
 ];

@@ -5,6 +5,8 @@ namespace App\Services;
 use App\Enums\UserSource;
 use App\Livewire\Admin\UserAccess;
 use App\Models\AccessHubConnection;
+use App\Models\Department;
+use App\Models\Farm;
 use App\Models\User;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -88,7 +90,7 @@ class AccessHubSyncService
             }
 
             $mapped = $this->mapRoles($person['roles'] ?? []);
-            $currentlyDiffers = $this->differsFromCurrent($local, $mapped);
+            $currentlyDiffers = $this->differsFromCurrent($local, $mapped, $person);
 
             if ($local->trashed() || $currentlyDiffers) {
                 $changed[] = ['type' => 'update', 'user' => $local, 'hub' => $person, 'mapped' => $mapped];
@@ -172,6 +174,7 @@ class AccessHubSyncService
                 $row['user']->restore();
             }
             UserPermissionWriter::write($row['user'], $row['mapped']);
+            $this->applyHubProfile($row['user'], $row['hub']);
         }
     }
 
@@ -183,15 +186,80 @@ class AccessHubSyncService
             'name' => $person['name'],
             'email' => $person['email'],
             'username' => $this->uniqueUsername($person['email'], $person['user_id']),
-            // farm/department/position are display-only per guide §3 — shown in the
-            // preview, deliberately never persisted (no bearing on access, and this
-            // app's farm is a real Farm-table FK, not free text like the hub's string).
             'source' => UserSource::Hub,
         ]);
         $user->id = $person['user_id']; // must match the hub, never auto-increment — guide §4.6
         $user->save();
 
         UserPermissionWriter::write($user, $mapped);
+        $this->applyHubProfile($user, $person);
+    }
+
+    /**
+     * Farm, department ("Requests for"), and position — pulled from the hub for
+     * source=hub rows, refreshed on every sync (not just at creation, so this
+     * never goes stale the way an unrefreshed carry-over value did elsewhere in
+     * this app). Farm and department arrive as display strings from the hub but
+     * are real relations here (Farm FK, department_user_requestor pivot), so each
+     * is resolved by name first.
+     *
+     * Deliberately only ever STRENGTHENS data, never degrades it: a name that
+     * doesn't match anything logs a warning and leaves whatever was already
+     * there alone, rather than nulling out (or, for department, wiping) a
+     * working assignment over what's more likely a naming mismatch than a
+     * genuine "remove this" signal — the hub has an explicit signal for removal
+     * (active:false) and this isn't it.
+     */
+    private function applyHubProfile(User $user, array $person): void
+    {
+        $updates = [];
+
+        $position = trim((string) ($person['position'] ?? ''));
+        if ($position !== '') {
+            $updates['position'] = $position;
+        }
+
+        $farmName = $person['farm'] ?? null;
+        if ($farmName !== null) {
+            $farmId = $this->resolveFarmId($farmName);
+            if ($farmId !== null) {
+                $updates['farm_id'] = $farmId;
+            } else {
+                Log::warning('Access Hub: farm name matched no known Farm, left unchanged', ['farm' => $farmName, 'user_id' => $user->id]);
+            }
+        }
+
+        if ($updates !== []) {
+            $user->update($updates);
+        }
+
+        $departmentName = $person['department'] ?? null;
+        if ($departmentName !== null) {
+            $departmentId = $this->resolveDepartmentId($departmentName);
+            if ($departmentId !== null) {
+                $user->requestorDepartments()->sync([$departmentId]);
+            } else {
+                Log::warning('Access Hub: department name matched no known Department, left unchanged', ['department' => $departmentName, 'user_id' => $user->id]);
+            }
+        }
+    }
+
+    /** Checks config/access_hub_farm_aliases.php first (e.g. hub's "BROOKDALE" -> PANDA's "BDL"), then falls back to a direct name match. */
+    private function resolveFarmId(string $name): ?int
+    {
+        $name = trim($name);
+        $normalized = Str::lower($name);
+
+        $aliasTarget = collect(config('access_hub_farm_aliases'))
+            ->mapWithKeys(fn (string $target, string $hubName) => [Str::lower($hubName) => $target])
+            ->get($normalized);
+
+        return Farm::whereRaw('LOWER(name) = ?', [Str::lower($aliasTarget ?? $name)])->value('id');
+    }
+
+    private function resolveDepartmentId(string $name): ?int
+    {
+        return Department::whereRaw('LOWER(name) = ?', [Str::lower(trim($name))])->value('id');
     }
 
     private function uniqueUsername(string $email, int $id): string
@@ -201,11 +269,39 @@ class AccessHubSyncService
         return User::withTrashed()->where('username', $base)->exists() ? "{$base}{$id}" : $base;
     }
 
-    /** @param array<string,bool> $mapped */
-    private function differsFromCurrent(User $user, array $mapped): bool
+    /**
+     * @param  array<string,bool>  $mapped
+     * @param  array  $person  raw hub person row — only checked for fields
+     *                         applyHubProfile() would actually change (resolved
+     *                         farm/department, non-blank position); an unmatched
+     *                         name never counts as "differs" since it won't be
+     *                         written either.
+     */
+    private function differsFromCurrent(User $user, array $mapped, array $person): bool
     {
         foreach (UserAccess::PERM_COLUMNS as $key => $column) {
             if ((bool) $user->{$column} !== ($mapped[$key] ?? false)) {
+                return true;
+            }
+        }
+
+        $position = trim((string) ($person['position'] ?? ''));
+        if ($position !== '' && $position !== $user->position) {
+            return true;
+        }
+
+        $farmName = $person['farm'] ?? null;
+        if ($farmName !== null) {
+            $farmId = $this->resolveFarmId($farmName);
+            if ($farmId !== null && $farmId !== $user->farm_id) {
+                return true;
+            }
+        }
+
+        $departmentName = $person['department'] ?? null;
+        if ($departmentName !== null) {
+            $departmentId = $this->resolveDepartmentId($departmentName);
+            if ($departmentId !== null && ! $user->requestorDepartments()->where('departments.id', $departmentId)->exists()) {
                 return true;
             }
         }

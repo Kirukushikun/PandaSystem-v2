@@ -359,15 +359,90 @@ test('UserAccess::save() still persists permission toggles after the shared-writ
     expect($account->fresh()->is_requestor)->toBeTrue();
 });
 
-// --- A hub-created row stores no farm/department/position (display-only, guide §3) --
+// --- Farm/department/position are pulled from the hub (resolved against real FKs) --
 
-test('a newly-created hub row leaves position unset — display-only, never persisted', function () {
+test('a newly-created hub row gets farm, requestor department, and position from the hub', function () {
+    $farm = App\Models\Farm::factory()->create(['name' => 'BFC']);
+    $department = App\Models\Department::factory()->create(['name' => 'Poultry']);
+
     $preview = app(AccessHubSyncService::class)->compareAgainst([
-        hubPerson(['user_id' => 9012, 'position' => 'Senior Accountant']),
+        hubPerson(['user_id' => 9012, 'farm' => 'bfc', 'department' => 'poultry', 'position' => 'Senior Accountant']),
     ]);
     app(AccessHubSyncService::class)->apply($preview, [9012], []);
 
-    expect(User::find(9012)->position)->toBeNull();
+    $user = User::find(9012);
+    expect($user->position)->toBe('Senior Accountant')
+        ->and($user->farm_id)->toBe($farm->id)
+        ->and($user->requestorDepartments()->pluck('departments.id')->all())->toBe([$department->id]);
+});
+
+test('the hub\'s "BROOKDALE" resolves to PANDA\'s BDL farm code via the alias config', function () {
+    $bdl = App\Models\Farm::factory()->create(['name' => 'BDL']);
+    App\Models\Farm::factory()->create(['name' => 'BRD']); // the other Brookdale code — must NOT be picked
+
+    $preview = app(AccessHubSyncService::class)->compareAgainst([
+        hubPerson(['user_id' => 9017, 'farm' => 'BROOKDALE']),
+    ]);
+    app(AccessHubSyncService::class)->apply($preview, [9017], []);
+
+    expect(User::find(9017)->farm_id)->toBe($bdl->id);
+});
+
+test('the hub\'s "RH/BBGC" resolves to PANDA\'s RH farm code via the alias config', function () {
+    $rh = App\Models\Farm::factory()->create(['name' => 'RH']);
+
+    $preview = app(AccessHubSyncService::class)->compareAgainst([
+        hubPerson(['user_id' => 9018, 'farm' => 'RH/BBGC']),
+    ]);
+    app(AccessHubSyncService::class)->apply($preview, [9018], []);
+
+    expect(User::find(9018)->farm_id)->toBe($rh->id);
+});
+
+test('an unmatched farm or department name logs a warning and never crashes the sync', function () {
+    Log::spy();
+
+    $preview = app(AccessHubSyncService::class)->compareAgainst([
+        hubPerson(['user_id' => 9014, 'farm' => 'Nonexistent Farm', 'department' => 'Nonexistent Dept']),
+    ]);
+    app(AccessHubSyncService::class)->apply($preview, [9014], []);
+
+    $user = User::find(9014);
+    expect($user)->not->toBeNull()
+        ->and($user->farm_id)->toBeNull()
+        ->and($user->requestorDepartments()->count())->toBe(0);
+    Log::shouldHaveReceived('warning')->with('Access Hub: farm name matched no known Farm, left unchanged', \Mockery::any())->once();
+    Log::shouldHaveReceived('warning')->with('Access Hub: department name matched no known Department, left unchanged', \Mockery::any())->once();
+});
+
+test('a profile-only change (farm/department/position) surfaces in Changed even with no permission change', function () {
+    $farm = App\Models\Farm::factory()->create(['name' => 'PFC']);
+    $user = User::factory()->create(['id' => 9015, 'source' => UserSource::Hub, 'is_requestor' => true, 'farm_id' => null]);
+
+    $preview = app(AccessHubSyncService::class)->compareAgainst([
+        hubPerson(['user_id' => 9015, 'roles' => ['manager'], 'farm' => 'PFC']), // same role, different farm
+    ]);
+
+    expect(collect($preview['changed'])->firstWhere('user.id', 9015))->not->toBeNull();
+
+    app(AccessHubSyncService::class)->apply($preview, [], [9015]);
+    expect($user->fresh()->farm_id)->toBe($farm->id);
+});
+
+test('re-syncing an already-resolved profile does not spuriously mark the row Changed', function () {
+    $farm = App\Models\Farm::factory()->create(['name' => 'RH']);
+    $department = App\Models\Department::factory()->create(['name' => 'Swine']);
+    $user = User::factory()->create([
+        'id' => 9016, 'source' => UserSource::Hub, 'is_requestor' => true,
+        'farm_id' => $farm->id, 'position' => 'Farm Hand',
+    ]);
+    $user->requestorDepartments()->sync([$department->id]);
+
+    $preview = app(AccessHubSyncService::class)->compareAgainst([
+        hubPerson(['user_id' => 9016, 'roles' => ['manager'], 'farm' => 'rh', 'department' => 'swine', 'position' => 'Farm Hand']),
+    ]);
+
+    expect(collect($preview['changed'])->firstWhere('user.id', 9016))->toBeNull();
 });
 
 // --- A hand edit on a hub-owned row detaches it from sync -----------------------------

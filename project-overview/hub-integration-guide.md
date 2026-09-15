@@ -243,3 +243,124 @@ Log failures. A silent catch makes a real outage invisible.
 - [ ] Every hub call has connect and read timeouts
 - [ ] Panel verified working with the hub switched off entirely
 - [ ] Test fixture rebuilt from a real hub response once the hub exists
+
+---
+
+## 8. Worked example — how PANDA v2 answered §4's open decisions
+
+Every system that builds this makes the same four calls differently, per its own access model and
+UI conventions — same contract above, different concrete answers. This section is PANDA's own
+record of those answers, kept here so future work on this feature doesn't have to re-derive them
+or depend on some other project's write-up. Update this section, not a separate file, whenever
+the implementation changes.
+
+### 8.1 — The role map
+
+PANDA's access model is **9 independent booleans** on `users` (`is_requestor`, `is_division_head`,
+etc. — see `UserAccess::PERM_COLUMNS`), not a single enum column. That makes §4.2's "decide how
+multiple roles combine" resolve to **union**, not highest-wins: every permission from every hub
+role a person holds gets turned on. `config/access_hub_roles.php`:
+
+| Hub role | PANDA permission(s) | Reasoning |
+|---|---|---|
+| `division_head` | Division Head | Direct match |
+| `vp` | Final Approver | The closest executive-sign-off stage PANDA has |
+| `manager` | Requestor | Baseline operational access |
+| `user` | *(unmapped, deliberately)* | A plain hub user gets no PANDA access at all |
+
+Every other PANDA permission (`hr_preparer`, `hr_approver`, `hr_head`, `dh_head`, `admin`,
+`proxy_approver`) has **no hub equivalent** — those stay `source = manual` permanently; the hub
+never creates, touches, or revokes them.
+
+### 8.2 — Multiple hub roles on one person, who wins
+
+Doesn't apply the way it does for a single-enum system — union means every mapped permission is
+simply OR'd on, no priority ordering needed. `AccessHubSyncService::mapRoles()` does this in one
+pass; nothing about it lives in the config file.
+
+### 8.3 — Farm / department / position: display-only, or stored?
+
+**Store all three, refreshed on every sync** — reversed from an earlier "display only, never
+persisted" decision once it turned out a new Requestor pulled in from the hub needs a real farm
+and an actual department scope to submit anything at all; display-only wasn't good enough once
+these fields started mattering for what the account can do, not just how it reads in a list.
+
+The mechanics, since PANDA's model isn't free text the way it might be elsewhere: `farm` and
+`department` arrive from the hub as **name strings**, but PANDA's `farm_id` is a real FK to a
+`Farm` row and "department" is the `requestorDepartments()` many-to-many pivot — so each is
+resolved by a case-insensitive exact match against the existing table before being written.
+`position` is a plain string column, no resolution needed.
+
+An unmatched name (typo, rename lag at the hub, farm/department not yet in PANDA's own reference
+data) **never** nulls out or wipes something already there — it logs a warning and leaves the
+existing value alone. The hub has one explicit signal for "remove this" (`active: false`); a
+name that doesn't resolve isn't that, so it's treated as a sync-time miss to flag, not a
+revocation to act on. This only strengthens data over time, never silently degrades it.
+
+`AccessHubSyncService::differsFromCurrent()` checks these three alongside the permission booleans,
+so a person whose farm/department/position changed at the hub — with their roles unchanged —
+still surfaces in the Changed group and gets refreshed on Apply, rather than only updating once at
+creation and going stale forever after (the exact bug class `CarryOverService` had before its own
+2026-09-15 fix, deliberately not repeated here).
+
+**Real values, confirmed 2026-09-15** (not the guide's generic placeholder examples above — these
+are what the hub actually returns for this project): 11 departments, all matching PANDA's own
+`departments` table exactly (case-insensitively) — no alias needed there at all. 7 farms against
+PANDA's 5 (`BDL`/`BFC`/`BRD`/`PFC`/`RH`), only 2 of which line up as an exact string match. The
+rest needed a decision, not a guess:
+
+| Hub farm | Resolves to | |
+|---|---|---|
+| `BFC` | `BFC` | exact match |
+| `PFC` | `PFC` | exact match |
+| `BROOKDALE` | `BDL` | the hub doesn't distinguish PANDA's two Brookdale codes (`BDL`/`BRD`, both print as "Brookdale Farms Corporation") — `BDL` chosen deliberately |
+| `RH/BBGC` | `RH` | same farm, different string |
+| `BFC-IRAQ`, `FEEDMILL`, `HATCHERY` | *(unmapped)* | no PANDA `Farm` row for these yet — left unresolved on purpose rather than auto-creating farms; logs a warning each sync until revisited |
+
+See `config/access_hub_farm_aliases.php` for the alias table itself (department needs none —
+confirmed exact match on all 11).
+
+### 8.4 — The actual wire protocol
+
+Confirmed directly by whoever administers `accesshub.bfcgroup.ph` for this project, not invented:
+
+- Base URL and project key: `HUB_BASE_URL` / `HUB_PROJECT_KEY` in `.env` (note: **not**
+  `ACCESS_HUB_*` — the env var names were fixed to match what was already set up on the hub's
+  admin side, since renaming that felt riskier than renaming PANDA's own config keys).
+- `POST /api/v1/enroll` — `{code, project_key, environment}` → `{client_id, client_secret}`.
+  `422` invalid/expired/used code, `404` unrecognized project, `429` rate limited, each shown as
+  its own distinct message — not one generic "enrollment failed."
+- `GET /api/v1/grants` — auth via `X-Client-Id` / `X-Client-Secret` headers. `401`/`403`
+  credentials revoked (offers **Reset connection**, never a silent retry), `429` rate limited,
+  shown distinctly from a generic "unreachable."
+
+### 8.5 — One more PANDA-specific call the generic contract doesn't cover
+
+**A hand edit on a hub-owned account detaches it from sync.** Saving any change to a
+`source = hub` account through the ordinary Access panel (`UserAccess::save()`) flips it to
+`source = manual` — "a manual edit is manual intent." The panel shows a note explaining this
+*before* the admin saves, so it's not a surprise after the fact. Without this, a deliberate manual
+correction on a hub-managed account would just get silently overwritten the next time sync ran.
+
+### 8.6 — UI shape
+
+Not a sidebar module. "Sync from Hub" is a single link on **User Accounts**
+(`admin.users` — `resources/views/livewire/admin/users.blade.php`), shown only when
+`HUB_BASE_URL` is actually configured. Clicking it navigates to its own page
+(`admin.access-hub`) — full width, not a modal, since the three preview groups need real room —
+with a plain "← Back to User Accounts" link to return. **Deliberately no sidebar nav entry**: the
+only way in is that one link, the only way out is that one link back, same as before you ever
+connected. Every action that touches the network or writes to the database (`enroll`, `runSync`,
+`apply`, `resetConnection`) has its own `wire:loading` state — button disables and its label swaps
+("Connecting…", "Syncing…", "Applying…", "Resetting…") — specifically so a slow response doesn't
+read as "did that click even register," which is exactly the class of confusion the UI shape
+itself caused once already (see the commit history around 2026-09-15).
+
+### 8.7 — Files, for reference
+
+`app/Enums/UserSource.php` · `app/Models/AccessHubConnection.php` ·
+`app/Services/AccessHubService.php` (HTTP client) ·
+`app/Services/AccessHubSyncService.php` (compare/apply) ·
+`app/Services/UserPermissionWriter.php` (the one shared write path — also used by
+`UserAccess::save()`) · `app/Livewire/Admin/AccessHub.php` + `access-hub.blade.php` ·
+`config/access_hub_roles.php` · `config/access_hub_farm_aliases.php` · `tests/Feature/AccessHubTest.php`.

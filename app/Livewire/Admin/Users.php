@@ -34,9 +34,6 @@ class Users extends Component
 
     public string $filter = 'all'; // all | heads | hr | admins | noaccess (directory mode only)
 
-    /** Access Hub sync lives in its own nested component (AccessHub) — this just opens/closes it. */
-    public bool $showHubModal = false;
-
     public function updatedSearch(): void
     {
         $this->resetPage();

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthenticationController;
 use App\Http\Controllers\LoginController;
+use App\Livewire\Admin\AccessHub;
 use App\Livewire\Admin\UserAccess;
 use App\Livewire\Admin\Users;
 use App\Livewire\Dev\LegacyPeekIndex;
@@ -119,6 +120,9 @@ Route::middleware('auth')->group(function () {
 
         Route::get('/admin/users', Users::class)->name('admin.users');
         Route::get('/admin/users/{user}', UserAccess::class)->name('admin.users.access');
+        // No sidebar nav entry, deliberately — reachable only via the "Sync from
+        // Hub" link on User Accounts, not a permanent module of its own.
+        Route::get('/admin/users/sync/hub', AccessHub::class)->name('admin.access-hub');
 
         // Mockup's Maintenance subtabs are separate routes (per CLAUDE.md UI contract)
         Route::redirect('/maintenance', '/maintenance/logs');

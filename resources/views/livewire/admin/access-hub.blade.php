@@ -1,5 +1,13 @@
-{{-- Embedded inside User Accounts' "Sync from Hub" modal — not a standalone page. --}}
+{{-- Reachable only via "Sync from Hub" on User Accounts — no sidebar nav entry of its own. --}}
 <div>
+  <p class="crumb">Administration</p>
+  <div class="htop">
+    <div><h2>Sync from Access Hub</h2>
+      <p>Review what would change before anything is written.</p></div>
+    <div class="spacer"></div>
+    <a class="btn" href="{{ route('admin.users') }}" wire:navigate style="text-decoration:none">← Back to User Accounts</a>
+  </div>
+
   <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:0 0 14px">
     <p class="hint" style="margin:0">Last synced:
       @if ($lastSyncedAt)

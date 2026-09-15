@@ -501,6 +501,32 @@ test('a newer Approved-but-unfiled PAN outranks an older Filed one for carry-ove
         ->assertDontSee($filed->reference);
 });
 
+test('creation order wins for carry-over, even when the earlier-created PAN was approved later', function () {
+    // Reproduces a real production case: two PANs for the same employee, both
+    // reaching Approved/Served/Filed, but processed out of order — the one
+    // created first happened to clear someone's queue and get its final
+    // approval stamp LAST. approved_at alone would wrongly pick it; creation
+    // order (id) correctly picks whichever PAN was actually made more recently.
+    $createdFirst = prepPan(PanStatus::Served, ['approved_at' => now()]); // approved most recently
+    PanForm::factory()->create([
+        'pan_request_id' => $createdFirst->id,
+        'action_reference' => [['field' => 'basic', 'from' => '15,000.00', 'to' => '16,000.00']],
+    ]);
+
+    $createdSecond = prepPan(PanStatus::Approved, ['approved_at' => now()->subMonths(1)]); // approved earlier
+    PanForm::factory()->create([
+        'pan_request_id' => $createdSecond->id,
+        'action_reference' => [['field' => 'basic', 'from' => '16,000.00', 'to' => '17,500.00']],
+    ]);
+
+    $pan = prepPan(PanStatus::InPreparation);
+
+    Livewire::test(PrepareForm::class, ['pan' => $pan->reference])
+        ->assertSet('fromValues.basic', '17,500.00')
+        ->assertSee($createdSecond->reference)
+        ->assertDontSee($createdFirst->reference);
+});
+
 test('allowance rows carry over from the previous PAN, not just the six fixed fields', function () {
     // HR-reported bug: fromValuesFor() only ever seeded section/place/head/position/
     // joblevel/basic — any Communication/Meal/etc. Allowance row silently never

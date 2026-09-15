@@ -9,9 +9,20 @@ use App\Models\Employee;
 use App\Models\PanRequest;
 
 /**
- * The previous_pan_id chain: an employee's most recently APPROVED PAN seeds the
- * next one — its "To" values become the new form's "From" values, and its
- * employment status carries forward (the employment-status lock).
+ * The previous_pan_id chain: an employee's most recently CREATED PAN that has
+ * reached Approved/Served/Filed seeds the next one — its "To" values become the
+ * new form's "From" values, and its employment status carries forward (the
+ * employment-status lock).
+ *
+ * Ordered by id (creation order) among qualifying statuses, deliberately NOT by
+ * approved_at — approval is processed by different people/queues at different
+ * speeds, so an earlier-created PAN can genuinely finish its approval AFTER a
+ * later-created one for the same employee; approved_at reflects processing
+ * timing, not which PAN's data is actually current. Creation order does: a PAN
+ * created after another was already Approved/Served/Filed was necessarily
+ * created with that earlier PAN's "To" values as the real, current state — so
+ * whichever qualifying PAN was created last is always the right one, regardless
+ * of how fast or slow its own approval happened to move.
  *
  * Approved, not Filed: per PanWorkflow, Approved has no reject/void path — the
  * only moves from there are mark_served/mark_unserved, so the values are final
@@ -30,14 +41,13 @@ class CarryOverService
     /** The six fixed Action Reference fields, plus Leave Credits — everything else is a dynamic allowance row. */
     private const KNOWN_FIELDS = ['section', 'place', 'head', 'position', 'joblevel', 'basic', 'leavecredits'];
 
-    /** The employee's most recently approved PAN that has prepared paperwork. */
+    /** The employee's most recently created PAN, among those that reached Approved/Served/Filed, with prepared paperwork. */
     public function previousPanFor(Employee $employee, ?PanRequest $ignore = null): ?PanRequest
     {
         return PanRequest::where('employee_id', $employee->id)
             ->whereIn('status', array_map(fn (PanStatus $s) => $s->value, self::CARRY_OVER_STATUSES))
             ->whereHas('form')
             ->when($ignore, fn ($q) => $q->whereKeyNot($ignore->id))
-            ->orderByDesc('approved_at')
             ->orderByDesc('id')
             ->first();
     }

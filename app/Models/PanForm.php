@@ -18,6 +18,7 @@ class PanForm extends Model
     protected $fillable = [
         'pan_request_id', 'date_hired', 'employment_status', 'doe_from',
         'doe_to', 'wage_no', 'action_reference', 'remarks', 'prepared_by',
+        'new_department_id',
     ];
 
     protected function casts(): array
@@ -39,6 +40,12 @@ class PanForm extends Model
     public function preparedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'prepared_by');
+    }
+
+    /** Set only for Lateral Transfer / Change of Position / Promotion — see ActionType::mayChangeDepartment(). */
+    public function newDepartment(): BelongsTo
+    {
+        return $this->belongsTo(Department::class, 'new_department_id');
     }
 
     /** The Action Reference field's display label — fixed fields get a proper name; a dynamic allowance renders its own. */

@@ -102,6 +102,17 @@
         @error('employment_status')<span class="hint" style="color:var(--red)">{{ $message }}</span>@enderror
         <span class="hint">Pre-selected from the last approved PAN (or Regular for a first-time PAN, Probationary for a Regularization) — editable here. Regularization still finalizes it to Regular at final approval regardless.</span></div>
       <div class="field"><label>Division / Department</label><input readonly value="{{ $pan->employee->department->name }}"></div>
+      @if ($pan->action_type->mayChangeDepartment())
+      <div class="field"><label>New Department</label>
+        <select wire:model="newDepartmentId" @error('newDepartmentId') style="border-color:var(--red)" @enderror>
+          <option value="">— No department change —</option>
+          @foreach ($departments as $department)
+          <option value="{{ $department->id }}">{{ $department->name }}</option>
+          @endforeach
+        </select>
+        @error('newDepartmentId')<span class="hint" style="color:var(--red)">{{ $message }}</span>@enderror
+        <span class="hint">Only if this {{ $pan->action_type->label() }} actually moves the employee to a different department. On final approval, this is written to the employee record — every future PAN and their manager's employee list follow it from there.</span></div>
+      @endif
       <div class="field"><label>Effectivity From <em>*</em></label><input type="date" wire:model.live="doe_from" @error('doe_from') style="border-color:var(--red)" @enderror>
         @error('doe_from')<span class="hint" style="color:var(--red)">{{ $message }}</span>@enderror</div>
       <div class="field"><label>Effectivity To</label><input type="date" wire:model="doe_to" placeholder="Open-ended">

@@ -475,3 +475,53 @@ test('a hub-owned account detached by a hand edit is untouched by the next sync'
     expect(collect($preview['changed'])->firstWhere('user.id', 9013))->toBeNull();
     expect($account->fresh()->is_division_head)->toBeTrue(); // the hand grant survives
 });
+
+// --- Applying a Changed row through the actual page updates farm/department/position --
+
+test('applying a Changed row through the real Livewire request cycle updates farm/department/position', function () {
+    $farm = App\Models\Farm::factory()->create(['name' => 'BFC']);
+    $department = App\Models\Department::factory()->create(['name' => 'Poultry']);
+    $user = User::factory()->create(['id' => 9099, 'source' => UserSource::Hub, 'is_requestor' => true, 'farm_id' => null]);
+
+    enrollConnection();
+    fakeHubGrants([hubPerson(['user_id' => 9099, 'roles' => ['manager'], 'farm' => 'BFC', 'department' => 'Poultry', 'position' => 'Farm Helper'])]);
+
+    Livewire::test(AccessHub::class)
+        ->call('runSync')
+        ->set('selectedChanged', [9099])
+        ->call('apply');
+
+    $fresh = $user->fresh();
+    expect($fresh->farm_id)->toBe($farm->id)
+        ->and($fresh->position)->toBe('Farm Helper')
+        ->and($fresh->requestorDepartments()->pluck('departments.id')->all())->toBe([$department->id]);
+});
+
+test('applying several Changed rows selected one at a time (simulating individual checkbox clicks) updates every row', function () {
+    $bfc = App\Models\Farm::factory()->create(['name' => 'BFC']);
+    $pfc = App\Models\Farm::factory()->create(['name' => 'PFC']);
+    $poultry = App\Models\Department::factory()->create(['name' => 'Poultry']);
+    $swine = App\Models\Department::factory()->create(['name' => 'Swine']);
+
+    $u1 = User::factory()->create(['id' => 9101, 'source' => UserSource::Hub, 'is_requestor' => true, 'farm_id' => null]);
+    $u2 = User::factory()->create(['id' => 9102, 'source' => UserSource::Hub, 'is_requestor' => true, 'farm_id' => null]);
+
+    enrollConnection();
+    fakeHubGrants([
+        hubPerson(['user_id' => 9101, 'roles' => ['manager'], 'farm' => 'BFC', 'department' => 'Poultry']),
+        hubPerson(['user_id' => 9102, 'roles' => ['manager'], 'farm' => 'PFC', 'department' => 'Swine']),
+    ]);
+
+    $test = Livewire::test(AccessHub::class)->call('runSync');
+    // wire:model.live fires a separate round-trip per click — simulate that with
+    // two separate ->set() calls rather than one, each re-serializing the whole
+    // component (including $preview) in between, same as the real browser flow.
+    $test->set('selectedChanged', [9101]);
+    $test->set('selectedChanged', [9101, 9102]);
+    $test->call('apply');
+
+    expect($u1->fresh()->farm_id)->toBe($bfc->id)
+        ->and($u1->fresh()->requestorDepartments()->pluck('departments.id')->all())->toBe([$poultry->id])
+        ->and($u2->fresh()->farm_id)->toBe($pfc->id)
+        ->and($u2->fresh()->requestorDepartments()->pluck('departments.id')->all())->toBe([$swine->id]);
+});

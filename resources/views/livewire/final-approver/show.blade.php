@@ -46,6 +46,9 @@
     @if ($pan->action_type->autoFinalizesToRegular() && $pan->status === App\Enums\PanStatus::ForFinalApproval)
     <div class="note info" style="margin:14px 18px"><span class="ic">i</span>Approving this Regularization finalizes the employee's status as "Regular" automatically.</div>
     @endif
+    @if ($form?->new_department_id && $pan->status === App\Enums\PanStatus::ForFinalApproval)
+    <div class="note info" style="margin:14px 18px"><span class="ic">i</span>Approving this moves <b>{{ $pan->employee->name }}</b> to <b>{{ $form->newDepartment->name }}</b> — their record, every future PAN, and whichever manager requests for that department will follow from here.</div>
+    @endif
     <div class="formfoot">
       <a class="btn" href="{{ route('final-approval.queue') }}" wire:navigate style="text-decoration:none">← Back to queue</a>
       <div class="spacer"></div>

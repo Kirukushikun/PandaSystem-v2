@@ -57,4 +57,17 @@ enum ActionType: string
     {
         return $this === self::Regularization;
     }
+
+    /**
+     * These three carry a real possibility of moving the employee to a
+     * different department (confirmed 2026-09-16, after PAN-2026-00061 showed
+     * employees.department_id never followed a department change anywhere).
+     * Shows the "New Department" field on the prepare form; if HR actually
+     * sets it, Final Approval writes it back to the employee record — see
+     * GivesFinalApproval.
+     */
+    public function mayChangeDepartment(): bool
+    {
+        return in_array($this, [self::LateralTransfer, self::ChangeOfPosition, self::Promotion], true);
+    }
 }

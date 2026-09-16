@@ -27,7 +27,7 @@ class Show extends Component
     public function mount(string $pan): void
     {
         $this->panRequest = PanRequest::where('reference', $pan)
-            ->with(['employee.department', 'requestedBy', 'form.preparedBy', 'hrApprover', 'returns.returnedBy', 'attachments'])
+            ->with(['employee.department', 'requestedBy', 'form.preparedBy', 'form.newDepartment', 'hrApprover', 'returns.returnedBy', 'attachments'])
             ->firstOrFail();
 
         $this->authorize('view', $this->panRequest);
@@ -35,11 +35,17 @@ class Show extends Component
 
     public function approve(): void
     {
+        $newDepartment = $this->panRequest->form?->newDepartment?->name;
         $this->giveFinalApproval($this->panRequest);
 
-        $this->js($this->panRequest->action_type->autoFinalizesToRegular()
-            ? "showToast('Final approval given — status auto-finalized to Regular.')"
-            : "showToast('Final approval given — {$this->panRequest->reference} moves on to serving.')");
+        $message = $this->panRequest->action_type->autoFinalizesToRegular()
+            ? 'Final approval given — status auto-finalized to Regular.'
+            : "Final approval given — {$this->panRequest->reference} moves on to serving.";
+        if ($newDepartment !== null) {
+            $message .= " {$this->panRequest->employee->name} is now recorded under {$newDepartment}.";
+        }
+
+        $this->js("showToast('{$message}')");
         $this->redirectRoute('final-approval.queue', navigate: true);
     }
 

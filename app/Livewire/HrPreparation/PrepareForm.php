@@ -5,6 +5,7 @@ namespace App\Livewire\HrPreparation;
 use App\Enums\ConfidentialityTag;
 use App\Enums\PanStatus;
 use App\Livewire\Concerns\ValidatesWithToast;
+use App\Models\Department;
 use App\Models\PanAttachment;
 use App\Models\PanForm;
 use App\Models\PanRequest;
@@ -46,6 +47,9 @@ class PrepareForm extends Component
 
     /** Editable dropdown, not free text — EmploymentStatus::cases() are the only valid values. */
     public string $employment_status = '';
+
+    /** Only shown for ActionType::mayChangeDepartment() types; blank = no department change. */
+    public string $newDepartmentId = '';
 
     /** Fixed Action Reference rows: field => value. From is carried; To is typed. */
     public array $fromValues = [];
@@ -123,6 +127,7 @@ class PrepareForm extends Component
             $this->wage_no = (string) $form->wage_no;
             $this->remarks = (string) $form->remarks;
             $this->employment_status = $form->employment_status->value;
+            $this->newDepartmentId = $form->new_department_id !== null ? (string) $form->new_department_id : '';
 
             foreach ($form->action_reference as $row) {
                 if (in_array($row['field'], [...self::FIXED_FIELDS, 'leavecredits'], true)) {
@@ -317,6 +322,7 @@ class PrepareForm extends Component
             'allowances.*.to' => 'nullable|string|max:255',
             'remarks' => $this->panRequest->wasProxyApproved() ? 'required|string|max:1000' : 'nullable|string|max:1000',
             'employment_status' => ['required', \Illuminate\Validation\Rule::enum(\App\Enums\EmploymentStatus::class)],
+            'newDepartmentId' => 'nullable|exists:departments,id',
         ];
     }
 
@@ -357,6 +363,9 @@ class PrepareForm extends Component
                 'action_reference' => $reference,
                 'remarks' => $this->remarks ?: null,
                 'prepared_by' => auth()->id(),
+                'new_department_id' => $this->panRequest->action_type->mayChangeDepartment() && $this->newDepartmentId !== ''
+                    ? (int) $this->newDepartmentId
+                    : null,
             ]
         );
 
@@ -400,6 +409,9 @@ class PrepareForm extends Component
             'previous' => $this->panRequest->previousPan
                 ?? app(CarryOverService::class)->previousPanFor($this->panRequest->employee, $this->panRequest),
             'isHrHead' => auth()->user()->is_hr_head,
+            'departments' => $this->panRequest->action_type->mayChangeDepartment()
+                ? Department::orderBy('name')->get()
+                : collect(),
         ]);
     }
 }

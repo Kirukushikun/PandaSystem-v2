@@ -117,6 +117,30 @@ describe('Final Approver', function () {
             ->and($form->fresh()->employment_status)->toBe(EmploymentStatus::Regular);
     });
 
+    test('approving a Lateral Transfer with a New Department set moves the employee there', function () {
+        $newDept = App\Models\Department::factory()->create(['name' => 'Poultry']);
+        $pan = PanRequest::factory()->status(PanStatus::ForFinalApproval)
+            ->create(['action_type' => 'lateral-transfer']);
+        PanForm::factory()->create(['pan_request_id' => $pan->id, 'new_department_id' => $newDept->id]);
+
+        Livewire::test(FinalShow::class, ['pan' => $pan->reference])
+            ->call('approve')
+            ->assertRedirect(route('final-approval.queue'));
+
+        expect($pan->fresh()->employee->department_id)->toBe($newDept->id);
+    });
+
+    test('approving a department-eligible PAN with no New Department picked leaves the employee alone', function () {
+        $pan = PanRequest::factory()->status(PanStatus::ForFinalApproval)
+            ->create(['action_type' => 'promotion']);
+        PanForm::factory()->create(['pan_request_id' => $pan->id, 'new_department_id' => null]);
+        $originalDeptId = $pan->employee->department_id;
+
+        Livewire::test(FinalQueue::class)->call('approveOne', $pan->id);
+
+        expect($pan->fresh()->employee->department_id)->toBe($originalDeptId);
+    });
+
     test('a non-Regularization approval leaves the prepared employment status alone', function () {
         $pan = PanRequest::factory()->status(PanStatus::ForFinalApproval)
             ->create(['action_type' => 'wage-order']);

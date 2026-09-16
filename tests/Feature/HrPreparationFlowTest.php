@@ -730,3 +730,61 @@ test('the queue tells apart a fresh InPreparation PAN from a disputed one from a
         ->assertSee('Disputed — by Division Head')
         ->assertSee('Rejected — by Final Approver');
 });
+
+/*
+|--------------------------------------------------------------------------
+| New Department — only for the 3 action types that can actually move an
+| employee's department (see ActionType::mayChangeDepartment()); the actual
+| employee-record write happens at Final Approval, not here — see
+| ApproverFlowTest.php.
+|--------------------------------------------------------------------------
+*/
+
+test('the New Department field only appears for Lateral Transfer / Change of Position / Promotion', function () {
+    $eligible = prepPan(PanStatus::InPreparation, ['action_type' => 'lateral-transfer']);
+    Livewire::test(PrepareForm::class, ['pan' => $eligible->reference])
+        ->assertSee('New Department');
+
+    $ineligible = prepPan(PanStatus::InPreparation, ['action_type' => 'wage-order']);
+    Livewire::test(PrepareForm::class, ['pan' => $ineligible->reference])
+        ->assertDontSee('New Department');
+});
+
+test('picking a New Department persists it; leaving it blank persists null', function () {
+    $department = App\Models\Department::factory()->create(['name' => 'Swine']);
+    $pan = prepPan(PanStatus::InPreparation, ['action_type' => 'change-of-position']);
+
+    Livewire::test(PrepareForm::class, ['pan' => $pan->reference])
+        ->set('newDepartmentId', (string) $department->id)
+        ->set('date_hired', '2026-08-01')
+        ->set('doe_from', '2026-08-16')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect($pan->fresh()->form->new_department_id)->toBe($department->id);
+
+    // Leaving it blank on another PAN of the same eligible type persists null — not
+    // every Change of Position actually changes department.
+    $other = prepPan(PanStatus::InPreparation, ['action_type' => 'change-of-position']);
+    Livewire::test(PrepareForm::class, ['pan' => $other->reference])
+        ->set('date_hired', '2026-08-01')
+        ->set('doe_from', '2026-08-16')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect($other->fresh()->form->new_department_id)->toBeNull();
+});
+
+test('a New Department can never persist for an ineligible action type, even if hand-set', function () {
+    $department = App\Models\Department::factory()->create();
+    $pan = prepPan(PanStatus::InPreparation, ['action_type' => 'salary-alignment']);
+
+    Livewire::test(PrepareForm::class, ['pan' => $pan->reference])
+        ->set('newDepartmentId', (string) $department->id) // hand-set despite no UI for it on this type
+        ->set('date_hired', '2026-08-01')
+        ->set('doe_from', '2026-08-16')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect($pan->fresh()->form->new_department_id)->toBeNull();
+});

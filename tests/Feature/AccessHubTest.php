@@ -486,15 +486,37 @@ test('applying a Changed row through the real Livewire request cycle updates far
     enrollConnection();
     fakeHubGrants([hubPerson(['user_id' => 9099, 'roles' => ['manager'], 'farm' => 'BFC', 'department' => 'Poultry', 'position' => 'Farm Helper'])]);
 
+    // '9099' as a STRING, not 9099 — this is exactly what a real wire:model.live
+    // checkbox delivers (HTML form values are always strings), and is the case
+    // that slipped through every earlier version of this test using an int.
     Livewire::test(AccessHub::class)
         ->call('runSync')
-        ->set('selectedChanged', [9099])
+        ->set('selectedChanged', ['9099'])
         ->call('apply');
 
     $fresh = $user->fresh();
     expect($fresh->farm_id)->toBe($farm->id)
         ->and($fresh->position)->toBe('Farm Helper')
         ->and($fresh->requestorDepartments()->pluck('departments.id')->all())->toBe([$department->id]);
+});
+
+test('regression: a string checkbox id (real browser behavior) is matched against the int user id, not silently dropped', function () {
+    // The actual 2026-09-18 production bug: apply()'s in_array(..., true) strict
+    // comparison meant a real checkbox's string id ('9099') never matched
+    // $row['user']->id (int 9099) — the Changed loop silently matched nothing,
+    // every single time, for every real click. Permissions looked fine because
+    // most of these accounts were already granted from their original creation;
+    // farm/department/position — only ever set through this exact path — never
+    // had a chance, no matter how many times "Apply" was clicked.
+    $farm = App\Models\Farm::factory()->create(['name' => 'BFC']);
+    $user = User::factory()->create(['id' => 9199, 'source' => UserSource::Hub, 'is_requestor' => true, 'farm_id' => null]);
+
+    $preview = app(AccessHubSyncService::class)->compareAgainst([
+        hubPerson(['user_id' => 9199, 'roles' => ['manager'], 'farm' => 'BFC']),
+    ]);
+    app(AccessHubSyncService::class)->apply($preview, [], ['9199']); // string, like a real checkbox
+
+    expect($user->fresh()->farm_id)->toBe($farm->id);
 });
 
 test('applying several Changed rows selected one at a time (simulating individual checkbox clicks) updates every row', function () {
@@ -516,8 +538,8 @@ test('applying several Changed rows selected one at a time (simulating individua
     // wire:model.live fires a separate round-trip per click — simulate that with
     // two separate ->set() calls rather than one, each re-serializing the whole
     // component (including $preview) in between, same as the real browser flow.
-    $test->set('selectedChanged', [9101]);
-    $test->set('selectedChanged', [9101, 9102]);
+    $test->set('selectedChanged', ['9101']);
+    $test->set('selectedChanged', ['9101', '9102']);
     $test->call('apply');
 
     expect($u1->fresh()->farm_id)->toBe($bfc->id)

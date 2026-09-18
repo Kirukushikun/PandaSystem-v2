@@ -151,6 +151,14 @@ class AccessHubSyncService
      */
     public function apply(array $preview, array $confirmedNewIds, array $confirmedChangedIds): void
     {
+        // Checkbox values arrive as strings from a real wire:model.live-bound
+        // checkbox array — cast up front so the strict in_array() checks below
+        // compare like-for-like against the int ids on $row['user']/hub.user_id,
+        // regardless of whether the caller passed strings (real browser) or ints
+        // (server-side pre-ticked defaults, or a test calling this directly).
+        $confirmedNewIds = array_map('intval', $confirmedNewIds);
+        $confirmedChangedIds = array_map('intval', $confirmedChangedIds);
+
         foreach ($preview['new'] as $row) {
             $id = (int) $row['hub']['user_id'];
             if (! in_array($id, $confirmedNewIds, true)) {
